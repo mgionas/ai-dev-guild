@@ -5,6 +5,10 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- README: the "How it works" diagram is now a designed image in the banner's style, with numbered
+  steps, the role and the file each step leaves, and the fix loop; a tall version for phones, light
+  and dark. (new)
+
 - Role `token-optimizer` and skill `token-review`: measure where a session spent its tokens and
   adopt a few rules to spend less. (field-tested)
 - Skill `roadmap`: milestones a user can see, one step per task with its stage, and "later" items

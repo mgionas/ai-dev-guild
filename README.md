@@ -43,16 +43,12 @@ agent. A different agent reviews it, and the task is not done until the test out
 
 ## How it works
 
-```mermaid
-flowchart TD
-    A["📝 Brief<br/>one task, one file"] --> B["🔨 Build<br/>a fresh agent,<br/>test first"]
-    B --> C["🔍 Inspect<br/>never the builder"]
-    C -- "findings" --> D["🔧 Fix<br/>a fresh agent"]
-    D --> E["✔️ Re-check<br/>confirms only"]
-    E --> F["🧪 Strict local check<br/>as CI runs it"]
-    C -- "clean" --> F
-    F --> G["🏁 Merge<br/>boards updated"]
-```
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/loop-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/loop-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/loop-wide-dark.svg">
+  <img alt="How it works: 1 ask first, 2 brief, 3 build with a fresh agent, 4 inspect by a different agent; if review finds something, 5 a fresh fixer and one re-check; 6 prove with a strict local check; then merge and update the boards." src="assets/loop-wide-light.svg" width="100%">
+</picture>
 
 1. **Ask first.** Before anything is built, the product questions go to you in one batch, each
    with a recommended answer.
