@@ -13,6 +13,8 @@ $ <command>
 <pasted output>
 ```
 
+Steps: <each heavy step as ran, skipped (why) or escalated (which file); or "none needed", and why>
+
 ## Tests changed
 
 - `<test file>:<line>` — <an existing assertion you changed or removed, and why>; or "none"

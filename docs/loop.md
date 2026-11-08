@@ -42,7 +42,8 @@ flowchart TD
    changes. ([`fix-round`](../plugin/skills/fix-round/SKILL.md))
 7. **Re-check.** One combined re-check confirms the fixes. It does not reopen the review. After the
    second fix round, the owner decides whether to continue.
-8. **Strict local check.** The full suites run once, the way CI runs them.
+8. **Strict local check.** The checks run once, the way CI runs them, on what the change can
+   reach; the full suite when the change reaches everything or no remote CI follows.
    ([`local-ci`](../plugin/skills/local-ci/SKILL.md))
 9. **Merge and update.** The roadmap, the QA board and the system map change in the same turn.
    ([`progress-boards`](../plugin/skills/progress-boards/SKILL.md), [`system-map`](../plugin/skills/system-map/SKILL.md))

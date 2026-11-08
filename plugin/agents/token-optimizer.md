@@ -40,6 +40,8 @@ and the controller itself. If the field names differ in the version you find, sa
 - **Context growth:** where the controller passed about 250K tokens of context, and where a
   `/compact` would have paid off; agents that ran far past about 110 turns.
 - **Waiting:** polling loops and agents idling on a slow check.
+- **Suites the change cannot reach:** full or integration runs for a change that no test in them
+  loads, and two heavy runs at once on one machine.
 
 ## What you return
 

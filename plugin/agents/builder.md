@@ -26,7 +26,8 @@ How you work:
 - Change only what the task needs. No reformatting, renaming or tidying beside your change.
 - Build nothing the brief did not ask for: no extra option, flag or abstraction with one caller.
 - Run the tests the brief names as covering your change, plus the project's guard tests, lint and
-  typecheck. Paste their output.
+  typecheck. Paste their output. Run a heavy suite (integration, end-to-end, the full local check)
+  only where the change can reach it, and say in the report which ones you ran or skipped, and why.
 - Never kill processes by pattern (`pkill`, `killall`, `kill $(pgrep …)`). Stop only a process you
   started, by its own PID.
 - If others may share this checkout, commit by path: `git commit -m "…" -- <path> …`, then check

@@ -1,62 +1,195 @@
 #!/usr/bin/env node
 /**
- * Example strict local check: runs every CI step on the current checkout, to completion, with a
+ * Example strict local check: runs your CI steps on the current checkout, to completion, with a
  * log per step and one verdict line at the end.
  *
- * Usage: node ci-local.mjs <outdir>
+ * Usage: node ci-local.mjs <outdir> [--full] [--base <ref>]
  *
  * Copy it into your project and replace STEPS with your CI workflow's steps, in the same order.
  * Then add a test that reads the workflow file and fails when the two lists differ: that test is
  * what keeps this script honest.
  *
- * Strict on purpose: no flags to skip or filter a step, one failure never prevents later steps from running,
- * and the environment is cleaned like a CI runner's so local secrets and caches cannot make a
- * step pass here that would fail there. Not included: the flake retry described in the local-ci
- * skill, because which files a branch touched depends on your test runner.
+ * By default it runs only what the change can reach. The base is where this branch left the main
+ * branch (`git merge-base HEAD origin/main`, or `--base <ref>`), and the build tool works out which
+ * packages changed since then and which depend on them; this script never keeps its own map of
+ * that. Cheap whole-repository steps always run. The whole suite runs instead when you pass
+ * `--full`, when the base cannot be found, or when a changed file reaches everything (the
+ * ESCALATE list). Every step's line says whether it ran in full, ran on the affected part, or was
+ * skipped and why, and the verdict line names the mode, so a narrow run never reads as a full one.
+ *
+ * Strict on purpose: no flag skips a named step, one failure never stops later steps, and the
+ * environment is cleaned like a CI runner's so local secrets and caches cannot make a step pass
+ * here that would fail there. Not included: the flake retry described in the local-ci skill,
+ * because which files a branch touched depends on your test runner.
  */
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 
-/** Replace with your CI steps. `run` is one shell command. */
+/**
+ * Replace with your CI steps. `run` is the whole-repository command. `affected`, when present, is
+ * the same step narrowed by the build tool to what changed since `{base}` and what depends on it
+ * (Turborepo: `--filter=...[{base}]`; Nx: `npx nx affected -t test --base={base}`). A step with
+ * `when` runs only if a changed file matches it, for a suite your build tool does not track, such
+ * as browser tests of one app. A step with neither always runs in full: keep that for cheap checks.
+ */
 const STEPS = [
-  { name: 'install', run: 'npm ci' },
-  { name: 'lint', run: 'npm run lint' },
-  { name: 'typecheck', run: 'npm run typecheck' },
-  { name: 'test', run: 'npm test' },
-  { name: 'build', run: 'npm run build' },
+  { name: "install", run: "npm ci" },
+  { name: "format", run: "npx prettier --check ." },
+  {
+    name: "lint",
+    run: "npx turbo run lint",
+    affected: "npx turbo run lint --filter=...[{base}]",
+  },
+  {
+    name: "typecheck",
+    run: "npx turbo run typecheck",
+    affected: "npx turbo run typecheck --filter=...[{base}]",
+  },
+  {
+    name: "test",
+    run: "npx turbo run test",
+    affected: "npx turbo run test --filter=...[{base}]",
+  },
+  {
+    name: "build",
+    run: "npx turbo run build",
+    affected: "npx turbo run build --filter=...[{base}]",
+  },
+  { name: "e2e", run: "npm run test:e2e", when: /^apps\/web\// },
 ];
+
+/**
+ * Changed files that can reach every package, so the build tool's narrowing cannot be trusted:
+ * the CI workflow, this script, and the root build configuration. Add your own.
+ */
+const ESCALATE = [
+  /^\.github\/workflows\//,
+  /^package\.json$/,
+  /^turbo\.json$/,
+  /^tsconfig[^/]*\.json$/,
+  /^\.nvmrc$/,
+];
+
+/** A lockfile change that only adds lines is a new dependency; one that alters lines can move every package. */
+const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
 
 /** Variables a CI runner would not have. Add your own local-only ones (database URLs, tokens). */
 const DROP_ENV = /^(DATABASE_URL.*|NODE_ENV|.*_TOKEN|.*_SECRET)$/;
 
-const outdir = process.argv[2];
+const args = process.argv.slice(2);
+const outdir = args.find(
+  (arg, i) => !arg.startsWith("--") && args[i - 1] !== "--base",
+);
 if (!outdir) {
-  console.error('Usage: node ci-local.mjs <outdir>   (outdir outside the checkout, or git-ignored)');
+  console.error(
+    "Usage: node ci-local.mjs <outdir> [--full] [--base <ref>]   (outdir outside the checkout, or git-ignored)",
+  );
   process.exit(2);
 }
-const out = resolve(outdir);
-mkdirSync(out, { recursive: true });
-const summary = join(out, 'summary.txt');
-writeFileSync(summary, '');
+const git = (...gitArgs) => {
+  const result = spawnSync("git", gitArgs, { encoding: "utf8" });
+  return result.status === 0 ? result.stdout.trim() : null;
+};
 
-const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !DROP_ENV.test(key)));
-Object.assign(env, { CI: 'true', TURBO_FORCE: 'true', NX_SKIP_NX_CACHE: 'true' });
-
-let failed = false;
-for (const step of STEPS) {
-  const started = Date.now();
-  const result = spawnSync(step.run, { shell: true, env, encoding: 'utf8', maxBuffer: 1 << 30 });
-  writeFileSync(join(out, `${step.name}.log`), `$ ${step.run}\n${result.stdout ?? ''}${result.stderr ?? ''}`);
-  const code = result.status ?? 1;
-  if (code !== 0) failed = true;
-  const line = `${step.name}: ${code} (${Math.round((Date.now() - started) / 1000)}s)`;
-  appendFileSync(summary, `${line}\n`);
-  console.log(line);
+/** Decides the mode. Anything uncertain lands on the full run, never on less. */
+function chooseScope() {
+  if (args.includes("--full")) return { full: true, why: "--full" };
+  const baseIndex = args.indexOf("--base");
+  const ref = baseIndex === -1 ? "origin/main" : args[baseIndex + 1];
+  const base = ref && git("merge-base", "HEAD", ref);
+  if (!base)
+    return {
+      full: true,
+      why: `no merge base with ${ref ?? "(missing --base value)"}`,
+    };
+  const changed = git("diff", "--name-only", base);
+  if (changed === null) return { full: true, why: "git diff failed" };
+  const files = changed.split("\n").filter(Boolean);
+  const root = git("rev-parse", "--show-toplevel");
+  const self =
+    root && relative(root, resolve(process.argv[1])).split("\\").join("/");
+  for (const file of files) {
+    if (file === self || ESCALATE.some((pattern) => pattern.test(file)))
+      return { full: true, why: `${file} reaches everything` };
+    if (LOCKFILES.includes(file)) {
+      const [, removed] = (
+        git("diff", "--numstat", base, "--", file) ?? "0\t1"
+      ).split("\t");
+      if (removed !== "0")
+        return { full: true, why: `${file} changes existing lines` };
+    }
+  }
+  return { full: false, base, files };
 }
 
-const head = spawnSync('git', ['rev-parse', '--short=9', 'HEAD'], { encoding: 'utf8' }).stdout.trim() || 'unknown';
-const verdict = `HEAD ${head} — overall: ${failed ? 'FAIL' : 'PASS'}`;
-appendFileSync(summary, `${verdict}\n`);
-console.log(verdict);
+const out = resolve(outdir);
+mkdirSync(out, { recursive: true });
+const summary = join(out, "summary.txt");
+writeFileSync(summary, "");
+const say = (line) => {
+  appendFileSync(summary, `${line}\n`);
+  console.log(line);
+};
+
+const scope = chooseScope();
+const shortBase = scope.base?.slice(0, 9);
+say(
+  scope.full
+    ? `mode: full (${scope.why})`
+    : `mode: affected since ${shortBase} (${scope.files.length} changed files)`,
+);
+
+const env = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !DROP_ENV.test(key)),
+);
+Object.assign(env, {
+  CI: "true",
+  TURBO_FORCE: "true",
+  NX_SKIP_NX_CACHE: "true",
+});
+
+let failed = false;
+let skipped = 0;
+for (const step of STEPS) {
+  let command = step.run;
+  let how = "ran full";
+  if (
+    !scope.full &&
+    step.when &&
+    !scope.files.some((file) => step.when.test(file))
+  ) {
+    skipped += 1;
+    say(`${step.name}: skipped (no changed file matches ${step.when})`);
+    continue;
+  }
+  if (!scope.full && step.when)
+    how = `ran (a changed file matches ${step.when})`;
+  if (!scope.full && step.affected) {
+    command = step.affected.replaceAll("{base}", scope.base);
+    how = `ran affected since ${shortBase}`;
+  }
+  const started = Date.now();
+  const result = spawnSync(command, {
+    shell: true,
+    env,
+    encoding: "utf8",
+    maxBuffer: 1 << 30,
+  });
+  writeFileSync(
+    join(out, `${step.name}.log`),
+    `$ ${command}\n${result.stdout ?? ""}${result.stderr ?? ""}`,
+  );
+  const code = result.status ?? 1;
+  if (code !== 0) failed = true;
+  say(
+    `${step.name}: ${how} — exit ${code} (${Math.round((Date.now() - started) / 1000)}s)`,
+  );
+}
+
+const head = git("rev-parse", "--short=9", "HEAD") || "unknown";
+const mode = scope.full
+  ? "full"
+  : `affected since ${shortBase}, ${skipped} skipped`;
+say(`HEAD ${head} — overall: ${failed ? "FAIL" : "PASS"} (${mode})`);
 process.exit(failed ? 1 : 0);

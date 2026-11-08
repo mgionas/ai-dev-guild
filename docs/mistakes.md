@@ -21,6 +21,7 @@ with an example is far less likely to come back.
 [A check that never runs](#a-check-that-never-runs) ·
 [A measurement something else can move](#a-measurement-something-else-can-move) ·
 [Evidence gathered where something repairs the bug](#evidence-gathered-where-something-repairs-the-bug) ·
+[Testing everything for a change that reaches nothing](#testing-everything-for-a-change-that-reaches-nothing) ·
 [Believing the label instead of the artifact](#believing-the-label-instead-of-the-artifact)
 
 **In the way agents work:**
@@ -121,8 +122,9 @@ gets a timeout, and nothing waits on the network while holding a lock or a poole
 ## Assuming one country
 
 ```js
-const cents = Math.round(price * 100);             // wrong for currencies with 0 or 3 decimals
-const due = new Date(); due.setDate(due.getDate() + 30); // the server's time zone, not the user's
+const cents = Math.round(price * 100); // wrong for currencies with 0 or 3 decimals
+const due = new Date();
+due.setDate(due.getDate() + 30); // the server's time zone, not the user's
 const label = `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`; // one country's date order
 ```
 
@@ -181,6 +183,28 @@ always fails. The author's pasted "passing" output was true and still proved not
 
 **Fix:** run a check the way CI does before you trust it: a clean build, no editor or watcher
 running, no local caches or secrets. (The [`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
+
+## Testing everything for a change that reaches nothing
+
+```text
+changed:  scripts/dev-server.sh, docs/setup.md, two added lines in the lockfile
+ran:      every package's unit tests, every database suite in containers — 25 minutes
+loaded:   none of the changed files
+```
+
+The rule said "run the full local check before every merge", so the agent did. The machine's load
+went past three times its core count, and another agent's pre-push hook timed out three times while
+it waited. The run proved nothing about the change: no test it ran could load a file the change
+touched.
+
+The opposite mistake is as bad: a narrowed run whose skipped steps print nothing, so a reader takes
+"3 steps passed" for "everything passed".
+
+**Fix:** before a heavy run, write down what the change can reach and which steps cover it. Let the
+build tool pick the affected packages from the merge base; run the full suite when the change
+reaches everything or the base is unknown; report each step as ran, skipped (why) or escalated; and
+never run two heavy suites at once on a shared machine. (The
+[`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
 
 ## Believing the label instead of the artifact
 

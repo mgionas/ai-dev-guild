@@ -20,7 +20,7 @@ Do:
   or failing dependency.
 - For every test you add, break the code it covers and confirm it fails. A test that cannot fail
   is worse than none, because it looks like cover.
-- Run the relevant suites and paste the output.
+- Run the suites the change can reach and paste the output; name any you skipped, and why.
 
 Return: a criteria → tests table, the tests you added, each failure you found with a reproduction,
 and a verdict: pass or fail.
