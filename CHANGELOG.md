@@ -1,0 +1,32 @@
+# Changelog
+
+One entry per change, so each can be taken or left on its own. **(field-tested)** means it ran in a
+real project's workflow before it was written here; **(new)** means it has not yet.
+
+## Unreleased
+
+## 0.1.0 — 2026-11-08
+
+First public version.
+
+- Roles: builder, fixer, qa-tester, architect, security-reviewer, domain-guardian,
+  money-specialist, db-migrations, designer, ux-researcher, i18n, docs-keeper, and eight board
+  members with a chair. (field-tested)
+- Role `fixer`: a fresh agent for each fix round, instead of resuming the builder. (field-tested as
+  a practice; new as a role file)
+- Skills: run-task, write-brief, review-panel, fix-round, decision-batch, board, design-review,
+  research-review, local-ci, system-map, progress-boards. (field-tested)
+- Skill `setup`: writes an `AGENTS.md` brief, `CLAUDE.md`, `.work/` and the protected-paths list.
+  (new)
+- Hooks: `guard-paths` (protected files, symlinks resolved), `bash-guard` (pattern kills, skipped
+  git hooks, shell writes to protected files). (field-tested)
+- Hook `after-edit`: runs the project's own `.claude/after-edit` command instead of a built-in
+  formatter, so it works with any stack. (new)
+- Docs: how the loop works, 22 working rules with reasons, 15 mistakes with reproductions, one page
+  per role. (field-tested)
+- Rule "Assume no country" and the mistake "Assuming one country": money with its currency code
+  and minor unit, UTC with IANA time zones, locale formatting, E.164 phone numbers, country rules from
+  the project. Applied to the builder, money, i18n, QA and domain roles and the `AGENTS.md`
+  template. (new)
+- Examples, not loaded by the plugin: new-migration, new-endpoint, new-event, new-screen, and a
+  strict local CI runner. (field-tested, rewritten generic)

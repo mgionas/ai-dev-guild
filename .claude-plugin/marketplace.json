@@ -1,0 +1,21 @@
+{
+  "name": "ai-dev-guild",
+  "owner": {
+    "name": "mgionas",
+    "url": "https://github.com/mgionas"
+  },
+  "description": "The ai-dev-guild plugin: roles, skills and guard hooks for a builder-never-reviews loop.",
+  "plugins": [
+    {
+      "name": "ai-dev-guild",
+      "source": "./",
+      "description": "Roles, skills and guard hooks for a loop where one fresh agent builds, another reviews, and nothing is done without evidence.",
+      "category": "development",
+      "tags": [
+        "subagents",
+        "review",
+        "workflow"
+      ]
+    }
+  ]
+}
