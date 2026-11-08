@@ -46,6 +46,7 @@ machine first.
   moved to different code.
 - Know what each setup action caches, and turn off caches you did not choose: some cache
   automatically when they see a package manager field, and can upload far more than you meant.
+  Turn such a cache off with the action's own switch: removing the `cache` input is not enough.
 
 ## Self-hosted runners
 
@@ -57,6 +58,17 @@ A self-hosted runner is a program on a machine you own that runs whatever a work
   machine, and prefer ephemeral runners (registered for one job, then removed). GitHub advises
   self-hosted runners only for private repositories: never attach one to a public repository or
   let it run pull requests from forks.
+- **A middle option: send outside code to a hosted runner.** If the runner must stay under your own
+  account, route the pull requests you trust least, such as automated dependency updates, to a
+  hosted runner by their author:
+
+  ```yaml
+  runs-on: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && 'ubuntu-latest' || fromJSON('["self-hosted"]') }}
+  ```
+
+  Decide by the pull request's author, not by `github.actor` (whoever started this run), so a
+  re-run by a maintainer still goes to the hosted runner. This narrows the risk; it does not remove
+  it, because your own pull requests still run under your account.
 - **Nothing is reset between jobs.** Git-ignored leftovers from the last run (dependencies, build
   output, task-runner caches) stay in the workspace and can make a step pass that would fail from a
   clean start. Clean them at the start of each job.
