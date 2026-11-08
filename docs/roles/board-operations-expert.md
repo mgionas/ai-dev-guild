@@ -7,7 +7,7 @@ Speaks for the people who run the service day to day: staffing, scheduling, serv
 ## When to use it
 - When a decision changes how the team works.
 - Not for technical feasibility; that is `board-tech-lead`.
-- It is used inside a board session; see [the board skill](../../skills/board/SKILL.md).
+- It is used inside a board session; see [the board skill](../../plugin/skills/board/SKILL.md).
 
 ## What it gets
 - The path of the board record: its `01-request.md`, and `02-owner-input.md` if present.

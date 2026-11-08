@@ -10,7 +10,7 @@ them.
 - A project has no stack yet, and the person building it is not sure where to start.
 - Before adding a hosted service to an existing project (a new database, email, payments).
 - Not to reopen choices already made, unless the brief asks.
-- Usually through the [`stack-advice`](../../skills/stack-advice/SKILL.md) skill, which asks the user the questions first.
+- Usually through the [`stack-advice`](../../plugin/skills/stack-advice/SKILL.md) skill, which asks the user the questions first.
 
 ## What it gets
 

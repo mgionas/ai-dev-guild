@@ -1,25 +1,25 @@
-# Copy the folder instead
+# Copy the folders instead
 
-The plugin is the easiest way to install and update ai-dev-guild. If you would rather keep plain
+The plugins are the easiest way to install and update ai-dev-guild. If you would rather keep plain
 files in your repository (to edit them freely, or because your team does not use plugins), copy
-them into `.claude/`.
+them into your project's `.claude/` folder by hand.
 
-## 1. Copy
+## 1. Copy the roles and skills
 
-```bash
-git clone https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild
-```
+Download this repository from GitHub (the green **Code** button, then **Download ZIP**), and read
+what you are copying. Then copy two folders into your project:
 
-```bash
-mkdir -p .claude && cp -R /tmp/ai-dev-guild/agents /tmp/ai-dev-guild/skills /tmp/ai-dev-guild/hooks .claude/
-```
+| From the download | To your project   |
+| ----------------- | ----------------- |
+| `plugin/agents/`  | `.claude/agents/` |
+| `plugin/skills/`  | `.claude/skills/` |
 
-Delete the hook tests if you do not want them in your project: `.claude/hooks/hooks.test.mjs`.
+That is the whole main plugin: Markdown files and one HTML template. Nothing in it runs by itself.
 
-## 2. Wire the hooks
+## 2. Optional: the guard hooks
 
-A copied hook is not read from `hooks/hooks.json`. Add this to `.claude/settings.json` (merge it
-with what is there):
+Copy `guards/hooks/` to `.claude/hooks/` (you can leave out `hooks.test.mjs`), then add this to
+`.claude/settings.json`, merged with what is there:
 
 ```json
 {
@@ -59,6 +59,8 @@ with what is there):
 }
 ```
 
+The hooks need Node.js 22.5 or later.
+
 ## 3. Keep secrets out of the model's context
 
 Hooks stop writes. To stop reads of secret files too, add deny rules to the same settings file:
@@ -79,7 +81,7 @@ Hooks stop writes. To stop reads of secret files too, add deny rules to the same
 
 ## What changes
 
-- Skills and agents are not namespaced: `/run-task` instead of `/ai-dev-guild:run-task`, and the agent
-  `builder` instead of `ai-dev-guild:builder`.
+- Skills and agents are not namespaced: `/run-task` instead of `/ai-dev-guild:run-task`, and the
+  agent `builder` instead of `ai-dev-guild:builder`.
 - You update by copying again. Read [CHANGELOG.md](../CHANGELOG.md) first: each entry is one
   change, so you can take the ones you want.

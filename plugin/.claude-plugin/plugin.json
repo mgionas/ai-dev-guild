@@ -1,0 +1,21 @@
+{
+  "name": "ai-dev-guild",
+  "displayName": "ai-dev-guild",
+  "version": "0.2.0",
+  "description": "A guild of AI agents for Claude Code: one fresh agent builds, a different one reviews, and nothing is done without evidence.",
+  "author": {
+    "name": "mgionas",
+    "url": "https://github.com/mgionas"
+  },
+  "homepage": "https://github.com/mgionas/ai-dev-guild",
+  "repository": "https://github.com/mgionas/ai-dev-guild",
+  "license": "MIT",
+  "keywords": [
+    "subagents",
+    "code-review",
+    "workflow",
+    "evidence",
+    "decision-making",
+    "roadmap"
+  ]
+}

@@ -10,18 +10,21 @@ with a mistake it prevents.
 - **Say why.** A new rule or mistake comes with the reason, and for a mistake a short reproduction:
   the code or command, and what went wrong. "It seemed cleaner" is not a reason.
 - **Generic.** No product names, business rules, company terms, people, paths or ports from your
-  own project. A stack-specific skill goes in `examples/`, marked as an example, never in `skills/`.
+  own project. The main plugin in `plugin/` stays free of scripts and hooks: anything that runs goes in
+  `guards/` or `examples/`. A stack-specific skill goes in `examples/`, marked as an example, never in `skills/`.
 - **Plain English.** Short sentences. Say what to do and why. No marketing words.
 - **Build nothing unasked.** No option or setting until someone needs it.
 
 ## Before you open a pull request
 
 ```bash
-node --test 'hooks/*.test.mjs'
+node --test 'guards/hooks/*.test.mjs'
 ```
 
 ```bash
 claude plugin validate .
+claude plugin validate ./plugin
+claude plugin validate ./guards
 ```
 
 Paste the output of both in the pull request. If you change a hook, add a test that fails without

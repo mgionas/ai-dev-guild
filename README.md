@@ -92,7 +92,13 @@ Then hand it your first task:
 /ai-dev-guild:run-task <a task from your plan>
 ```
 
-<sub>Hooks need Node.js 22.5 or later. Prefer plain files to a plugin? [Copy the folder instead](docs/install.md).</sub>
+Optional guard hooks (needs Node.js 22.5 or later):
+
+```
+/plugin install ai-dev-guild-guards@ai-dev-guild
+```
+
+<sub>Prefer plain files to a plugin? [Copy the folders instead](docs/install.md).</sub>
 
 ## What's inside
 
@@ -133,10 +139,11 @@ operations, growth and your industry. They never see each other's answers.
 `stack-advice` · `roadmap` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
 `design-review` · `research-review` · `local-ci` · `system-map` · `progress-boards` · `setup`
 
-### 🛡️ Guard hooks
+### 🛡️ Guard hooks (optional)
 
-Refuse edits to protected files (`.env` by default), `pkill`/`killall`, `--no-verify` and other
-skipped git hooks. Optionally run your own formatter after every edit.
+A separate plugin, `ai-dev-guild-guards`, in the same marketplace. It refuses edits to protected
+files (`.env` by default), `pkill`/`killall`, `--no-verify` and other skipped git hooks, and can run
+your own formatter after every edit. The main plugin has no hooks or scripts at all.
 
 <details>
 <summary><b>Every role, with what it gets and what it returns</b></summary>
@@ -164,29 +171,29 @@ money, the stack advisor, the board's chair, finance and legal seats, design), s
 
 | Skill                                                | Use it to                                                 |
 | ---------------------------------------------------- | --------------------------------------------------------- |
-| [`setup`](skills/setup/SKILL.md)                     | prepare a project for the loop, once                      |
-| [`stack-advice`](skills/stack-advice/SKILL.md) | get a sourced stack and testing proposal for a new project |
-| [`roadmap`](skills/roadmap/SKILL.md) | build a roadmap of milestones and steps from a plan or an idea |
-| [`project-map`](skills/project-map/SKILL.md) | draw a page of the system and its folders, read from the code |
-| [`token-review`](skills/token-review/SKILL.md) | find where sessions spent tokens and how to spend fewer |
-| [`run-task`](skills/run-task/SKILL.md)               | run one task through the whole loop                       |
-| [`write-brief`](skills/write-brief/SKILL.md)         | write a brief a fresh agent can work from alone           |
-| [`review-panel`](skills/review-panel/SKILL.md)       | choose reviewers by what the change touches               |
-| [`fix-round`](skills/fix-round/SKILL.md)             | fix findings with a fresh agent, then confirm once        |
-| [`decision-batch`](skills/decision-batch/SKILL.md)   | ask every open question at once, with recommendations     |
-| [`board`](skills/board/SKILL.md)                     | put a decision with real trade-offs to the board          |
-| [`design-review`](skills/design-review/SKILL.md)     | review a built screen from screenshots first              |
-| [`research-review`](skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
-| [`local-ci`](skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
-| [`system-map`](skills/system-map/SKILL.md)           | keep a map of features, screens and tables current        |
-| [`progress-boards`](skills/progress-boards/SKILL.md) | keep the roadmap and QA board current with every change   |
+| [`setup`](plugin/skills/setup/SKILL.md)                     | prepare a project for the loop, once                      |
+| [`stack-advice`](plugin/skills/stack-advice/SKILL.md) | get a sourced stack and testing proposal for a new project |
+| [`roadmap`](plugin/skills/roadmap/SKILL.md) | build a roadmap of milestones and steps from a plan or an idea |
+| [`project-map`](plugin/skills/project-map/SKILL.md) | draw a page of the system and its folders, read from the code |
+| [`token-review`](plugin/skills/token-review/SKILL.md) | find where sessions spent tokens and how to spend fewer |
+| [`run-task`](plugin/skills/run-task/SKILL.md)               | run one task through the whole loop                       |
+| [`write-brief`](plugin/skills/write-brief/SKILL.md)         | write a brief a fresh agent can work from alone           |
+| [`review-panel`](plugin/skills/review-panel/SKILL.md)       | choose reviewers by what the change touches               |
+| [`fix-round`](plugin/skills/fix-round/SKILL.md)             | fix findings with a fresh agent, then confirm once        |
+| [`decision-batch`](plugin/skills/decision-batch/SKILL.md)   | ask every open question at once, with recommendations     |
+| [`board`](plugin/skills/board/SKILL.md)                     | put a decision with real trade-offs to the board          |
+| [`design-review`](plugin/skills/design-review/SKILL.md)     | review a built screen from screenshots first              |
+| [`research-review`](plugin/skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
+| [`local-ci`](plugin/skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
+| [`system-map`](plugin/skills/system-map/SKILL.md)           | keep a map of features, screens and tables current        |
+| [`progress-boards`](plugin/skills/progress-boards/SKILL.md) | keep the roadmap and QA board current with every change   |
 
 Stack-specific starting points (database migrations, API endpoints, events, screens, a CI runner)
 are in [examples](examples/README.md), clearly marked and not loaded by the plugin.
 </details>
 
 <details>
-<summary><b>The guard hooks in detail</b></summary>
+<summary><b>The guard hooks in detail</b> (the optional <code>ai-dev-guild-guards</code> plugin)</summary>
 
 | Hook          | Refuses                                                                                                                               |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |

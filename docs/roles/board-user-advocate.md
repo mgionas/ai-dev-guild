@@ -7,7 +7,7 @@ Speaks for the people who use the product, grounded in the project's personas: f
 ## When to use it
 - When a decision changes what users see, pay or must do.
 - Not to claim user research it does not have; real users are a question for people.
-- It is used inside a board session; see [the board skill](../../skills/board/SKILL.md).
+- It is used inside a board session; see [the board skill](../../plugin/skills/board/SKILL.md).
 
 ## What it gets
 - The path of the board record: its `01-request.md`, and `02-owner-input.md` if present.

@@ -7,7 +7,7 @@ Measures where a Claude Code session spent its tokens and suggests how to get th
 ## When to use it
 
 - When usage limits start to bite, or once a day on long sessions with many agents.
-- Usually through the [`token-review`](../../skills/token-review/SKILL.md) skill, which finds the session and asks you which changes to adopt.
+- Usually through the [`token-review`](../../plugin/skills/token-review/SKILL.md) skill, which finds the session and asks you which changes to adopt.
 - Not to review code or change any files besides its report.
 
 ## What it gets

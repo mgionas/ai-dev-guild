@@ -180,7 +180,7 @@ reformats the file on save, so the test always passes there. In CI nothing refor
 always fails. The author's pasted "passing" output was true and still proved nothing.
 
 **Fix:** run a check the way CI does before you trust it: a clean build, no editor or watcher
-running, no local caches or secrets. (The [`local-ci`](../skills/local-ci/SKILL.md) skill.)
+running, no local caches or secrets. (The [`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
 
 ## Believing the label instead of the artifact
 
@@ -239,4 +239,4 @@ whole long context is read again on every turn. It also keeps the line of thinki
 mistakes.
 
 **Fix:** each fix round goes to a new `fixer` agent with a findings file (the
-[`fix-round`](../skills/fix-round/SKILL.md) skill).
+[`fix-round`](../plugin/skills/fix-round/SKILL.md) skill).

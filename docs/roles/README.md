@@ -1,6 +1,6 @@
 # Roles
 
-The builder of a change never reviews it. Reviewers get the change and the rules, never the builder's reasoning. Models are chosen on purpose; see [the run-task skill](../../skills/run-task/SKILL.md) for the table.
+The builder of a change never reviews it. Reviewers get the change and the rules, never the builder's reasoning. Models are chosen on purpose; see [the run-task skill](../../plugin/skills/run-task/SKILL.md) for the table.
 
 ## Build
 
@@ -28,7 +28,7 @@ The designer also writes screen specs. The ux-researcher also does research.
 
 ## Board
 
-Board members advise in a [board session](../../skills/board/SKILL.md). Each answers alone.
+Board members advise in a [board session](../../plugin/skills/board/SKILL.md). Each answers alone.
 
 | Role | Does | Edits | Model |
 | --- | --- | --- | --- |

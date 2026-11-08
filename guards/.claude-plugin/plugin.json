@@ -1,0 +1,19 @@
+{
+  "name": "ai-dev-guild-guards",
+  "displayName": "ai-dev-guild guards",
+  "version": "0.2.0",
+  "description": "Optional guard hooks for the ai-dev-guild loop: refuse edits to protected files, pattern kills (pkill, killall) and skipped git hooks, and run your project's own after-edit check.",
+  "author": {
+    "name": "mgionas",
+    "url": "https://github.com/mgionas"
+  },
+  "homepage": "https://github.com/mgionas/ai-dev-guild",
+  "repository": "https://github.com/mgionas/ai-dev-guild",
+  "license": "MIT",
+  "keywords": [
+    "hooks",
+    "guardrails",
+    "safety",
+    "subagents"
+  ]
+}

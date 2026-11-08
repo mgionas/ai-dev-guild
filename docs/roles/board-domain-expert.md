@@ -7,7 +7,7 @@ Speaks for how the industry the product serves really works: its practices, regu
 ## When to use it
 - When a decision depends on industry practice.
 - Not for facts it cannot source; it must cite a source for every legal or market fact.
-- It is used inside a board session; see [the board skill](../../skills/board/SKILL.md).
+- It is used inside a board session; see [the board skill](../../plugin/skills/board/SKILL.md).
 
 ## What it gets
 - The path of the board record: its `01-request.md`, and `02-owner-input.md` if present.

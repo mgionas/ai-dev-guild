@@ -7,7 +7,7 @@ Speaks for the law that applies where the product runs: contracts, signatures, p
 ## When to use it
 - When a decision has legal exposure.
 - Not as a replacement for a lawyer; it never cites a law or article it has not verified.
-- It is used inside a board session; see [the board skill](../../skills/board/SKILL.md).
+- It is used inside a board session; see [the board skill](../../plugin/skills/board/SKILL.md).
 
 ## What it gets
 - The path of the board record: its `01-request.md`, and `02-owner-input.md` if present.

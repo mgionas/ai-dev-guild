@@ -7,7 +7,7 @@ Speaks for winning customers, partnerships, competitors, positioning and reputat
 ## When to use it
 - When a decision affects the next customer or a competitor's response.
 - Not to give legal or financial advice.
-- It is used inside a board session; see [the board skill](../../skills/board/SKILL.md).
+- It is used inside a board session; see [the board skill](../../plugin/skills/board/SKILL.md).
 
 ## What it gets
 - The path of the board record: its `01-request.md`, and `02-owner-input.md` if present.

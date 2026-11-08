@@ -7,7 +7,7 @@ Speaks for feasibility, cost and risk of building and running the work, fit with
 ## When to use it
 - When a decision needs a view on effort, cost or migration risk.
 - Not to take a technical choice inside an agreed architecture to the board.
-- It is used inside a board session; see [the board skill](../../skills/board/SKILL.md).
+- It is used inside a board session; see [the board skill](../../plugin/skills/board/SKILL.md).
 
 ## What it gets
 - The path of the board record: its `01-request.md`, and `02-owner-input.md` if present.
