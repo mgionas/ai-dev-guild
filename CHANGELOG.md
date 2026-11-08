@@ -5,6 +5,10 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Repository guards: CI on every pull request (`scripts/check-repo.mjs` keeps the listed plugin
+  Markdown-only, files under 256 KiB, frontmatter quoted and links whole; the hook tests), a
+  CODEOWNERS file, and a protected `main` that needs the maintainer's approval. (new)
+
 - Listing links for the directory: support (GitHub issues), documentation, and a privacy note
   (`PRIVACY.md`: the plugin collects and sends nothing). (new)
 

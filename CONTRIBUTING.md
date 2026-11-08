@@ -18,6 +18,7 @@ with a mistake it prevents.
 ## Before you open a pull request
 
 ```bash
+node scripts/check-repo.mjs
 node --test 'guards/hooks/*.test.mjs'
 ```
 
@@ -33,6 +34,12 @@ your change, and say that you saw it fail.
 Add one line to the `Unreleased` section of [CHANGELOG.md](CHANGELOG.md): what changed and why, in
 one sentence. Mark it **(field-tested)** if it comes from real use in a project, or **(new)** if it
 has not been used in anger yet.
+
+## How changes get in
+
+`main` is protected. Every change arrives as a pull request, CI must pass (the repository checks
+and the hook tests), and the maintainer reviews and approves it before it is merged. CI on a pull
+request from a first-time or outside contributor runs once the maintainer allows it.
 
 ## The rule we keep ourselves
 
