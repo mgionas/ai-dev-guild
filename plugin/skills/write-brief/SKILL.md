@@ -18,6 +18,8 @@ A good brief:
   does not know exists.
 - **Names the heavy steps the change needs**: which integration, end-to-end or full-suite steps
   the change can reach, and why; or none, and why. The agent then runs those and no others.
+- **Links the "Where CI runs" page** when the task touches CI, build config, test timeouts or heavy
+  tests, so the agent knows CI is not its own machine.
 - **Gives the owner's answers** to this task's questions, quoted, with the date.
 - **Points to long documents by line range**, never "read the plan". A 400 KB plan read by every
   agent is the most expensive line in a brief.

@@ -24,4 +24,9 @@ exists. Where one exists, show the user what you would add and ask.
 6. **A stack**: if the repository shows no stack yet (no lock file, no framework config), offer
    the `stack-advice` skill before the first task, and leave the Stack section as `TODO(owner)`.
 
+7. **Where CI runs**: if the project has CI, write its page from `ci-environment-template.md` in
+   the `local-ci` skill's folder. Fill what the workflow files say (runner labels, OS, jobs); ask
+   the user for cores, memory and who else uses a self-hosted machine, and leave the rest as
+   `TODO(owner)`. Link the page from `AGENTS.md`.
+
 Finish with a short list of what you created and what still says `TODO(owner)`.

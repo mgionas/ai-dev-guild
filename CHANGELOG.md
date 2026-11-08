@@ -5,6 +5,15 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Know where CI runs: a guide (`docs/where-ci-runs.md`) on how CI differs from a developer machine
+  (heap and workers sized from the machine, parallel levels that multiply, local state that hides
+  missing setup, case-sensitive file systems, time zone and processor, unreached steps, hidden
+  progress), every-workflow basics and self-hosted runner traps, security first. A page template in
+  the `local-ci` skill, filled by `setup` and linked from briefs; the local check and its example
+  runner imitate CI's heap, cores, time zone and locale. Rule "Know where CI runs"; mistakes "CI is
+  a smaller machine" and "Raising a timeout to hide a starved machine"; "A check that never runs"
+  now covers CI steps nobody reaches. (field-tested)
+
 - Heavy checks run only where the change reaches: the `local-ci` skill and its example runner run
   the affected steps from the merge base by default, using the build tool's own detection; they
   escalate to the full suite for CI files, the check itself, root config, a lockfile change that
