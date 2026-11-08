@@ -15,6 +15,9 @@ and on a machine shared by several agents it starves everyone else's runs.
 - Run the full suite when the change reaches everything (CI files, the check itself, root config,
   a lockfile change that alters existing lines), when the base cannot be found, and before any
   merge that no remote CI checks.
+- A file read across package lines is declared as an input of the task that reads it, in the
+  build tool's config, and a guard test enforces that. A changed file nobody has classified runs
+  everything.
 - Every report says, step by step, what ran, what was skipped and why. A skip never reads as a pass.
 - Never run two heavy suites at once on a shared machine.
 

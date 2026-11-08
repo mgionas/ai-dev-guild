@@ -43,6 +43,23 @@ heap, jobs at once and what else shares the machine. The guide behind it:
   local check itself, root build or compiler config, or a lockfile change that alters existing lines
   (a lockfile change that only adds lines is a new dependency, and stays narrow). If the merge base
   cannot be found, it runs the full suite, never less.
+- **An unknown file means the full run.** A changed file outside the packages escalates unless the
+  project lists it as read by nothing (documentation, for example). A file nobody has classified
+  is assumed to reach everything, never nothing.
+- **Files read across package lines are declared where the build tool sees them.** When a
+  package's code, tests or lint rules read a file outside the package (a glossary a lint rule
+  checks, a generated API document, a compose file a test starts), the build tool cannot know it
+  unless told. Declare the file as an input of the task that reads it, in the build tool's own
+  config (Turborepo: `"inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/<path>"]`), with a comment naming
+  the reader. Its cache then sees the file too. Never keep that list in the local check: a
+  hand-kept list misses files and the run says PASS. Add a guard test that scans package sources
+  for paths outside the package and fails when no declaration covers one; list by hand only the
+  files whose paths are built at run time, and have the guard check those too.
+- **Suites that read every package declare it.** A guard or architecture suite that scans all
+  packages' sources declares them as its inputs, so any source change runs it.
+- **Check the build tool's answer too.** Look at its selection before running (Turborepo
+  `--dry=json`, Nx `nx show projects --affected`). If the list is empty while package files
+  changed, misses a workspace package, or drops one the selection chose, run everything and say why.
 - **`--full` where nothing else runs the full suite.** If remote CI runs every step on each pull
   request into the main branch, the narrow local run is safe before that pull request. A merge
   that no remote CI checks (into a long-lived feature or milestone branch, a release cut by hand)
@@ -50,7 +67,9 @@ heap, jobs at once and what else shares the machine. The guide behind it:
 - **No other shortcuts.** Nothing lets you leave out a named step or cut one short. When a step
   fails, the rest still run, so a single run shows every problem.
 - **Every step says what happened:** ran in full, ran on the affected part, or skipped and why. The
-  verdict line names the mode. A skip never reads as a pass.
+  verdict line names the mode and its reach, such as `PASS (affected: 6 of 11 packages; integration
+  for api, db)` or `PASS (full run)`. A skip never reads as a pass. A dry run (`--dry-run`) prints
+  that plan and runs nothing.
 - **No cache.** Build and test caches are off, so an old success cannot be replayed as a new one.
 - **CI's limits.** Run with the smallest runner's heap cap (`NODE_OPTIONS=--max-old-space-size=…`),
   its core count for parallel tasks and test workers, and its time zone and locale. A build that

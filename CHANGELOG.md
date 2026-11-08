@@ -5,6 +5,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Narrowed checks fail closed: a changed file outside the packages that nobody has classified runs
+  everything; files read across package lines are declared as inputs of the task that reads them,
+  in the build tool's config, with a guard test; suites that scan every package declare it; the
+  build tool's own selection is checked before it is trusted; the verdict names its reach; the
+  example runner gains `--dry-run`, an INERT list and lockfile diffs that external diff tools
+  cannot change. Mistake "A hand-kept list of what reads what". (field-tested)
+
 - Know where CI runs: a guide (`docs/where-ci-runs.md`) on how CI differs from a developer machine
   (heap and workers sized from the machine, parallel levels that multiply, local state that hides
   missing setup, case-sensitive file systems, time zone and processor, unreached steps, hidden

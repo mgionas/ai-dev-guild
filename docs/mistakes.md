@@ -22,6 +22,7 @@ with an example is far less likely to come back.
 [A measurement something else can move](#a-measurement-something-else-can-move) ·
 [Evidence gathered where something repairs the bug](#evidence-gathered-where-something-repairs-the-bug) ·
 [Testing everything for a change that reaches nothing](#testing-everything-for-a-change-that-reaches-nothing) ·
+[A hand-kept list of what reads what](#a-hand-kept-list-of-what-reads-what) ·
 [Believing the label instead of the artifact](#believing-the-label-instead-of-the-artifact) ·
 [CI is a smaller machine](#ci-is-a-smaller-machine) ·
 [Raising a timeout to hide a starved machine](#raising-a-timeout-to-hide-a-starved-machine)
@@ -222,6 +223,23 @@ holds four scripts.
 installed version. A label is a claim to check, not evidence.
 
 ---
+
+## A hand-kept list of what reads what
+
+```js
+// in the local check: files outside the packages that some test reads
+const OUTSIDE_READS = ["docs/api/openapi.json"];
+```
+
+The narrowed check kept its own list of files that tests read from outside their packages. It
+missed three: a glossary a lint rule checks, a generated map a documentation test reads and a
+compose file an API test starts. A change to any of them selected no package, every suite was
+skipped, and the run said PASS.
+
+**Fix:** declare each outside read next to its reader, as an input of the task that reads it in the
+build tool's own config, and add a guard test that fails when a package reads an outside path no
+declaration covers. Treat any changed file nobody has classified as reaching everything. (The
+[`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
 
 ## CI is a smaller machine
 

@@ -3,7 +3,7 @@
  * Example strict local check: runs your CI steps on the current checkout, to completion, with a
  * log per step and one verdict line at the end.
  *
- * Usage: node ci-local.mjs <outdir> [--full] [--base <ref>]
+ * Usage: node ci-local.mjs <outdir> [--full] [--base <ref>] [--dry-run]
  *
  * Copy it into your project and replace STEPS with your CI workflow's steps, in the same order.
  * Then add a test that reads the workflow file and fails when the two lists differ: that test is
@@ -13,15 +13,21 @@
  * branch (`git merge-base HEAD origin/main`, or `--base <ref>`), and the build tool works out which
  * packages changed since then and which depend on them; this script never keeps its own map of
  * that. Cheap whole-repository steps always run. The whole suite runs instead when you pass
- * `--full`, when the base cannot be found, or when a changed file reaches everything (the
- * ESCALATE list). Every step's line says whether it ran in full, ran on the affected part, or was
- * skipped and why, and the verdict line names the mode, so a narrow run never reads as a full one.
+ * `--full`, when the base cannot be found, when a changed file reaches everything (the ESCALATE
+ * list), or when a changed file is neither in a package nor known to be read by nothing (INERT):
+ * an unknown file means "run everything", never "run nothing". Every step's line says whether it
+ * ran in full, ran on the affected part, or was skipped and why, and the verdict line names the
+ * mode, so a narrow run never reads as a full one. `--dry-run` prints that plan and runs nothing.
  *
  * Strict on purpose: no flag skips a named step, one failure never stops later steps, and the
  * environment is cleaned like a CI runner's so local secrets and caches cannot make a step pass
  * here that would fail there. It also runs with the smallest CI runner's limits (SMALLEST_RUNNER),
- * so a build that needs more memory, or a test that needs spare cores, fails here first. Not included: the flake retry described in the local-ci skill,
- * because which files a branch touched depends on your test runner.
+ * so a build that needs more memory, or a test that needs spare cores, fails here first.
+ *
+ * Not included, because they depend on your tools (the local-ci skill describes each): the flake
+ * retry; checking that the build tool's own selection is not empty and drops no package; and the
+ * guard test that fails when a package reads a file outside itself without declaring it as an
+ * input of the task that reads it.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync, appendFileSync } from "node:fs";
@@ -75,6 +81,16 @@ const ESCALATE = [
   /^\.nvmrc$/,
 ];
 
+/** Folders that hold your packages. A change inside one is the build tool's to narrow. */
+const PACKAGES = /^(apps|packages)\//;
+
+/**
+ * Changed files outside the packages that nothing tested reads. Anything else outside the packages
+ * escalates to the full run. Add a folder here only when you know no package, test or lint rule
+ * reads it (dev-only scripts covered by a whole-repository step, for example).
+ */
+const INERT = [/^docs\//, /^[^/]+\.md$/];
+
 /** A lockfile change that only adds lines is a new dependency; one that alters lines can move every package. */
 const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
 
@@ -98,7 +114,7 @@ const outdir = args.find(
 );
 if (!outdir) {
   console.error(
-    "Usage: node ci-local.mjs <outdir> [--full] [--base <ref>]   (outdir outside the checkout, or git-ignored)",
+    "Usage: node ci-local.mjs <outdir> [--full] [--base <ref>] [--dry-run]   (outdir outside the checkout, or git-ignored)",
   );
   process.exit(2);
 }
@@ -128,12 +144,27 @@ function chooseScope() {
     if (file === self || ESCALATE.some((pattern) => pattern.test(file)))
       return { full: true, why: `${file} reaches everything` };
     if (LOCKFILES.includes(file)) {
-      const [, removed] = (
-        git("diff", "--numstat", base, "--", file) ?? "0\t1"
-      ).split("\t");
+      // Without these flags a binary attribute or an external diff tool can hide removed lines.
+      const stat = git(
+        "diff",
+        "--numstat",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--text",
+        base,
+        "--",
+        file,
+      );
+      const [, removed] = (stat ?? "0\t1").split("\t");
       if (removed !== "0")
         return { full: true, why: `${file} changes existing lines` };
+      continue;
     }
+    if (!PACKAGES.test(file) && !INERT.some((pattern) => pattern.test(file)))
+      return {
+        full: true,
+        why: `${file} is outside the packages and not known to be inert`,
+      };
   }
   return { full: false, base, files };
 }
@@ -171,6 +202,7 @@ say(
   `limits: ${SMALLEST_RUNNER.cores} cores, heap ${SMALLEST_RUNNER.heapMb} MB, TZ ${SMALLEST_RUNNER.timeZone}`,
 );
 
+const dryRun = args.includes("--dry-run");
 let failed = false;
 let skipped = 0;
 for (const step of STEPS) {
@@ -192,6 +224,10 @@ for (const step of STEPS) {
       .replaceAll("{base}", scope.base)
       .replaceAll("{cores}", SMALLEST_RUNNER.cores);
     how = `ran affected since ${shortBase}`;
+  }
+  if (dryRun) {
+    say(`${step.name}: would ${how.replace(/^ran/, "run")} — ${command}`);
+    continue;
   }
   const started = Date.now();
   const result = spawnSync(command, {
@@ -215,5 +251,9 @@ const head = git("rev-parse", "--short=9", "HEAD") || "unknown";
 const mode = scope.full
   ? "full"
   : `affected since ${shortBase}, ${skipped} skipped`;
+if (dryRun) {
+  say(`HEAD ${head} — dry run (${mode}), nothing ran`);
+  process.exit(0);
+}
 say(`HEAD ${head} — overall: ${failed ? "FAIL" : "PASS"} (${mode})`);
 process.exit(failed ? 1 : 0);
