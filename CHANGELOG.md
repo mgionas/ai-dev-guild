@@ -5,6 +5,14 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Heavy checks run only where the change reaches: the `local-ci` skill and its example runner run
+  the affected steps from the merge base by default, using the build tool's own detection; they
+  escalate to the full suite for CI files, the check itself, root config, a lockfile change that
+  alters lines, an unknown base, or `--full` where no remote CI follows; every step reports ran,
+  skipped (why) or escalated. Briefs and reports name the heavy steps and why; never two heavy
+  runs at once on a shared machine. New mistake: "Testing everything for a change that reaches
+  nothing". (field-tested)
+
 - Repository guards: CI on every pull request (`scripts/check-repo.mjs` keeps the listed plugin
   Markdown-only, files under 256 KiB, frontmatter quoted and links whole; the hook tests), a
   CODEOWNERS file, and a protected `main` that needs the maintainer's approval. (new)

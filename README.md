@@ -57,7 +57,8 @@ agent. A different agent reviews it, and the task is not done until the test out
 4. **Inspect.** Reviewers are chosen by what changed (security, money, schema, screens). None of
    them built it.
 5. **Fix and confirm.** A fresh fixer handles the findings; one re-check confirms them.
-6. **Prove it.** The full suite runs once, the way CI runs it, and then the work merges.
+6. **Prove it.** The checks run once, the way CI runs them, on everything the change can reach, and
+   then the work merges.
 
 Bigger choices (scope, pricing, legal exposure) go to the **board**: eight advisor agents who
 answer independently, a summary that keeps disagreement visible, and you making the call.
@@ -232,7 +233,7 @@ It is not for one-off scripts: the loop pays off when a mistake would cost more 
 
 ## The ideas behind it
 
-Twenty-four short [working rules](docs/rules/README.md), each with its reason, and sixteen
+Twenty-four short [working rules](docs/rules/README.md), each with its reason, and seventeen
 [mistakes that keep happening](docs/mistakes.md), each with a tiny reproduction. The core six:
 
 1. [The builder never reviews its own work.](docs/rules/builder-never-reviews.md)

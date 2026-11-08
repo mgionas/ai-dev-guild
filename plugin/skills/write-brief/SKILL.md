@@ -16,6 +16,8 @@ A good brief:
 - **Names the repo's guard tests**: the checks that catch rule breaks the agent will not think of
   (boundary rules, protected files, a docs index, a system map). An agent cannot run a check it
   does not know exists.
+- **Names the heavy steps the change needs**: which integration, end-to-end or full-suite steps
+  the change can reach, and why; or none, and why. The agent then runs those and no others.
 - **Gives the owner's answers** to this task's questions, quoted, with the date.
 - **Points to long documents by line range**, never "read the plan". A 400 KB plan read by every
   agent is the most expensive line in a brief.

@@ -29,7 +29,9 @@ The task: $ARGUMENTS
 7. **Re-check.** One combined re-check confirms the fixes. It does not reopen the review. New
    non-blocking points go to the carried list. If the second re-check confirms every fix, stopping is the default: say so in the merge report, and
    the owner can still say "continue".
-8. **Strict local check.** Run the `local-ci` skill on the final head. Full suites run here, once.
+8. **Strict local check.** Run the `local-ci` skill on the final head, once. First write down
+   what the change can reach and which steps cover it; use `--full` for a merge no remote CI
+   checks. Paste which steps ran and which were skipped, and why.
 9. **Merge**, then update the roadmap and the QA board (`progress-boards` skill) in the same turn,
    and the system map if the project has one (`system-map` skill).
 
@@ -57,7 +59,10 @@ Put these in every brief, because they were each learned the hard way:
 - Commit follow-up changes with `git commit --fixup=<sha>`, and squash them before reporting with
   `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>`, where `<base>` is the commit before
   the task's first change. Then the controller never has to rewrite history.
-- A build that changes routes, contracts or background jobs runs the integration suite once
-  before its report; fixers stay with the covering tests.
+- A build that changes routes, contracts or background jobs runs the integration tests of the
+  parts it changed once before its report; fixers stay with the covering tests.
+- Before any heavy run (a full suite, integration, end-to-end or mutation tests), write down which
+  parts the change can reach and which steps cover them. Never two heavy runs at once on a shared
+  machine.
 
 As the controller, `/compact` after each merge and whenever your context passes about 250K.
