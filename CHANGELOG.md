@@ -5,6 +5,9 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- README is now a landing page: a light and dark banner, before-and-after advantages, a diagram of
+  the loop, a two-minute install, what's inside and who it is for. (new)
+
 ## 0.1.0 — 2026-11-08
 
 First public version.

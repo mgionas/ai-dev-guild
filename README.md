@@ -1,14 +1,74 @@
-# ai-dev-guild
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+    <img alt="ai-dev-guild: one agent builds, another inspects, nothing ships without proof" src="assets/banner-light.svg" width="100%">
+  </picture>
+</p>
 
-**A guild of AI agents for Claude Code: one builds, another inspects, and nothing leaves the
-workshop without proof.**
+<p align="center">
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
+  <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
+  <img alt="20 roles" src="https://img.shields.io/badge/roles-20-9a6700">
+  <img alt="12 skills" src="https://img.shields.io/badge/skills-12-9a6700">
+  <img alt="Any stack, any country" src="https://img.shields.io/badge/any%20stack-any%20country-0969da">
+</p>
 
-Like a craft guild, every member has one trade, and no piece of work gets the guild's mark until
-someone other than its maker has checked it. ai-dev-guild is a Claude Code plugin: 20 subagent roles, 12 skills and 3 guard hooks. It came out of a
-production project built mostly by AI agents, after months of finding the same mistakes in review.
-Everything project-specific has been taken out, so you bring your own glossary, stack and rules.
+<p align="center">
+  <a href="#install-in-2-minutes">Install</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#what-changes">What changes</a> ·
+  <a href="#whats-inside">What's inside</a> ·
+  <a href="docs/mistakes.md">Mistakes it prevents</a>
+</p>
 
-## Quick start (2 minutes)
+---
+
+### One agent builds. Another inspects. Nothing ships without proof.
+
+AI agents write code fast and report success with confidence, even when no test has run. In a
+craft guild, no maker stamps their own work: a master inspects it first. **ai-dev-guild is a
+Claude Code plugin that brings that rule to your project.** Each task goes to a fresh builder
+agent. A different agent reviews it, and the task is not done until the test output is pasted in.
+
+## What changes
+
+| Without the guild                                           | With the guild                                                                                                                     |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| "Done! All tests pass." No test ever ran.                   | **Done means pasted output** of the tests, type check and lint. No output, no done.                                                |
+| The agent reviews its own code and agrees with itself.      | **A different agent reviews**, and never sees the builder's reasoning, so it catches the misunderstanding instead of repeating it. |
+| Questions turn up halfway through the build, one at a time. | **One batch of questions before the build**, each with a recommendation. You answer "accept all" in a minute.                      |
+| Fix rounds reopen the review and run for days.              | **A fresh fixer, then one re-check that only confirms.** After two rounds, you decide whether to go on.                            |
+| "While I was there, I tidied up…"                           | **Only the task changes.** Anything else noticed goes on a list, with `file:line`.                                                 |
+| `pkill -f jest` kills every agent's test run.               | **A guard hook refuses pattern kills**, skipped git hooks and edits to protected files.                                            |
+| `price * 100` and the server's time zone, baked in.         | **No country assumed:** currency codes, UTC with real time zones, locale formats.                                                  |
+
+## How it works
+
+```mermaid
+flowchart TD
+    A["📝 Brief<br/>one task, one file"] --> B["🔨 Build<br/>a fresh agent,<br/>test first"]
+    B --> C["🔍 Inspect<br/>never the builder"]
+    C -- "findings" --> D["🔧 Fix<br/>a fresh agent"]
+    D --> E["✔️ Re-check<br/>confirms only"]
+    E --> F["🧪 Strict local check<br/>as CI runs it"]
+    C -- "clean" --> F
+    F --> G["🏁 Merge<br/>boards updated"]
+```
+
+1. **Ask first.** Before anything is built, the product questions go to you in one batch, each
+   with a recommended answer.
+2. **Brief.** The task is written down for a fresh agent: goal, scope, tests to run, your answers.
+3. **Build.** A new agent writes the failing test first, builds, and pastes what it ran.
+4. **Inspect.** Reviewers are chosen by what changed (security, money, schema, screens). None of
+   them built it.
+5. **Fix and confirm.** A fresh fixer handles the findings; one re-check confirms them.
+6. **Prove it.** The full suite runs once, the way CI runs it, and then the work merges.
+
+Bigger choices (scope, pricing, legal exposure) go to the **board**: eight advisor agents who
+answer independently, a summary that keeps disagreement visible, and you making the call.
+More on the loop: [docs/loop.md](docs/loop.md).
+
+## Install in 2 minutes
 
 In Claude Code:
 
@@ -17,56 +77,57 @@ In Claude Code:
 /plugin install ai-dev-guild@ai-dev-guild
 ```
 
-Or from a shell:
-
-```bash
-claude plugin marketplace add mgionas/ai-dev-guild
-```
-
-```bash
-claude plugin install ai-dev-guild@ai-dev-guild
-```
-
-Then, in your project:
+Set up your project once. This writes an `AGENTS.md` with the working rules and asks before it
+touches any existing file:
 
 ```
 /ai-dev-guild:setup
 ```
 
-This writes an `AGENTS.md` brief (golden rules, where your glossary lives, commands), a `CLAUDE.md`
-that imports it, a `.work/` folder for briefs and reports, and the list of files the guard hooks
-protect. It never overwrites a file; it asks.
-
-Now run a task through the loop:
+Then hand it your first task:
 
 ```
 /ai-dev-guild:run-task <a task from your plan>
 ```
 
-Hooks need Node.js 22.5 or later (24 LTS recommended). Prefer plain files to a plugin? See [copy the folder instead](docs/install.md).
+<sub>Hooks need Node.js 22.5 or later. Prefer plain files to a plugin? [Copy the folder instead](docs/install.md).</sub>
 
-## The loop
+## What's inside
 
-The **controller** is your main Claude Code session: it writes briefs, sends each task to a fresh
-agent and reads reports, but never builds or reviews. A **question sweep** lists the product
-questions a task will raise before anyone builds it. The **carried list** (`.work/carried.md`) keeps
-problems noticed outside a task until they get their own.
+### 🔨 Makers
 
-```
-question sweep → brief → fresh builder → report with evidence
-   → review panel (never the builder) → fresh fixer → one re-check
-   → strict local check → merge → roadmap and QA board updated
-```
+**builder** builds one task from a brief · **fixer** fixes findings in a fresh context ·
+**money-specialist** handles prices and payments in integer minor units · **db-migrations**
+writes backward-compatible schema changes · **i18n** keeps every language file complete.
 
-[How the loop works](docs/loop.md) has the diagram and the reason for each step.
+### 🔍 Inspectors
 
-## What you get
+**architect** checks structure and contracts · **security-reviewer** checks access, secrets and
+personal data · **domain-guardian** checks your words and business rules · **qa-tester** tries to
+break it · **designer** reviews screenshots of each screen · **ux-researcher** checks flows
+against real users · **docs-keeper** keeps the docs true.
 
-### Roles (subagents)
+### 🏛️ The board
 
-| Build                                              | Review                                               | Board (decision advisors)                                        |
+Eight advisors for decisions with real trade-offs: product (chair), tech, finance, legal, users,
+operations, growth and your industry. They never see each other's answers.
+
+### ⚙️ Skills
+
+`run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
+`design-review` · `research-review` · `local-ci` · `system-map` · `progress-boards` · `setup`
+
+### 🛡️ Guard hooks
+
+Refuse edits to protected files (`.env` by default), `pkill`/`killall`, `--no-verify` and other
+skipped git hooks. Optionally run your own formatter after every edit.
+
+<details>
+<summary><b>Every role, with what it gets and what it returns</b></summary>
+
+| Makers                                             | Inspectors                                           | Board                                                            |
 | -------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| [builder](docs/roles/builder.md)                   | [architect](docs/roles/architect.md)                 | [product-manager](docs/roles/board-product-manager.md) (chair)   |
+| [builder](docs/roles/builder.md)                   | [architect](docs/roles/architect.md)                 | [product-manager](docs/roles/board-product-manager.md)           |
 | [fixer](docs/roles/fixer.md)                       | [security-reviewer](docs/roles/security-reviewer.md) | [tech-lead](docs/roles/board-tech-lead.md)                       |
 | [money-specialist](docs/roles/money-specialist.md) | [domain-guardian](docs/roles/domain-guardian.md)     | [finance-expert](docs/roles/board-finance-expert.md)             |
 | [db-migrations](docs/roles/db-migrations.md)       | [qa-tester](docs/roles/qa-tester.md)                 | [legal-advisor](docs/roles/board-legal-advisor.md)               |
@@ -75,66 +136,83 @@ question sweep → brief → fresh builder → report with evidence
 |                                                    | [docs-keeper](docs/roles/docs-keeper.md)             | [business-development](docs/roles/board-business-development.md) |
 |                                                    |                                                      | [domain-expert](docs/roles/board-domain-expert.md)               |
 
-Each role page says when to use it, what it gets and what it returns. Each role has a default
-model: opus where judgement is the whole job (security, architecture, money), sonnet elsewhere.
+Each role has a default model: opus where judgement is the whole job (security, architecture,
+money, the board's chair, finance and legal seats, design), sonnet for the rest.
+</details>
 
-### Skills
+<details>
+<summary><b>Every skill</b></summary>
 
-| Skill                                                | Use it to                                                       |
-| ---------------------------------------------------- | --------------------------------------------------------------- |
-| [`setup`](skills/setup/SKILL.md)                     | prepare a project for the loop, once                            |
-| [`run-task`](skills/run-task/SKILL.md)               | run one task through the whole loop, as the controller          |
-| [`write-brief`](skills/write-brief/SKILL.md)         | write a brief a fresh agent can work from alone                 |
-| [`review-panel`](skills/review-panel/SKILL.md)       | choose reviewers by what the change touches                     |
-| [`fix-round`](skills/fix-round/SKILL.md)             | fix findings with a fresh agent, then confirm once              |
-| [`decision-batch`](skills/decision-batch/SKILL.md)   | ask the owner every open question at once, with recommendations |
-| [`board`](skills/board/SKILL.md)                     | put a decision with real trade-offs to a board of advisors      |
-| [`design-review`](skills/design-review/SKILL.md)     | review a built screen from screenshots before anyone sees it    |
-| [`research-review`](skills/research-review/SKILL.md) | review a flow against personas, heuristics and WCAG 2.2 AA      |
-| [`local-ci`](skills/local-ci/SKILL.md)               | run (or set up) a strict local check that mirrors CI            |
-| [`system-map`](skills/system-map/SKILL.md)           | keep a map of features, operations, screens and tables current  |
-| [`progress-boards`](skills/progress-boards/SKILL.md) | keep the roadmap and the QA board current with every change     |
+| Skill                                                | Use it to                                                 |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| [`setup`](skills/setup/SKILL.md)                     | prepare a project for the loop, once                      |
+| [`run-task`](skills/run-task/SKILL.md)               | run one task through the whole loop                       |
+| [`write-brief`](skills/write-brief/SKILL.md)         | write a brief a fresh agent can work from alone           |
+| [`review-panel`](skills/review-panel/SKILL.md)       | choose reviewers by what the change touches               |
+| [`fix-round`](skills/fix-round/SKILL.md)             | fix findings with a fresh agent, then confirm once        |
+| [`decision-batch`](skills/decision-batch/SKILL.md)   | ask every open question at once, with recommendations     |
+| [`board`](skills/board/SKILL.md)                     | put a decision with real trade-offs to the board          |
+| [`design-review`](skills/design-review/SKILL.md)     | review a built screen from screenshots first              |
+| [`research-review`](skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
+| [`local-ci`](skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
+| [`system-map`](skills/system-map/SKILL.md)           | keep a map of features, screens and tables current        |
+| [`progress-boards`](skills/progress-boards/SKILL.md) | keep the roadmap and QA board current with every change   |
 
-Skills are invoked as `/ai-dev-guild:<name>`. Stack-specific skills (migrations with row-level
-security, API endpoints, outbox events, screens) are in [examples](examples/README.md), clearly
-marked, and are not loaded by the plugin.
+Stack-specific starting points (database migrations, API endpoints, events, screens, a CI runner)
+are in [examples](examples/README.md), clearly marked and not loaded by the plugin.
+</details>
 
-### The guard hooks
+<details>
+<summary><b>The guard hooks in detail</b></summary>
 
-| Hook          | Refuses                                                                                                                                                |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `guard-paths` | an edit to a file listed in `.claude/protected-paths` (default: `.env` files), symlinks included                                                       |
-| `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify` and other skipped git hooks; a shell write (`>`, `tee`, `sed -i`, `cp`, `mv`) to a protected file |
-| `after-edit`  | nothing by itself: if your project has an executable `.claude/after-edit`, it runs it on each edited file and sends any failure back to Claude         |
+| Hook          | Refuses                                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `guard-paths` | an edit to a file listed in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included                  |
+| `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`; a shell write to a protected file |
+| `after-edit`  | nothing by itself: it runs your executable `.claude/after-edit` on each edited file and sends any failure back to Claude              |
 
-The hooks read the command as text (quoted text and heredocs are ignored) and fail open on bad
-input. They are a fast first line; your pre-commit hooks and CI stay the authority. With the default
-rules, `cp .env.example .env` is refused too: create secret files yourself, not through an agent.
-The hooks do not protect their own files or `.claude/protected-paths`; review changes to those.
-A live run inside a Claude Code session has not been recorded yet; the hooks' own tests and their
-exact command strings have been run.
+They ignore text inside quotes and heredocs, so `grep pkill` or a commit message is fine. They fail
+open on bad input: your pre-commit hooks and CI stay the authority. With the default rules,
+`cp .env.example .env` is refused too, so create secret files yourself. The hooks do not protect
+their own files or `.claude/protected-paths`.
+</details>
 
-## The rules behind it
+## Who it's for
 
-- [Working rules](docs/rules/README.md), one file each, with the reason. The core:
-  the builder never reviews; one task per fresh agent; evidence before done; change only what the
-  task needs; write down what you assumed; build nothing unasked.
-- [Mistakes that keep happening](docs/mistakes.md), each with a short reproduction: failing open,
-  secrets inside errors, a test that cannot fail, a check that never runs, editing the decision to
-  match the code, and more.
+- **Developers who use Claude Code on real projects** and want its work checked the way a
+  colleague's would be.
+- **Teams running several agents at once**, who need them not to break each other's work.
+- **Product owners who decide but don't code**: you get questions in batches with
+  recommendations, and your decisions are recorded and never quietly rewritten.
 
-## What it does not do
+It is not for one-off scripts: the loop pays off when a mistake would cost more than a review.
 
-- It does not know your product. Your glossary, business rules and decisions live in your
-  repository, and the roles read them from the paths your `AGENTS.md` names.
-- It does not decide for you. Product, money and legal questions always go to a person.
-- It does not replace CI. It makes sure the local check is as strict as CI, and that nobody says
-  "done" without one.
+## Works anywhere
+
+- **Any stack.** Roles read your project's `AGENTS.md`, glossary and commands. Stack-specific
+  advice lives in examples.
+- **Any country.** No currency, time zone, date format or local law is built in.
+  See [Assume no country](docs/rules/international-by-default.md).
+- **Your words, your rules.** It never invents product terms or makes product, money or legal
+  decisions. It asks.
+
+## The ideas behind it
+
+Twenty-three short [working rules](docs/rules/README.md), each with its reason, and sixteen
+[mistakes that keep happening](docs/mistakes.md), each with a tiny reproduction. The core six:
+
+1. [The builder never reviews its own work.](docs/rules/builder-never-reviews.md)
+2. [One task per fresh agent, with a brief and a report.](docs/rules/one-task-fresh-agent.md)
+3. [Evidence before done.](docs/rules/evidence-before-done.md)
+4. [Change only what the task needs.](docs/rules/change-only-the-task.md)
+5. [Write down what you assumed.](docs/rules/write-down-assumptions.md)
+6. [Build nothing nobody asked for.](docs/rules/build-nothing-unasked.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+One change per pull request, each with its reason. See [CONTRIBUTING.md](CONTRIBUTING.md) and
+the [CHANGELOG](CHANGELOG.md).
 
 ## Licence
 
-[MIT](LICENSE).
+[MIT](LICENSE)
