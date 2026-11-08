@@ -27,8 +27,8 @@ folders (count them if useful, do not list them).
 ## Steps
 
 1. Collect the facts above into the data shape below.
-2. Copy `map-template.html` from this skill's folder to `docs/map/index.html` (or the path the user
-   gives) and replace only the content of the `<script id="map-data">` block with the data, serialised as
+2. Take the HTML inside the code block of `map-template.md` in this skill's folder and write it to
+   `docs/map/index.html` (or the path the user gives) and replace only the content of the `<script id="map-data">` block with the data, serialised as
    JSON with every `<` written as `\u003c`, so no text inside it can end the block.
 3. Open the page or describe it, and list the folders with no stated job: each is a small task for
    the docs or the builder who owns that folder.

@@ -14,7 +14,7 @@ what you are copying. Then copy two folders into your project:
 | `plugin/agents/`  | `.claude/agents/` |
 | `plugin/skills/`  | `.claude/skills/` |
 
-That is the whole main plugin: Markdown files and one HTML template. Nothing in it runs by itself.
+That is the whole main plugin: Markdown files only. Nothing in it runs by itself.
 
 ## 2. Optional: the guard hooks
 

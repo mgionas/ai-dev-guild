@@ -5,8 +5,9 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
-- Split for the Claude plugin directory: the main plugin (`plugin/`) is roles, skills and one page
-  template, with no hooks or scripts; the guard hooks are a separate optional plugin,
+- Split for the Claude plugin directory: the main plugin (`plugin/`) is roles and skills in Markdown
+  only (the project-map page template is now a code block in `map-template.md`), with no hooks or
+  scripts; the guard hooks are a separate optional plugin,
   `ai-dev-guild-guards` (`guards/`), in the same marketplace. Install with
   `/plugin install ai-dev-guild-guards@ai-dev-guild`. (new)
 - Directory fixes: a square icon, hooks written as `node` plus the script path, every frontmatter

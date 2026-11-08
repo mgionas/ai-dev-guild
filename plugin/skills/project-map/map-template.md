@@ -1,3 +1,13 @@
+# Project map page template
+
+The `project-map` skill writes this page to `docs/map/index.html`. Copy everything inside the
+code block below into that file, unchanged, then replace only the content of the
+`<script type="application/json" id="map-data">` block with the project's data.
+
+It is kept here as text, inside a Markdown file, so the plugin itself contains no web pages or
+scripts: the page exists only once you create it in your project.
+
+````html
 <!doctype html>
 <html lang="en">
 <head>
@@ -162,3 +172,4 @@
 </script>
 </body>
 </html>
+````

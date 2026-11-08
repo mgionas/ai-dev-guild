@@ -23,8 +23,7 @@ building? Try `/ai-dev-guild:stack-advice <your idea>` first.
 
 ## What it runs, sends and fetches
 
-- **Runs:** nothing by itself. This plugin is roles and skills written in Markdown, plus one HTML
-  page template. It has no hooks, no MCP servers and no scripts.
+- **Runs:** nothing by itself. This plugin is roles and skills written in Markdown, and nothing else: no hooks, no MCP servers and no scripts.
 - **Reads:** your project's files, as Claude Code does. The `token-review` skill reads your own
   Claude Code session files in `~/.claude/projects/` to count tokens; it copies no prompt text and
   sends nothing anywhere.
