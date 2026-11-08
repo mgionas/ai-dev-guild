@@ -5,6 +5,9 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Listing links for the directory: support (GitHub issues), documentation, and a privacy note
+  (`PRIVACY.md`: the plugin collects and sends nothing). (new)
+
 - Split for the Claude plugin directory: the main plugin (`plugin/`) is roles and skills in Markdown
   only (the project-map page template is now a code block in `map-template.md`), with no hooks or
   scripts; the guard hooks are a separate optional plugin,
