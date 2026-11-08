@@ -37,6 +37,8 @@ hold:
 
 1. **Done** — what you changed, by file.
 2. **Evidence** — the commands you ran and their pasted output. No output, no "done".
-3. **Assumptions** — every choice the brief left open: what you chose, the other reading, why.
-4. **Noticed** — problems you saw outside the task, with `file:line`; you did not fix them.
-5. **Questions** — anything only a person can decide.
+3. **Tests changed** — any existing test assertion you changed or removed, and why. A reviewer
+   reads these first: weakening a test is the quietest way to make a change pass.
+4. **Assumptions** — every choice the brief left open: what you chose, the other reading, why.
+5. **Noticed** — problems you saw outside the task, with `file:line`; you did not fix them.
+6. **Questions** — anything only a person can decide.

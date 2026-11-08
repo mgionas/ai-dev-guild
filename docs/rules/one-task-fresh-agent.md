@@ -7,8 +7,9 @@ Each task goes to a new agent that gets a written brief and writes a report file
 **How to apply:**
 
 - Write the brief with the `write-brief` skill: goal, scope, acceptance criteria, covering tests, guard tests, the owner's answers.
-- Split a task likely to need more than about 150 turns.
-- An agent near the end of its context writes a handover file and stops.
+- Split a task likely to need more than about 110 turns (about 250K tokens of context).
+- An agent near that point writes a handover file and stops.
+- Hand back in a few lines; the full report stays in its file.
 
 **Where it lives:** the `run-task` and `write-brief` skills.
 

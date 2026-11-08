@@ -14,6 +14,9 @@ review → fixing → merged (or waiting on the owner). A progress report withou
 incomplete, and that includes relaying a parallel agent's result. Mark only what waits on the owner
 now as needing the owner.
 
+The `roadmap` skill builds the first version; this skill keeps it current. Refresh the
+`project-map` page in the same turn when a merge adds a part, a link or a folder.
+
 ## The QA board
 
 One entry per update (a merge, a fix round that changes behaviour, a release): date, title, a

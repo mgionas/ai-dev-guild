@@ -27,7 +27,8 @@ The task: $ARGUMENTS
 6. **Fix.** Merge the findings into one file and run the `fix-round` skill: a fresh `fixer`, never
    the builder's session resumed.
 7. **Re-check.** One combined re-check confirms the fixes. It does not reopen the review. New
-   non-blocking points go to the carried list. After fix round 2, ask the owner whether to stop.
+   non-blocking points go to the carried list. If the second re-check confirms every fix, stopping is the default: say so in the merge report, and
+   the owner can still say "continue".
 8. **Strict local check.** Run the `local-ci` skill on the final head. Full suites run here, once.
 9. **Merge**, then update the roadmap and the QA board (`progress-boards` skill) in the same turn,
    and the system map if the project has one (`system-map` skill).
@@ -49,5 +50,14 @@ Put these in every brief, because they were each learned the hard way:
 - Never kill processes by pattern (`pkill -f`, `killall`). Stop only your own PID.
 - In a shared checkout, commit by path: `git commit -m "…" -- <paths>`.
 - Change only what the task needs; list Assumptions and Noticed; build nothing unasked.
-- Split a task likely to need more than about 150 turns. An agent near the end of its context
-  writes a handover file and stops.
+- Split a task likely to need more than about 110 turns (about 250K tokens of context). An agent
+  near that point writes a handover file and stops; a fresh agent continues from it.
+- Hand back in a few lines (at most about 1,500 characters): status, commit range, concerns and
+  owner questions. The full report stays in its file, so the controller's context stays small.
+- Commit follow-up changes with `git commit --fixup=<sha>`, and squash them before reporting with
+  `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>`, where `<base>` is the commit before
+  the task's first change. Then the controller never has to rewrite history.
+- A build that changes routes, contracts or background jobs runs the integration suite once
+  before its report; fixers stay with the covering tests.
+
+As the controller, `/compact` after each merge and whenever your context passes about 250K.

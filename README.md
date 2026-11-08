@@ -8,9 +8,8 @@
 <p align="center">
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
-  <img alt="20 roles" src="https://img.shields.io/badge/roles-20-9a6700">
-  <img alt="12 skills" src="https://img.shields.io/badge/skills-12-9a6700">
-  <img alt="Any stack, any country" src="https://img.shields.io/badge/any%20stack-any%20country-0969da">
+  <img alt="22 roles" src="https://img.shields.io/badge/roles-22-9a6700">
+  <img alt="16 skills" src="https://img.shields.io/badge/skills-16-9a6700">
 </p>
 
 <p align="center">
@@ -84,6 +83,13 @@ touches any existing file:
 /ai-dev-guild:setup
 ```
 
+New to building, with no stack chosen yet? Describe your idea and get a sourced proposal for
+hosting, database and testing:
+
+```
+/ai-dev-guild:stack-advice <what you want to build>
+```
+
 Then hand it your first task:
 
 ```
@@ -107,6 +113,20 @@ personal data · **domain-guardian** checks your words and business rules · **q
 break it · **designer** reviews screenshots of each screen · **ux-researcher** checks flows
 against real users · **docs-keeper** keeps the docs true.
 
+### 🧭 Stack advisor
+
+Describe your project and get a stack proposal: hosting, database, auth, email, payments and
+monitoring, each with an alternative, today's free tier (linked and dated), the regions it serves
+and how to leave it. It also sets up how you test: a preview per change, database branches and
+staging. You decide and sign up yourself.
+
+### 🗺️ See where you are
+
+**Roadmap:** milestones a user can see, each step with its stage (planned, building, review,
+fixing, merged), and what waits on you. **Project map:** one page with a diagram of the parts and
+who talks to whom, plus every folder and its job, read from the code. **Token review:** where your
+sessions spent their tokens, and a few rules to spend less.
+
 ### 🏛️ The board
 
 Eight advisors for decisions with real trade-offs: product (chair), tech, finance, legal, users,
@@ -114,7 +134,7 @@ operations, growth and your industry. They never see each other's answers.
 
 ### ⚙️ Skills
 
-`run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
+`stack-advice` · `roadmap` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
 `design-review` · `research-review` · `local-ci` · `system-map` · `progress-boards` · `setup`
 
 ### 🛡️ Guard hooks
@@ -134,10 +154,13 @@ skipped git hooks. Optionally run your own formatter after every edit.
 | [i18n](docs/roles/i18n.md)                         | [designer](docs/roles/designer.md)                   | [user-advocate](docs/roles/board-user-advocate.md)               |
 |                                                    | [ux-researcher](docs/roles/ux-researcher.md)         | [operations-expert](docs/roles/board-operations-expert.md)       |
 |                                                    | [docs-keeper](docs/roles/docs-keeper.md)             | [business-development](docs/roles/board-business-development.md) |
-|                                                    |                                                      | [domain-expert](docs/roles/board-domain-expert.md)               |
+| | | [domain-expert](docs/roles/board-domain-expert.md) |
+
+Outside the board: [stack-advisor](docs/roles/stack-advisor.md) for choosing tools and services, and
+[token-optimizer](docs/roles/token-optimizer.md) for spending fewer tokens.
 
 Each role has a default model: opus where judgement is the whole job (security, architecture,
-money, the board's chair, finance and legal seats, design), sonnet for the rest.
+money, the stack advisor, the board's chair, finance and legal seats, design), sonnet for the rest.
 </details>
 
 <details>
@@ -146,6 +169,10 @@ money, the board's chair, finance and legal seats, design), sonnet for the rest.
 | Skill                                                | Use it to                                                 |
 | ---------------------------------------------------- | --------------------------------------------------------- |
 | [`setup`](skills/setup/SKILL.md)                     | prepare a project for the loop, once                      |
+| [`stack-advice`](skills/stack-advice/SKILL.md) | get a sourced stack and testing proposal for a new project |
+| [`roadmap`](skills/roadmap/SKILL.md) | build a roadmap of milestones and steps from a plan or an idea |
+| [`project-map`](skills/project-map/SKILL.md) | draw a page of the system and its folders, read from the code |
+| [`token-review`](skills/token-review/SKILL.md) | find where sessions spent tokens and how to spend fewer |
 | [`run-task`](skills/run-task/SKILL.md)               | run one task through the whole loop                       |
 | [`write-brief`](skills/write-brief/SKILL.md)         | write a brief a fresh agent can work from alone           |
 | [`review-panel`](skills/review-panel/SKILL.md)       | choose reviewers by what the change touches               |
@@ -181,24 +208,28 @@ their own files or `.claude/protected-paths`.
 
 - **Developers who use Claude Code on real projects** and want its work checked the way a
   colleague's would be.
+- **People new to building** who have an idea but no stack: the stack advisor proposes hosting,
+  a database and a safe way to test, checked against today's plans and your users' country.
 - **Teams running several agents at once**, who need them not to break each other's work.
 - **Product owners who decide but don't code**: you get questions in batches with
   recommendations, and your decisions are recorded and never quietly rewritten.
 
 It is not for one-off scripts: the loop pays off when a mistake would cost more than a review.
 
-## Works anywhere
+## It fits your project, not the other way round
 
-- **Any stack.** Roles read your project's `AGENTS.md`, glossary and commands. Stack-specific
-  advice lives in examples.
-- **Any country.** No currency, time zone, date format or local law is built in.
+- **It learns your project from your files.** Every role reads your `AGENTS.md`, your glossary and
+  your commands, whatever language or framework you use. Advice tied to one framework sits in
+  [examples](examples/README.md).
+- **It assumes nothing local.** Amounts are stored with their currency, times in UTC with the
+  user's time zone, and dates and numbers in the user's format. Tax and legal rules come from you.
   See [Assume no country](docs/rules/international-by-default.md).
-- **Your words, your rules.** It never invents product terms or makes product, money or legal
-  decisions. It asks.
+- **It asks instead of inventing.** It never makes up product terms or makes product, money or
+  legal decisions for you.
 
 ## The ideas behind it
 
-Twenty-three short [working rules](docs/rules/README.md), each with its reason, and sixteen
+Twenty-four short [working rules](docs/rules/README.md), each with its reason, and sixteen
 [mistakes that keep happening](docs/mistakes.md), each with a tiny reproduction. The core six:
 
 1. [The builder never reviews its own work.](docs/rules/builder-never-reviews.md)

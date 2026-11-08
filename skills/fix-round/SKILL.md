@@ -16,5 +16,6 @@ argument-hint: "<task id> <round number>"
    and High findings themselves.
 5. **A re-check confirms; it does not reopen.** New blocking problems are a new finding. New
    non-blocking points go to the carried list.
-6. **After round 2, ask the owner** whether to stop, with what is still open and what it would
+6. **After round 2:** if the re-check confirms every fix, stop by default and say so in the merge
+   report. Otherwise **ask the owner** whether to stop, with what is still open and what it would
    cost to continue.

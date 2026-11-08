@@ -5,6 +5,21 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Role `token-optimizer` and skill `token-review`: measure where a session spent its tokens and
+  adopt a few rules to spend less. (field-tested)
+- Skill `roadmap`: milestones a user can see, one step per task with its stage, and "later" items
+  with what is done now to keep room for them. (field-tested)
+- Skill `project-map`: a self-contained page with a System diagram and a Folders tree, read from the
+  code, that never invents a job or shows a secret value. (field-tested, rewritten generic)
+- The loop: hand off at about 110 turns or 250K context; hand-backs of a few lines; reviewers block
+  only on correctness; reports list existing test assertions they changed; fixup commits; stop by
+  default after a confirmed second fix round; rule "Turn a repeated mistake into a check".
+  (field-tested)
+
+- Role `stack-advisor` and skill `stack-advice`: a newcomer describes the project and gets a stack
+  proposal per layer with an alternative, today's free tier (linked and dated), regions, lock-in,
+  monthly cost and how to build and test; the user decides and signs up. (new)
+
 - README is now a landing page: a light and dark banner, before-and-after advantages, a diagram of
   the loop, a two-minute install, what's inside and who it is for. (new)
 

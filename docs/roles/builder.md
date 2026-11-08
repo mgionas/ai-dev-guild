@@ -17,9 +17,10 @@ Builds one task from a brief file and writes a report file with evidence.
 - It must not be given a review's findings to fix; those go to a fresh `fixer`.
 
 ## What it returns
-- A report file at the path in the brief, under the headings the brief gives, with five parts:
+- A report file at the path in the brief, under the headings the brief gives, with six parts:
 - **Done**: what changed, by file.
 - **Evidence**: the commands run and their pasted output. No output, no "done".
+- **Tests changed**: any existing test assertion changed or removed, and why.
 - **Assumptions**: each choice the brief left open, what it chose, the other reading, and why.
 - **Noticed**: problems seen outside the task, with `file:line`, which it did not fix.
 - **Questions**: anything only a person can decide.

@@ -27,3 +27,4 @@ One rule per file, each with its reason, so you can adopt, change or drop one on
 | [Nobody sees a screen before the designer has seen its screenshots](screenshot-review.md) | Each built screen is screenshotted at every width, light and dark, in every reachable state, and reviewed against its spec before it is shown to the owner. |
 | [Keep the system map current](system-map.md) | If the project has a system map, every change that adds an operation, screen, table, folder or job updates it, and the check runs and its output is pasted. |
 | [Assume no country](international-by-default.md) | Write code that works anywhere. |
+| [Turn a repeated mistake into a check](rules-as-checks.md) | When review catches the same mistake twice, make a machine catch it next time. |

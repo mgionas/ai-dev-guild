@@ -45,6 +45,7 @@ Write `.work/tasks/<id>/report.md` with these headings:
 
 - **Done** — what changed, by file.
 - **Evidence** — each command you ran and its pasted output.
+- **Tests changed** — any existing assertion you changed or removed, and why (or "none").
 - **Assumptions** — each choice the brief left open: what you chose, the other reading, why.
 - **Noticed** — problems outside the task, with `file:line`, not fixed.
 - **Questions** — what only a person can decide.

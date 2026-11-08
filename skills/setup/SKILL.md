@@ -20,4 +20,7 @@ exists. Where one exists, show the user what you would add and ask.
    into `AGENTS.md`. If there is none, create `docs/glossary.md` with a heading and a note that only
    the product owner adds terms.
 
+6. **A stack**: if the repository shows no stack yet (no lock file, no framework config), offer
+   the `stack-advice` skill before the first task, and leave the Stack section as `TODO(owner)`.
+
 Finish with a short list of what you created and what still says `TODO(owner)`.

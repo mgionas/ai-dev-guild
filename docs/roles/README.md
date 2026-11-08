@@ -40,3 +40,12 @@ Board members advise in a [board session](../../skills/board/SKILL.md). Each ans
 | [board-operations-expert](board-operations-expert.md) | Day-to-day running of the service | Nothing (read-only) | sonnet |
 | [board-tech-lead](board-tech-lead.md) | Feasibility, cost, data model risk | Nothing (read-only) | sonnet |
 | [board-user-advocate](board-user-advocate.md) | The users' voice | Nothing (read-only) | sonnet |
+
+## Outside the board
+
+Advisors for getting started and for running the loop cheaply.
+
+| Role | Does | Edits | Model |
+| --- | --- | --- | --- |
+| [stack-advisor](stack-advisor.md) | Proposes a stack and online services, with current free tiers and a way to test | `docs/stack.md` only | opus |
+| [token-optimizer](token-optimizer.md) | Measures where a session spent its tokens and suggests cheaper habits | its report only | sonnet |

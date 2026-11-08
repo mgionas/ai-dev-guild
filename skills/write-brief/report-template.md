@@ -13,6 +13,10 @@ $ <command>
 <pasted output>
 ```
 
+## Tests changed
+
+- `<test file>:<line>` — <an existing assertion you changed or removed, and why>; or "none"
+
 ## Assumptions
 
 - Chose <X>; the other reading was <Y>; because <reason>.
