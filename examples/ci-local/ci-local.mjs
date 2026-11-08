@@ -19,7 +19,8 @@
  *
  * Strict on purpose: no flag skips a named step, one failure never stops later steps, and the
  * environment is cleaned like a CI runner's so local secrets and caches cannot make a step pass
- * here that would fail there. Not included: the flake retry described in the local-ci skill,
+ * here that would fail there. It also runs with the smallest CI runner's limits (SMALLEST_RUNNER),
+ * so a build that needs more memory, or a test that needs spare cores, fails here first. Not included: the flake retry described in the local-ci skill,
  * because which files a branch touched depends on your test runner.
  */
 import { spawnSync } from "node:child_process";
@@ -32,29 +33,32 @@ import { join, relative, resolve } from "node:path";
  * (Turborepo: `--filter=...[{base}]`; Nx: `npx nx affected -t test --base={base}`). A step with
  * `when` runs only if a changed file matches it, for a suite your build tool does not track, such
  * as browser tests of one app. A step with neither always runs in full: keep that for cheap checks.
+ * `{cores}` becomes SMALLEST_RUNNER.cores; pass it to your test runner too if it starts a worker per
+ * core (Vitest and Jest: `--maxWorkers`).
  */
 const STEPS = [
   { name: "install", run: "npm ci" },
   { name: "format", run: "npx prettier --check ." },
   {
     name: "lint",
-    run: "npx turbo run lint",
-    affected: "npx turbo run lint --filter=...[{base}]",
+    run: "npx turbo run lint --concurrency={cores}",
+    affected: "npx turbo run lint --concurrency={cores} --filter=...[{base}]",
   },
   {
     name: "typecheck",
-    run: "npx turbo run typecheck",
-    affected: "npx turbo run typecheck --filter=...[{base}]",
+    run: "npx turbo run typecheck --concurrency={cores}",
+    affected:
+      "npx turbo run typecheck --concurrency={cores} --filter=...[{base}]",
   },
   {
     name: "test",
-    run: "npx turbo run test",
-    affected: "npx turbo run test --filter=...[{base}]",
+    run: "npx turbo run test --concurrency={cores}",
+    affected: "npx turbo run test --concurrency={cores} --filter=...[{base}]",
   },
   {
     name: "build",
-    run: "npx turbo run build",
-    affected: "npx turbo run build --filter=...[{base}]",
+    run: "npx turbo run build --concurrency={cores}",
+    affected: "npx turbo run build --concurrency={cores} --filter=...[{base}]",
   },
   { name: "e2e", run: "npm run test:e2e", when: /^apps\/web\// },
 ];
@@ -73,6 +77,17 @@ const ESCALATE = [
 
 /** A lockfile change that only adds lines is a new dependency; one that alters lines can move every package. */
 const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
+
+/**
+ * The smallest runner your CI uses, copied from the project's "Where CI runs" page. Node sizes its
+ * heap from the machine's memory and tools start a worker per core, so a laptop hides limits CI has.
+ */
+const SMALLEST_RUNNER = {
+  cores: 2,
+  heapMb: 2048,
+  timeZone: "UTC",
+  locale: "C.UTF-8",
+};
 
 /** Variables a CI runner would not have. Add your own local-only ones (database URLs, tokens). */
 const DROP_ENV = /^(DATABASE_URL.*|NODE_ENV|.*_TOKEN|.*_SECRET)$/;
@@ -147,12 +162,19 @@ Object.assign(env, {
   CI: "true",
   TURBO_FORCE: "true",
   NX_SKIP_NX_CACHE: "true",
+  NODE_OPTIONS: `--max-old-space-size=${SMALLEST_RUNNER.heapMb}`,
+  TZ: SMALLEST_RUNNER.timeZone,
+  LANG: SMALLEST_RUNNER.locale,
+  LC_ALL: SMALLEST_RUNNER.locale,
 });
+say(
+  `limits: ${SMALLEST_RUNNER.cores} cores, heap ${SMALLEST_RUNNER.heapMb} MB, TZ ${SMALLEST_RUNNER.timeZone}`,
+);
 
 let failed = false;
 let skipped = 0;
 for (const step of STEPS) {
-  let command = step.run;
+  let command = step.run.replaceAll("{cores}", SMALLEST_RUNNER.cores);
   let how = "ran full";
   if (
     !scope.full &&
@@ -166,7 +188,9 @@ for (const step of STEPS) {
   if (!scope.full && step.when)
     how = `ran (a changed file matches ${step.when})`;
   if (!scope.full && step.affected) {
-    command = step.affected.replaceAll("{base}", scope.base);
+    command = step.affected
+      .replaceAll("{base}", scope.base)
+      .replaceAll("{cores}", SMALLEST_RUNNER.cores);
     how = `ran affected since ${shortBase}`;
   }
   const started = Date.now();

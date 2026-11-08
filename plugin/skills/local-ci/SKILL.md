@@ -20,6 +20,15 @@ mutation testing. Before starting one, write in the brief or report:
 A change to one script and a document reaches no package's tests. A change to a shared library
 reaches every package that imports it.
 
+## Know where CI runs
+
+A check run on a developer machine proves what CI will say only if the machine behaves like CI.
+CI is usually smaller (fewer cores, less memory), often another operating system, and starts with
+none of your caches. Keep the facts in one project page, from `ci-environment-template.md` in this
+skill's folder, linked from `AGENTS.md`: each runner's kind, labels, OS, cores, memory, default
+heap, jobs at once and what else shares the machine. The guide behind it:
+<https://github.com/mgionas/ai-dev-guild/blob/main/docs/where-ci-runs.md>.
+
 ## What makes it strict
 
 - **The same steps as CI, in the same order, with the same commands.** Keep a test that reads the CI
@@ -43,6 +52,9 @@ reaches every package that imports it.
 - **Every step says what happened:** ran in full, ran on the affected part, or skipped and why. The
   verdict line names the mode. A skip never reads as a pass.
 - **No cache.** Build and test caches are off, so an old success cannot be replayed as a new one.
+- **CI's limits.** Run with the smallest runner's heap cap (`NODE_OPTIONS=--max-old-space-size=…`),
+  its core count for parallel tasks and test workers, and its time zone and locale. A build that
+  needs more memory than CI has, or a test that only passes with spare cores, fails here first.
 - **A clean environment.** Set `CI=true`; remove local database URLs, tokens and other secrets; make
   sure no watcher, editor or format-on-save hook touches the files while it runs.
 - **A log per step, and one verdict.** Logs go to a folder outside the checkout (or a git-ignored
@@ -59,7 +71,8 @@ Run it once, on the final commit of the task, after the fix rounds are over. Nev
 suites at once on a shared machine, even in different checkouts: they compete for the same cores,
 and a database or container they share turns that into failures. Check what is already running
 before you start. If a run is killed with exit code 143, check whether some agent ran `pkill -f`
-before you blame the machine's load.
+before you blame the machine's load. A test that times out only on CI is a question about the
+machine first: count the processes per core before you raise a timeout.
 
 Paste the summary in the report: the mode line, each step's line and the verdict.
 

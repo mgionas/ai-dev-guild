@@ -55,6 +55,8 @@ flowchart TD
 - **Screens** get a [screenshot review](../plugin/skills/design-review/SKILL.md) by the designer before the
   owner sees them, and a [research review](../plugin/skills/research-review/SKILL.md) of the spec before
   they are built.
+- **CI's machine** is written down once ([where CI runs](where-ci-runs.md)); briefs that touch CI,
+  build config or test timeouts link it, and the local check imitates its limits.
 - **Guard hooks** refuse edits to protected files, pattern kills and skipped git hooks while the loop
   runs ([hooks](../README.md#the-guard-hooks)).
 

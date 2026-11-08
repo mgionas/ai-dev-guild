@@ -22,7 +22,9 @@ with an example is far less likely to come back.
 [A measurement something else can move](#a-measurement-something-else-can-move) ·
 [Evidence gathered where something repairs the bug](#evidence-gathered-where-something-repairs-the-bug) ·
 [Testing everything for a change that reaches nothing](#testing-everything-for-a-change-that-reaches-nothing) ·
-[Believing the label instead of the artifact](#believing-the-label-instead-of-the-artifact)
+[Believing the label instead of the artifact](#believing-the-label-instead-of-the-artifact) ·
+[CI is a smaller machine](#ci-is-a-smaller-machine) ·
+[Raising a timeout to hide a starved machine](#raising-a-timeout-to-hide-a-starved-machine)
 
 **In the way agents work:**
 [Editing the decision to match the code](#editing-the-decision-to-match-the-code) ·
@@ -158,8 +160,12 @@ The package has unit tests and a test config, but no `test` script, so the monor
 `run test` silently skips it. In the same way, a lint or architecture rule whose file pattern
 matches nothing reports "0 problems" forever.
 
+A CI step placed after one that keeps failing is the same: for as long as the early step stays
+red, the later one never runs, and it breaks without anyone seeing.
+
 **Fix:** never trust a check you have not seen fail. When you add one, make a change it should
-catch and confirm it goes red.
+catch and confirm it goes red. Put independent checks in separate CI jobs, or run every step and
+report each, so one red step cannot hide the rest.
 
 ## A measurement something else can move
 
@@ -216,6 +222,36 @@ holds four scripts.
 installed version. A label is a claim to check, not evidence.
 
 ---
+
+## CI is a smaller machine
+
+```text
+laptop:  16 GB memory → Node's default heap about 4 GB → type-aware lint passes
+runner:   7 GB memory → Node's default heap about 2 GB → the same lint runs out of memory
+```
+
+Node sizes its default heap from the machine's memory, and test runners start a worker per core.
+The agent's evidence was real, and came from a machine twice the size of CI's. To reproduce
+locally: `NODE_OPTIONS=--max-old-space-size=2048 npm run lint`.
+
+**Fix:** write down [where CI runs](where-ci-runs.md), and run the local check with the smallest
+runner's heap cap and core count.
+
+## Raising a timeout to hide a starved machine
+
+```js
+test("renders the monthly report", async () => {
+  // …
+}, 20_000); // was 5_000: "flaky on CI"
+```
+
+Three different tests got longer timeouts in one week, each in its own fix. The cause was one: the
+task runner ran four packages at once, each starting a test worker per core, on a two-core runner.
+About eight busy processes shared two cores, and a test that takes one second alone took six.
+
+**Fix:** a timeout that fails only on CI is a question about the machine. Count the processes per
+core first. Run fewer packages at once, or give heavy packages their own CI jobs, and the original
+timeouts hold.
 
 ## Editing the decision to match the code
 

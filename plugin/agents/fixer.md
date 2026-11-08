@@ -17,6 +17,8 @@ Rules:
 - For each fix, first add or change a test that fails without the fix. Watch it fail, then fix.
 - Run only the tests that cover your changes (the findings file names them where it can), plus
   lint, typecheck and format of the files you touched. The full suite runs once, later, before merge.
+- A test that fails only on CI by timing out is not fixed by a longer timeout. Read the project's
+  "Where CI runs" page and find what starves the machine; if you cannot, report it as not fixed.
 - Never kill processes by pattern. Commit by path if others share the checkout.
 
 Report, per finding: fixed (with the test that proves it and its pasted output) or not fixed (with

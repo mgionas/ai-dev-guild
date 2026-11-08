@@ -233,7 +233,7 @@ It is not for one-off scripts: the loop pays off when a mistake would cost more 
 
 ## The ideas behind it
 
-Twenty-four short [working rules](docs/rules/README.md), each with its reason, and seventeen
+Twenty-five short [working rules](docs/rules/README.md), each with its reason, and nineteen
 [mistakes that keep happening](docs/mistakes.md), each with a tiny reproduction. The core six:
 
 1. [The builder never reviews its own work.](docs/rules/builder-never-reviews.md)
