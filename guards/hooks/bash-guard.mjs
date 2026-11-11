@@ -164,7 +164,8 @@ export function pidKill(command) {
       signal = words[i].slice(1);
       i += 1;
     }
-    if (SIGNAL_ZERO.test(signal ?? '')) continue;
+    // `kill` keeps reading signal options and uses the last, so `kill -0 -s KILL 1234` sends KILL.
+    if (SIGNAL_ZERO.test(signal ?? '') && !(words[i]?.startsWith('-') && words[i] !== '--')) continue;
     if (words[i] === '--') i += 1;
     if (dropped.some((w) => w.split('/').pop() === 'xargs')) return '`xargs kill`';
     const target = words.slice(i).find((w) => !w.startsWith('%') && w !== '$!');

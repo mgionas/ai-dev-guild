@@ -125,6 +125,12 @@ test('bash-guard lets signal 0 pass: it checks that a process exists and stops n
   expectBash(dir, 'ask', ['kill -9 $pid', 'kill -s 9 $pid', 'kill -n 10 1234', 'kill -s SIGTERM $pid', 'kill -SIGKILL 1234', 'kill -0; kill 1234']);
 });
 
+test('bash-guard asks when a later signal option overrides signal 0: kill uses the last one', () => {
+  const dir = project();
+  expectBash(dir, 'ask', ['kill -0 -s KILL 1234', 'kill -0 -n 9 1234', 'kill -s 0 -s 9 1234', 'kill -EXIT -s TERM $pid']);
+  expectBash(dir, 'allow', ['kill -0 $pid', 'kill -s 0 1234', 'while kill -0 $pid; do sleep 1; done']);
+});
+
 test('bash-guard judges the command behind a wrapper and its options', () => {
   const dir = project();
   expectBash(dir, 'block', [
