@@ -5,6 +5,14 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The loop follows the project, not one habit: `setup` asks "squash follow-ups, or fix forward?"
+  and writes the answer under a "History" heading in `AGENTS.md` (default: fix forward); skills and
+  roles follow it. `qa-tester` has a panel mode that edits nothing and reports each missing test as
+  a finding, so it cannot change the head the others review. `run-task` gains a controller
+  checklist and a fallback when `ai-dev-guild:<role>` agent types are not loaded (a general-purpose
+  agent with the role's tools as a hard rule). Briefs gain "Choices already made (do not reopen)".
+  (field-tested)
+
 - A new project loads and runs on its first day: `setup` writes the permission rules (deny reads of
   `.env` files, ask before `git push` and `gh pr merge`, allow edits under `.work/` so reports can
   be written), offers to git-ignore `.claude/worktrees/`, proves the guard hooks run with a harmless

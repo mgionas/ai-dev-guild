@@ -21,9 +21,11 @@ A good brief:
 - **Links the "Where CI runs" page** when the task touches CI, build config, test timeouts or heavy
   tests, so the agent knows CI is not its own machine.
 - **Gives the owner's answers** to this task's questions, quoted, with the date.
+- **Lists the choices already made** under "Choices already made (do not reopen)": each with who
+  made it and why. A builder that finds none will reopen them.
 - **Points to long documents by line range**, never "read the plan". A 400 KB plan read by every
   agent is the most expensive line in a brief.
-- **Carries the house rules** (no pattern kills, commit by path, scope, assumptions, nothing
+- **Carries the house rules** and the project's history rule (no pattern kills, commit by path, scope, assumptions, nothing
   unasked).
 - **Gives the report path and its headings**: `.work/tasks/<id>/report.md`, with the headings from
   `report-template.md` in this skill's folder copied into the brief, since the agent cannot see the

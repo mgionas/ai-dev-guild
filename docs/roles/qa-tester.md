@@ -2,12 +2,13 @@
 
 Maps acceptance criteria to tests, adds the missing ones and tries to break the change.
 
-**Edits:** tests only (never production code) · **Default model:** sonnet · **Tools:** Read, Grep, Glob, Edit, Write, Bash
+**Edits:** tests when dispatched alone; nothing on a review panel (never production code) · **Default model:** sonnet · **Tools:** Read, Grep, Glob, Edit, Write, Bash
 
 ## When to use it
 - Its break attempts include other time zones, a daylight-saving change, other currencies, right-to-left text and long translations.
 - After a build and before review.
-- On every code change, with `domain-guardian` (see `skills/review-panel/SKILL.md`).
+- On every code change, with `domain-guardian` (see `skills/review-panel/SKILL.md`). On a panel it
+  edits nothing and reports each missing test as a finding.
 - Not to fix production code; failures go back as findings.
 
 ## What it gets
@@ -16,7 +17,7 @@ Maps acceptance criteria to tests, adds the missing ones and tries to break the 
 
 ## What it returns
 - A table mapping each criterion to its tests.
-- The tests it added.
+- The tests it added (on a panel: the tests it would add).
 - Each failure it found, with a reproduction.
 - A verdict: pass or fail, with the suite output pasted.
 
