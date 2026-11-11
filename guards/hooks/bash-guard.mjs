@@ -10,20 +10,21 @@
  * 4. Reading or sending a secret file from the shell (`cat .env`, `curl -d @.env`), the side door
  *    around the settings' read deny rules. See `secrets.mjs`.
  * 5. Asked, not refused: any `kill` that is not of the agent's own job (`kill %1`) or last
- *    background process (`kill $!`), and not `kill -l`. One command does not say which processes
- *    this agent started, so a number, a variable or a substitution (`kill $PID`,
- *    `kill $(lsof -ti :3000)`, `xargs kill`) may name someone else's. A refusal always wins over
- *    the question.
+ *    background process (`kill $!`), and not `kill -l` or signal 0 (`kill -0 $pid`, which stops
+ *    nothing). One command does not say which processes this agent started, so a number, a
+ *    variable or a substitution (`kill $PID`, `kill $(lsof -ti :3000)`, `xargs kill`) may name
+ *    someone else's. A refusal always wins over the question.
  * 6. Asked, not refused: a shell that runs a script from its input when that input is not a
  *    heredoc, a here-string or a file (`curl … | bash`, `echo … | sh -s`): the hook cannot see what
- *    the pipe sends.
+ *    the pipe sends. The same for a `-c` string or here-string built from an expansion
+ *    (`bash -c "$CMD"`, `bash -c "$(curl …)"`); `eval` is not asked about.
  *
  * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`,
  * a heredoc a shell runs as its script), up to three levels deep, and the command behind a wrapper
  * (`sudo -u root …`, `doas …`, `env -i …`, `timeout 5 …`). When the guard cannot tell what a
- * command does (an unknown wrapper option, deeper nesting, an error while reading it) it refuses,
- * and a command too long to read is asked about: a hook that fails or runs out of time would let
- * the command through.
+ * command does (an unknown wrapper option, deeper nesting, a quote that never closes, an error
+ * while reading it) it refuses, and a command too long to read is asked about: a hook that fails
+ * or runs out of time would let the command through.
  *
  * This reads the command as text, with comments and heredoc bodies taken out first, and quoted
  * text too except for a `$(…)` inside double quotes, which runs, and where a rule needs the words a
@@ -34,7 +35,7 @@
 import { loadRules, protectingRule } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
 import { secretAccess } from './secrets.mjs';
-import { commandParts, scriptsToJudge, stripWrappers, Unclear, unseenScript, withoutHeredocs } from './shell-words.mjs';
+import { commandParts, refuseOpenQuote, scriptsToJudge, stripWrappers, Unclear, unseenScript, withoutHeredocs } from './shell-words.mjs';
 
 // Longer commands get the question without being read: the reading time grows with the length,
 // and no one writes a command this long by hand.
@@ -45,7 +46,8 @@ const MAX_LENGTH = 20_000;
  * or a commit message that mentions `--no-verify` is not mistaken for doing it. A `$(…)` or
  * backtick substitution inside double quotes runs, so it stays: `echo "$(pkill -f x)"` becomes
  * `echo "$(pkill -f x)"` and `git commit -m "a $(b) c"` becomes `git commit -m "$(b)"`. Quotes are
- * read in order, one scan, so an apostrophe inside double quotes (`"it's"`) opens nothing.
+ * read in order, one scan, so an apostrophe inside double quotes (`"it's"`) opens nothing, and in
+ * `$'…'` a backslash escapes the next character. A command that ends inside a quote is refused.
  */
 export function withoutQuotedText(command) {
   const s = withoutHeredocs(command);
@@ -63,6 +65,19 @@ export function withoutQuotedText(command) {
     }
     if (c === '\\') {
       if (f.quote === null) out += s.slice(i, i + 2);
+      i++;
+      continue;
+    }
+    if (f.quote === "$'") {
+      if (c === "'") {
+        f.quote = null;
+        out += c;
+      }
+      continue;
+    }
+    if (c === '$' && s[i + 1] === "'" && f.quote === null) {
+      f.quote = "$'";
+      out += "$'";
       i++;
       continue;
     }
@@ -90,6 +105,7 @@ export function withoutQuotedText(command) {
     else if (f.close === ')' && c === ')' && f.depth-- === 0) frames.pop();
     out += c;
   }
+  refuseOpenQuote(frames.some((f) => f.quote !== null));
   return out;
 }
 
@@ -123,10 +139,14 @@ export function skipsHooks(command) {
   return null;
 }
 
+// Signal 0 by each name a shell accepts for it: a number of zeros, bash's `EXIT`, zsh's `SIG0`.
+const SIGNAL_ZERO = /^(0+|exit|sig0)$/i;
+
 /**
  * The `kill` the hook must ask about, as text for the question, or null. Only job specs
- * (`kill %1`), the last background process (`kill $!`) and `kill -l` pass: any other target, and
- * targets `xargs` reads from its input, could be another agent's process. Quotes are kept, so
+ * (`kill %1`), the last background process (`kill $!`), `kill -l` and signal 0 (`kill -0 $pid`,
+ * which checks that a process exists and stops nothing) pass: any other target, and targets
+ * `xargs` reads from its input, could be another agent's process. Quotes are kept, so
  * `kill "1234"` counts and `echo "kill 1234"` does not.
  */
 export function pidKill(command) {
@@ -136,8 +156,15 @@ export function pidKill(command) {
     if (/^-[lL]/.test(words[i] ?? '') || words[i] === '--list') continue;
     // One signal spec at most (`-9`, `-TERM`, `-s KILL`, `-n 9`), then an optional `--`; every
     // word after that is a target, so `kill -9 -1` (every process) is asked about too.
-    if (['-s', '-n', '--signal'].includes(words[i])) i += 2;
-    else if (words[i]?.startsWith('-') && words[i] !== '--') i += 1;
+    let signal = null;
+    if (['-s', '-n', '--signal'].includes(words[i])) {
+      signal = words[i + 1];
+      i += 2;
+    } else if (words[i]?.startsWith('-') && words[i] !== '--') {
+      signal = words[i].slice(1);
+      i += 1;
+    }
+    if (SIGNAL_ZERO.test(signal ?? '')) continue;
     if (words[i] === '--') i += 1;
     if (dropped.some((w) => w.split('/').pop() === 'xargs')) return '`xargs kill`';
     const target = words.slice(i).find((w) => !w.startsWith('%') && w !== '$!');
@@ -187,8 +214,8 @@ function judge(command, projectDir) {
   for (const script of scripts) {
     const kill = pidKill(script);
     if (kill) ask(`${kill} stops a process the hook cannot trace: it cannot tell whether this agent started it. Allow it only if that process is the agent's own.`);
-    const shell = unseenScript(script);
-    if (shell) ask(`\`${shell}\` runs a script from its input (a pipe, or whatever feeds it), which the hook cannot see. Allow it only if you know what that script does.`);
+    const unseen = unseenScript(script);
+    if (unseen) ask(`${unseen}, which the hook cannot see. Allow it only if you know what that script does.`);
   }
 }
 

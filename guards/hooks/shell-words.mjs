@@ -8,12 +8,21 @@
  * `echo "kill 1234"` stays one `echo`. A `$(…)` or backtick substitution runs even inside double
  * quotes, so its body is read as commands of its own. Comments are dropped first (`withoutHeredocs`).
  *
+ * An ANSI-C quote (`$'…'`) is a quote in which a backslash escapes the next character, so
+ * `$'it\'s'` closes where bash closes it. A command that ends inside an open quote throws `Unclear`:
+ * the rest of it would be hidden from the rules, and bash would not run it anyway.
+ *
  * This is not a shell parser. It catches the common spellings, not every possible one. Where it
  * cannot tell what a command runs, it throws `Unclear` and the hook refuses the command.
  */
 
 /** Thrown when the guard cannot tell what a command runs. The hooks refuse such a command. */
 export class Unclear extends Error {}
+
+/** Throws `Unclear` when a scan ended inside a quote, which would hide the rest of the command. */
+export function refuseOpenQuote(quoteOpen) {
+  if (quoteOpen) throw new Unclear('it could not read where this quote ends');
+}
 
 /**
  * The command with heredoc bodies and comments taken out: their lines are text, not commands. Only
@@ -49,6 +58,17 @@ export function withoutHeredocs(command, bodies = []) {
     }
     if (c === '\\') {
       out += s.slice(i, i + 2);
+      i++;
+      continue;
+    }
+    if (f.quote === "$'") {
+      if (c === "'") f.quote = null;
+      out += c;
+      continue;
+    }
+    if (c === '$' && s[i + 1] === "'" && f.quote === null) {
+      f.quote = "$'";
+      out += "$'";
       i++;
       continue;
     }
@@ -154,6 +174,7 @@ export function withoutHeredocs(command, bodies = []) {
     if (/[\s;&|]/.test(c)) wordStart = true;
     out += c;
   }
+  refuseOpenQuote(frames.some((f) => f.quote !== null));
   return out;
 }
 
@@ -260,8 +281,13 @@ function substitutionEnd(s, i) {
     if (quote === "'") {
       if (c === "'") quote = null;
     } else if (c === '\\') j++;
-    else if (quote === '"') {
+    else if (quote === "$'") {
+      if (c === "'") quote = null;
+    } else if (quote === '"') {
       if (c === '"') quote = null;
+    } else if (c === '$' && s[j + 1] === "'") {
+      quote = "$'";
+      j++;
     } else if (c === "'" || c === '"') quote = c;
     else if (c === '(') depth++;
     else if (c === ')' && --depth === 0) return j + 1;
@@ -282,7 +308,9 @@ export function shellCommands(command) {
 }
 
 /**
- * Like `shellCommands`, with the wrapper words each command dropped: `{ words, dropped }`. The
+ * Like `shellCommands`, with the wrapper words each command dropped: `{ words, dropped, expanded }`.
+ * `expanded[k]` is true when `words[k]` holds an expansion this shell makes before the command
+ * runs (`$name`, `${…}`, `$(…)` or backticks outside single quotes), so its text is not known. The
  * heredoc bodies are collected into `bodies` (see `withoutHeredocs`).
  */
 export function commandParts(command, bodies = []) {
@@ -295,38 +323,57 @@ function splitCommands(command, bodies) {
   const s = withoutHeredocs(command, bodies);
   const commands = [];
   const frames = []; // open substitutions: the command each one interrupted
-  let words = [];
+  // A command's words, with `expanded` beside them: whether each holds an expansion.
+  const fresh = () => Object.assign([], { expanded: [] });
+  let words = fresh();
   let word = null; // null: no word started; '' is a real (empty, quoted) word
-  let quote = null; // null, "'" or '"'
+  let quote = null; // null, "'", "$'" or '"'
+  let expanded = false; // the word being read holds an expansion
 
   const add = (text) => (word = (word ?? '') + text);
   const endWord = () => {
-    if (word !== null) words.push(word);
+    if (word !== null) {
+      words.push(word);
+      words.expanded.push(expanded);
+    }
     word = null;
+    expanded = false;
   };
   const endCommand = () => {
     endWord();
     if (words.length) commands.push(words);
-    words = [];
+    words = fresh();
   };
   const open = (kind, substitution) => {
-    frames.push({ kind, substitution, words, word, quote });
-    words = [];
+    frames.push({ kind, substitution, words, word, quote, expanded });
+    words = fresh();
     word = null;
     quote = null;
+    expanded = false;
   };
   const close = (kind) => {
     endCommand();
     if (frames.at(-1)?.kind !== kind) return; // unbalanced: treat it as a separator
     const frame = frames.pop();
-    ({ words, word, quote } = frame);
-    if (frame.substitution) add('*');
+    ({ words, word, quote, expanded } = frame);
+    if (frame.substitution) {
+      add('*');
+      expanded = true;
+    }
   };
 
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (quote === "'") {
       if (c === "'") quote = null;
+      else add(c);
+      continue;
+    }
+    if (quote === "$'") {
+      // A backslash escapes the next character; the escape is kept as that character, not decoded.
+      if (c === '\\') {
+        if (s[i + 1] !== undefined) add(s[++i]);
+      } else if (c === "'") quote = null;
       else add(c);
       continue;
     }
@@ -352,9 +399,17 @@ function splitCommands(command, bodies) {
       else open('`', true);
       continue;
     }
+    // A parameter expansion (`$name`, `$1`, `$@`, `${…}`) stays in the word as text, and marks it.
+    if (c === '$' && /[\w{@*#?$!-]/.test(s[i + 1] ?? '')) expanded = true;
     if (quote === '"') {
       if (c === '"') quote = null;
       else add(c);
+      continue;
+    }
+    if (c === '$' && s[i + 1] === "'") {
+      i++;
+      quote = "$'";
+      add('');
       continue;
     }
     if (c === "'" || c === '"') {
@@ -371,11 +426,13 @@ function splitCommands(command, bodies) {
       let op = c;
       while (s[i + 1] === c) op += s[++i];
       words.push(op);
+      words.expanded.push(false);
     } else add(c);
   }
+  refuseOpenQuote(quote !== null || frames.some((f) => f.quote !== null));
   endCommand();
   while (frames.length) {
-    ({ words, word, quote } = frames.pop());
+    ({ words, word, quote, expanded } = frames.pop());
     endCommand();
   }
   return commands;
@@ -400,7 +457,10 @@ const WRAPPERS = new Map([
   ['xargs', { value: 'adEIJLnPRSs', flag: '0eiloprtx', long: ['arg-file', 'delimiter', 'max-args', 'max-chars', 'max-procs', 'process-slot-var'], longFlag: ['eof', 'exit', 'interactive', 'max-lines', 'no-run-if-empty', 'null', 'open-tty', 'replace', 'show-limits', 'verbose'] }],
 ]);
 
-/** Drops leading `VAR=value`, keywords, and wrappers with their options: `{ words, dropped }`. */
+/**
+ * Drops leading `VAR=value`, keywords, and wrappers with their options: `{ words, dropped, expanded }`.
+ * `expanded` follows `words` from the end, since words are only dropped or added at the front.
+ */
 export function stripWrappers(words) {
   let ws = [...words];
   const dropped = [];
@@ -417,7 +477,9 @@ export function stripWrappers(words) {
     ws = dropOptions(wrapper, spec, ws, dropped);
   }
   if (ws.length) ws[0] = ws[0].split('/').pop();
-  return { words: ws, dropped };
+  const offset = words.length - ws.length;
+  const expanded = ws.map((_, k) => words.expanded?.[k + offset] ?? false);
+  return { words: ws, dropped, expanded };
 }
 
 // Drops a wrapper's options and their values from the front of `ws`, and `timeout`'s duration.
@@ -497,14 +559,20 @@ function innerScripts(command) {
 }
 
 /**
- * The shell in this command that runs a script the guard cannot see, or null: one that reads its
- * script from its input when that input is not a heredoc, a here-string or a file (`< x`). That
- * input is a pipe (`curl … | bash`) or whatever the enclosing command feeds it, which the hook
- * cannot read, so it asks. A shell with `-c` and no string (`xargs bash -c`) counts too.
+ * What runs a script the guard cannot see, as text for the question, or null. One is a shell that
+ * reads its script from its input when that input is not a heredoc, a here-string or a file
+ * (`< x`): a pipe (`curl … | bash`) or whatever the enclosing command feeds it, which the hook
+ * cannot read. A shell with `-c` and no string (`xargs bash -c`) counts too. The other is a shell
+ * whose `-c` string or here-string is built from an expansion (`bash -c "$CMD"`,
+ * `bash -c "$(curl …)"`): the text it runs is known only when the command runs. `eval` is not
+ * asked about, so that setup lines such as `eval "$(ssh-agent -s)"` pass.
  */
 export function unseenScript(command) {
-  for (const { words } of commandParts(command)) {
-    if (SHELLS.has(words[0]) && shellSource(words.slice(1), []).unseen) return words[0];
+  for (const { words, expanded } of commandParts(command)) {
+    if (!SHELLS.has(words[0])) continue;
+    const { unseen } = shellSource(words.slice(1), [], expanded.slice(1));
+    if (unseen === 'input') return `\`${words[0]}\` runs a script from its input (a pipe, or whatever feeds it)`;
+    if (unseen === 'expansion') return `\`${words[0]}\` runs a script built from an expansion (\`$name\`, \`$(…)\` or backticks)`;
   }
   return null;
 }
@@ -515,9 +583,11 @@ export function unseenScript(command) {
  * does not open (like `bash script.sh`), and its input is data for it. With no file, or with `-s`
  * or a file that is the shell's own input, the script is the input: a heredoc's body or a
  * here-string's word is judged as a script, a file redirect (`< x`) is not opened, and anything
- * else is `unseen`. A redirect's target and the digits of `2>` are never a script file.
+ * else is unseen (`unseen: 'input'`). A `-c` string or here-string whose word holds an expansion
+ * (`expanded`, from `commandParts`) is still judged for what it shows, and is unseen too
+ * (`unseen: 'expansion'`). A redirect's target and the digits of `2>` are never a script file.
  */
-function shellSource(args, bodies) {
+function shellSource(args, bodies, expanded = []) {
   const operands = [];
   const inputs = [];
   let withC = false;
@@ -525,9 +595,11 @@ function shellSource(args, bodies) {
   let optionsDone = false;
   for (let i = 0; i < args.length; i++) {
     const w = args[i];
-    if (REDIRECT.test(w)) inputs.push([w, args[++i]]);
-    else if (/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? '')) continue;
-    else if (optionsDone || operands.length) operands.push(w);
+    if (REDIRECT.test(w)) {
+      i++;
+      inputs.push([w, args[i], expanded[i]]);
+    } else if (/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? '')) continue;
+    else if (optionsDone || operands.length) operands.push(i);
     else if (w === '--' || w === '-') optionsDone = true;
     else if (SHELL_LONG_VALUE.has(w)) i++;
     else if (w.startsWith('--')) continue;
@@ -535,13 +607,17 @@ function shellSource(args, bodies) {
       if (w[0] === '-' && w.includes('c')) withC = true;
       if (w[0] === '-' && w.includes('s')) withS = true;
       if (/[oO]/.test(w)) i++; // `-o pipefail`, `-eo pipefail`: the value is not the script
-    } else operands.push(w);
+    } else operands.push(i);
   }
-  if (withC) return operands.length ? { scripts: [operands[0]], unseen: false } : { scripts: [], unseen: true };
-  if (operands.length && !withS && !STDIN_FILE.test(operands[0])) return { scripts: [], unseen: false };
+  if (withC) {
+    if (!operands.length) return { scripts: [], unseen: 'input' };
+    return { scripts: [args[operands[0]]], unseen: expanded[operands[0]] ? 'expansion' : false };
+  }
+  if (operands.length && !withS && !STDIN_FILE.test(args[operands[0]])) return { scripts: [], unseen: false };
   const scripts = [];
   let seen = false;
-  for (const [op, target] of inputs) {
+  let built = false;
+  for (const [op, target, targetExpanded] of inputs) {
     if (op === '<<') {
       // A heredoc with no terminator line has no body: its lines stayed in the command and were judged there.
       seen = true;
@@ -549,8 +625,10 @@ function shellSource(args, bodies) {
       if (n !== undefined && bodies[n] !== undefined) scripts.push(bodies[n]);
     } else if (op === '<<<' && target !== undefined) {
       seen = true;
+      if (targetExpanded) built = true;
       scripts.push(target);
     } else if (op === '<' && target !== undefined) seen = true;
   }
-  return { scripts, unseen: !seen };
+  if (built) return { scripts, unseen: 'expansion' };
+  return { scripts, unseen: seen ? false : 'input' };
 }
