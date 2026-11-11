@@ -207,7 +207,8 @@ are in [examples](examples/README.md), clearly marked and not loaded by the plug
 | `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`; a shell write to a protected file |
 | `after-edit`  | nothing by itself: it runs your executable `.claude/after-edit` on each edited file and sends any failure back to Claude              |
 
-They ignore text inside quotes and heredocs, so `grep pkill` or a commit message is fine. They fail
+They ignore text inside quotes, heredocs and comments, so `grep pkill` or a commit message is fine
+(a `$(…)` inside double quotes and a heredoc a shell runs are still read). They fail
 open on bad input: your pre-commit hooks and CI stay the authority. With the default rules,
 `cp .env.example .env` is refused too, so create secret files yourself. The hooks do not protect
 their own files or `.claude/protected-paths`.
