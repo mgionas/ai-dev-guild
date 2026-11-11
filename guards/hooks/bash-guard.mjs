@@ -9,19 +9,31 @@
  *    side door around the file-edit guard.
  * 4. Reading or sending a secret file from the shell (`cat .env`, `curl -d @.env`), the side door
  *    around the settings' read deny rules. See `secrets.mjs`.
- * 5. Asked, not refused: `kill <number>`. One command does not say which processes this agent
- *    started, so a process number may be someone else's. A refusal always wins over the question.
+ * 5. Asked, not refused: any `kill` that is not of the agent's own job (`kill %1`) or last
+ *    background process (`kill $!`), and not `kill -l`. One command does not say which processes
+ *    this agent started, so a number, a variable or a substitution (`kill $PID`,
+ *    `kill $(lsof -ti :3000)`, `xargs kill`) may name someone else's. A refusal always wins over
+ *    the question.
  *
- * This reads the command as text, with heredocs blanked out first, and quoted text too except
+ * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`),
+ * up to three levels deep, and the command behind a wrapper (`sudo -u root …`, `env -i …`,
+ * `timeout 5 …`). When the guard cannot tell what a command does (an unknown wrapper option,
+ * deeper nesting, an error while reading it) it refuses, and a command too long to read is asked
+ * about: a hook that fails or runs out of time would let the command through.
+ *
+ * This reads the command as text, with heredoc bodies taken out first, and quoted text too except
  * where a rule needs the words a command names (rules 4 and 5, see `shell-words.mjs`); it is not a
  * shell parser. It catches the common spellings, not every possible one, and the project's
- * pre-commit and CI checks remain the authority. Killing by port (`kill $(lsof -ti :3000)`) is
- * allowed: it names one listener, not every process with a name.
+ * pre-commit and CI checks remain the authority.
  */
 import { loadRules, protectingRule } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
 import { secretAccess } from './secrets.mjs';
-import { shellCommands, withoutHeredocs } from './shell-words.mjs';
+import { commandParts, scriptsToJudge, stripWrappers, Unclear, withoutHeredocs } from './shell-words.mjs';
+
+// Longer commands get the question without being read: the reading time grows with the length,
+// and no one writes a command this long by hand.
+const MAX_LENGTH = 20_000;
 
 /**
  * The command with the text inside quotes and heredocs blanked out, so that `grep pkill` or a
@@ -33,19 +45,11 @@ export function withoutQuotedText(command) {
     .replace(/"(?:[^"\\]|\\.)*"/g, '""');
 }
 
-/** Each simple command's words, with leading `VAR=value`, `sudo`, `exec`, `nohup` and `xargs` flags dropped. */
+/** Each simple command's words, with leading `VAR=value` and wrappers with their options dropped. */
 export function simpleCommands(command) {
   return withoutQuotedText(command)
     .split(/\$\(|`|\(|\)|&&|\|\||[;&|\n]/)
-    .map((part) => {
-      const words = part.trim().split(/\s+/).filter(Boolean);
-      while (words.length && (/^\w+=/.test(words[0]) || ['sudo', 'exec', 'nohup', 'command'].includes(words[0]))) words.shift();
-      if (words[0] === 'xargs') {
-        words.shift();
-        while (words.length && words[0].startsWith('-')) words.shift();
-      }
-      return words;
-    })
+    .map((part) => stripWrappers(part.trim().split(/\s+/).filter(Boolean)).words)
     .filter((words) => words.length);
 }
 
@@ -72,22 +76,24 @@ export function skipsHooks(command) {
 }
 
 /**
- * The process number a `kill` command targets, or null. Job specs (`kill %1`), `kill -l` and a
- * variable (`kill $!`, `kill $(lsof -ti :3000)`) are not literal numbers. Quotes are kept, so
+ * The `kill` the hook must ask about, as text for the question, or null. Only job specs
+ * (`kill %1`), the last background process (`kill $!`) and `kill -l` pass: any other target, and
+ * targets `xargs` reads from its input, could be another agent's process. Quotes are kept, so
  * `kill "1234"` counts and `echo "kill 1234"` does not.
  */
 export function pidKill(command) {
-  for (const words of shellCommands(command)) {
+  for (const { words, dropped } of commandParts(command)) {
     if (words[0] !== 'kill') continue;
     let i = 1;
     if (/^-[lL]/.test(words[i] ?? '') || words[i] === '--list') continue;
     // One signal spec at most (`-9`, `-TERM`, `-s KILL`, `-n 9`), then an optional `--`; every
-    // word after that is a target, so `kill -9 -1` (every process) is a number too.
+    // word after that is a target, so `kill -9 -1` (every process) is asked about too.
     if (['-s', '-n', '--signal'].includes(words[i])) i += 2;
     else if (words[i]?.startsWith('-') && words[i] !== '--') i += 1;
     if (words[i] === '--') i += 1;
-    const pid = words.slice(i).find((w) => /^-?\d+$/.test(w));
-    if (pid) return pid;
+    if (dropped.some((w) => w.split('/').pop() === 'xargs')) return '`xargs kill`';
+    const target = words.slice(i).find((w) => !w.startsWith('%') && w !== '$!');
+    if (target !== undefined) return `\`kill ${target === '*' ? '$(…)' : target}\``;
   }
   return null;
 }
@@ -110,24 +116,42 @@ export function writeTargets(command) {
   return targets.filter((t) => t && t !== '/dev/null' && !t.startsWith('&'));
 }
 
+// Runs every rule on the command and on each string it hands to another shell. `block` and `ask`
+// end the process, so the first refusal wins, and the question comes only after every refusal.
+function judge(command, projectDir) {
+  const scripts = scriptsToJudge(command);
+  const rules = loadRules(projectDir);
+  for (const script of scripts) {
+    const kill = patternKill(script);
+    if (kill) {
+      block(`${kill} kills by pattern, which stops other agents' runs too. Stop only what you started: your own background task, or a job (\`kill %1\`).`);
+    }
+    const skip = skipsHooks(script);
+    if (skip) block(`${skip} skips git hooks. Hooks are never skipped: fix what the hook reports instead.`);
+    for (const target of writeTargets(script)) {
+      const rel = target.replace(/^\.\//, '');
+      const rule = protectingRule(rel, rules);
+      if (rule) block(`the command writes ${target}, which is protected by "${rule}" in .claude/protected-paths.`);
+    }
+    const secret = secretAccess(script);
+    if (secret) block(`${secret}, which would put its values into the conversation or send them out. Ask the user for the one value you need.`);
+  }
+  for (const script of scripts) {
+    const kill = pidKill(script);
+    if (kill) ask(`${kill} stops a process the hook cannot trace: it cannot tell whether this agent started it. Allow it only if that process is the agent's own.`);
+  }
+}
+
 const read = readInput();
 const command = read?.input?.tool_input?.command;
 if (read && typeof command === 'string') {
-  const kill = patternKill(command);
-  if (kill) {
-    block(`${kill} kills by pattern, which stops other agents' runs too. Stop only what you started: your own background task, or a job (\`kill %1\`).`);
+  if (command.length > MAX_LENGTH) {
+    ask(`the command is ${command.length} characters long, more than the ${MAX_LENGTH} the guard reads, so it cannot tell what the command does.`);
   }
-  const skip = skipsHooks(command);
-  if (skip) block(`${skip} skips git hooks. Hooks are never skipped: fix what the hook reports instead.`);
-  const rules = loadRules(read.projectDir);
-  for (const target of writeTargets(command)) {
-    const rel = target.replace(/^\.\//, '');
-    const rule = protectingRule(rel, rules);
-    if (rule) block(`the command writes ${target}, which is protected by "${rule}" in .claude/protected-paths.`);
+  try {
+    judge(command, read.projectDir);
+  } catch (error) {
+    const why = error instanceof Unclear ? error.message : 'it failed while reading it';
+    block(`the guard could not check this command: ${why}. Write it as shorter, plainer commands.`);
   }
-  const secret = secretAccess(command);
-  if (secret) block(`${secret}, which would put its values into the conversation or send them out. Ask the user for the one value you need.`);
-  // Last, so that any refusal above wins over the question.
-  const pid = pidKill(command);
-  if (pid) ask(`\`kill ${pid}\` stops a process by number, and the hook cannot tell whether this agent started it. Allow it only if that process is the agent's own.`);
 }
