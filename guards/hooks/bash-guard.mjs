@@ -1,28 +1,34 @@
 /**
- * PreToolUse hook for shell commands: refuses three things agents keep doing.
+ * PreToolUse hook for shell commands: refuses four things agents keep doing, and asks about one.
  *
  * 1. Killing processes by pattern (`pkill -f vitest`, `killall node`, `kill $(pgrep …)`). On a
  *    machine where several agents run, a pattern kill stops every agent's tests and the CI run
- *    too. Stop your own process by its PID instead.
+ *    too. Stop only what you started: your own background task, or a job (`kill %1`).
  * 2. Skipping git hooks (`--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`, `LEFTHOOK=0`). The hooks are the check.
  * 3. Writing a protected path from the shell (`> .env`, `tee`, `sed -i`, `cp`/`mv` onto it), the
  *    side door around the file-edit guard.
+ * 4. Reading or sending a secret file from the shell (`cat .env`, `curl -d @.env`), the side door
+ *    around the settings' read deny rules. See `secrets.mjs`.
+ * 5. Asked, not refused: `kill <number>`. One command does not say which processes this agent
+ *    started, so a process number may be someone else's. A refusal always wins over the question.
  *
- * This reads the command as text, with quoted text and heredocs blanked out first; it is not a
+ * This reads the command as text, with heredocs blanked out first, and quoted text too except
+ * where a rule needs the words a command names (rules 4 and 5, see `shell-words.mjs`); it is not a
  * shell parser. It catches the common spellings, not every possible one, and the project's
  * pre-commit and CI checks remain the authority. Killing by port (`kill $(lsof -ti :3000)`) is
  * allowed: it names one listener, not every process with a name.
  */
 import { loadRules, protectingRule } from './protected.mjs';
-import { block, readInput } from './read-input.mjs';
+import { ask, block, readInput } from './read-input.mjs';
+import { secretAccess } from './secrets.mjs';
+import { shellCommands, withoutHeredocs } from './shell-words.mjs';
 
 /**
  * The command with the text inside quotes and heredocs blanked out, so that `grep pkill` or a
  * commit message that mentions `--no-verify` is not mistaken for doing it.
  */
 export function withoutQuotedText(command) {
-  return command
-    .replace(/<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\s*\2(?=\n|$)/g, '<<HEREDOC')
+  return withoutHeredocs(command)
     .replace(/'[^']*'/g, "''")
     .replace(/"(?:[^"\\]|\\.)*"/g, '""');
 }
@@ -65,6 +71,27 @@ export function skipsHooks(command) {
   return null;
 }
 
+/**
+ * The process number a `kill` command targets, or null. Job specs (`kill %1`), `kill -l` and a
+ * variable (`kill $!`, `kill $(lsof -ti :3000)`) are not literal numbers. Quotes are kept, so
+ * `kill "1234"` counts and `echo "kill 1234"` does not.
+ */
+export function pidKill(command) {
+  for (const words of shellCommands(command)) {
+    if (words[0] !== 'kill') continue;
+    let i = 1;
+    if (/^-[lL]/.test(words[i] ?? '') || words[i] === '--list') continue;
+    // One signal spec at most (`-9`, `-TERM`, `-s KILL`, `-n 9`), then an optional `--`; every
+    // word after that is a target, so `kill -9 -1` (every process) is a number too.
+    if (['-s', '-n', '--signal'].includes(words[i])) i += 2;
+    else if (words[i]?.startsWith('-') && words[i] !== '--') i += 1;
+    if (words[i] === '--') i += 1;
+    const pid = words.slice(i).find((w) => /^-?\d+$/.test(w));
+    if (pid) return pid;
+  }
+  return null;
+}
+
 /** Paths a command may write: redirect targets, `tee` and `sed -i` files, `cp`/`mv` destinations. */
 export function writeTargets(command) {
   const targets = [];
@@ -88,7 +115,7 @@ const command = read?.input?.tool_input?.command;
 if (read && typeof command === 'string') {
   const kill = patternKill(command);
   if (kill) {
-    block(`${kill} kills by pattern, which stops other agents' runs too. Stop only a process you started, by its PID (\`kill <pid>\`).`);
+    block(`${kill} kills by pattern, which stops other agents' runs too. Stop only what you started: your own background task, or a job (\`kill %1\`).`);
   }
   const skip = skipsHooks(command);
   if (skip) block(`${skip} skips git hooks. Hooks are never skipped: fix what the hook reports instead.`);
@@ -98,4 +125,9 @@ if (read && typeof command === 'string') {
     const rule = protectingRule(rel, rules);
     if (rule) block(`the command writes ${target}, which is protected by "${rule}" in .claude/protected-paths.`);
   }
+  const secret = secretAccess(command);
+  if (secret) block(`${secret}, which would put its values into the conversation or send them out. Ask the user for the one value you need.`);
+  // Last, so that any refusal above wins over the question.
+  const pid = pidKill(command);
+  if (pid) ask(`\`kill ${pid}\` stops a process by number, and the hook cannot tell whether this agent started it. Allow it only if that process is the agent's own.`);
 }

@@ -39,6 +39,15 @@ Copy `guards/hooks/` to `.claude/hooks/` (you can leave out `hooks.test.mjs`), t
         ]
       },
       {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-reads.mjs\""
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {

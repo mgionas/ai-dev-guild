@@ -5,6 +5,14 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The guard hooks ask before `kill <pid>` and refuse secret files from the shell: a kill by process
+  number gets the "ask" answer, because one command does not say which processes this agent
+  started (`kill %1` and stopping its own background task still work; a pattern kill is still
+  refused, and its message no longer suggests `kill <pid>`). Reading or sending `.env` and
+  `.env.*` (not `.env.example`, `.env.sample`, `.env.template`) is refused from the shell
+  (`cat`, `grep`, `< .env`, `curl -d @.env`, `scp`, …) and from the Read and Grep tools, a side
+  door the settings' deny rules left open. `source .env` is allowed. (field-tested)
+
 - The loop follows the project, not one habit: `setup` asks "squash follow-ups, or fix forward?"
   and writes the answer under a "History" heading in `AGENTS.md` (default: fix forward); skills and
   roles follow it. `qa-tester` has a panel mode that edits nothing and reports each missing test as
