@@ -27,7 +27,8 @@ A good brief:
   unasked).
 - **Gives the report path and its headings**: `.work/tasks/<id>/report.md`, with the headings from
   `report-template.md` in this skill's folder copied into the brief, since the agent cannot see the
-  plugin's files.
+  plugin's files. The agent then checks the file exists (`ls`); if the write was refused, it puts
+  the full report in its hand-back and says so.
 
 Before you send it, read it as the agent will: is there a choice it must make that you could make
 now? Make it, or make it a question for the owner.

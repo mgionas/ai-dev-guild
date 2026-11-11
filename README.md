@@ -66,6 +66,9 @@ More on the loop: [docs/loop.md](docs/loop.md).
 
 ## Install in 2 minutes
 
+> Plugins load when a session starts. After installing (or after copying files), start a new
+> session.
+
 In Claude Code:
 
 ```
@@ -73,8 +76,8 @@ In Claude Code:
 /plugin install ai-dev-guild@ai-dev-guild
 ```
 
-Set up your project once. This writes an `AGENTS.md` with the working rules and asks before it
-touches any existing file:
+Set up your project once. This writes an `AGENTS.md` with the working rules and the permission
+rules in `.claude/settings.json`, and asks before it touches any existing file:
 
 ```
 /ai-dev-guild:setup

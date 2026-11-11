@@ -29,4 +29,53 @@ exists. Where one exists, show the user what you would add and ask.
    the user for cores, memory and who else uses a self-hosted machine, and leave the rest as
    `TODO(owner)`. Link the page from `AGENTS.md`.
 
-Finish with a short list of what you created and what still says `TODO(owner)`.
+8. **Permission rules** in `.claude/settings.json`, merged with what is there. Show the user the
+   exact JSON you would add and ask before writing. Never remove a rule the user already has.
+
+   ```json
+   {
+     "permissions": {
+       "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./**/.env)", "Read(./**/.env.*)"],
+       "ask": ["Bash(git push *)", "Bash(gh pr merge *)"],
+       "allow": ["Edit(./.work/**)"]
+     }
+   }
+   ```
+
+   - The deny rules keep secret files out of the model's context.
+   - The ask rules stop a push or a merge until the user says yes. Ask the user for the command
+     that deploys this project, and add it as one more `ask` rule.
+   - Builders write their reports under `.work/`; without the allow rule, the permission system
+     can refuse the write. An `Edit` rule covers `Write` too, and a `Write(path)` rule would match
+     nothing.
+   - A command rule matches the text as written. `git -C . push` is not caught by
+     `Bash(git push *)`, so these rules are a prompt, not a wall. Tell the user.
+   - Check the syntax against the current documentation before writing:
+     https://code.claude.com/docs/en/permissions.
+
+9. **Worktrees.** If `.gitignore` does not ignore `.claude/worktrees/`, offer to add that line.
+   Advise in one sentence: where the app lets you choose where worktrees go, a folder outside the
+   project keeps them away from committed config.
+
+10. **Check the guard hooks**, only if the user has installed `ai-dev-guild-guards`. Run this
+    command with the Bash tool:
+
+    ```
+    pkill -f ai-dev-guild-probe-no-such-process
+    ```
+
+    The bash guard refuses a pattern kill, so it must come back refused. If it runs anyway, it
+    matches no process and harms nothing. Never probe with a write to a protected file. In a
+    session that started before the plugin was installed the hooks are not loaded yet, so a run
+    that is not refused means "not running yet": say so, and repeat the check in step 11's new
+    session. Record `guards: running` or `guards: not running`.
+
+11. **Start a new session.** Claude Code reads plugins, project agents, project skills, permission
+    rules and hooks only when a session starts. Whatever was installed, copied or written during
+    this setup does nothing until then. Tell the user plainly, and give the check to run in the new
+    session: `/ai-dev-guild:run-task` resolves (or `/run-task`, where the folders were copied), and
+    the `pkill` probe above is refused.
+
+Finish with a short list of what you created, what still says `TODO(owner)`, the guard result
+(`guards: running`, `guards: not running`, or not installed), and the last line: start a new
+session, then run the check from step 11.
