@@ -52,3 +52,6 @@ Write `.work/tasks/<id>/report.md` with these headings:
 - **Assumptions** — each choice the brief left open: what you chose, the other reading, why.
 - **Noticed** — problems outside the task, with `file:line`, not fixed.
 - **Questions** — what only a person can decide.
+
+After writing it, run `ls` on the file. If the write was refused, put the full report in your
+hand-back instead and say so.

@@ -4,6 +4,10 @@ The plugins are the easiest way to install and update ai-dev-guild. If you would
 files in your repository (to edit them freely, or because your team does not use plugins), copy
 them into your project's `.claude/` folder by hand.
 
+> Claude Code reads agents, skills, permission rules and hooks only when a session starts. After
+> copying, start a new session. `/setup` (or `/ai-dev-guild:setup` with the plugin) writes the
+> permission rules in section 3 for you.
+
 ## 1. Copy the roles and skills
 
 Download this repository from GitHub (the green **Code** button, then **Download ZIP**), and read
@@ -74,7 +78,8 @@ Hooks stop writes. To stop reads of secret files too, add deny rules to the same
       "Read(./**/.env)",
       "Read(./**/.env.*)"
     ],
-    "ask": ["Bash(git push*)"]
+    "ask": ["Bash(git push *)", "Bash(gh pr merge *)"],
+    "allow": ["Edit(./.work/**)"]
   }
 }
 ```

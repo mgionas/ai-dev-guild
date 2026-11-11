@@ -5,6 +5,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- A new project loads and runs on its first day: `setup` writes the permission rules (deny reads of
+  `.env` files, ask before `git push` and `gh pr merge`, allow edits under `.work/` so reports can
+  be written), offers to git-ignore `.claude/worktrees/`, proves the guard hooks run with a harmless
+  pattern-kill probe, and ends by telling you to start a new session, since plugins, agents, skills,
+  rules and hooks load only at session start. A builder whose report write is refused hands the
+  report back instead. (field-tested)
+
 - Narrowed checks fail closed: a changed file outside the packages that nobody has classified runs
   everything; files read across package lines are declared as inputs of the task that reads them,
   in the build tool's config, with a guard test; suites that scan every package declare it; the
