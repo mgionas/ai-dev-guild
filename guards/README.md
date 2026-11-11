@@ -3,15 +3,16 @@
 Optional guard hooks for the [ai-dev-guild](https://github.com/mgionas/ai-dev-guild) loop. They
 stop the things agents keep doing by accident.
 
-| Hook          | Refuses (or asks)                                                                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `guard-paths` | an edit to a file listed in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included                           |
-| `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`; a shell write to a protected file          |
-|               | any command naming a secret file, except the few that do not read it (`ls`, `rm`, `touch`, `chmod`, `stat`, `test`, `echo`, `source .env`, …)  |
-|               | asks: any `kill` but `kill %1` or `kill $!` (`kill 1234`, `kill $PID`, `kill $(lsof …)`), since it cannot tell whose process that is           |
-|               | asks: a shell that reads its script from a pipe (`curl … \| bash`) or another input it cannot see                                              |
-| `guard-reads` | the Read and Grep tools opening a secret file (`.env`, `.env.*` in any folder; not `.env.example`, `.env.sample`, `.env.template`)             |
-| `after-edit`  | nothing by itself: if your project has an executable `.claude/after-edit`, it runs it on each edited file and sends any failure back to Claude |
+| Hook          | Refuses (or asks)                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `guard-paths` | an edit to a file listed in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included                            |
+| `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`; a shell write to a protected file           |
+|               | any command naming a secret file, except the few that do not read it (`ls`, `rm`, `touch`, `chmod`, `stat`, `test`, `echo`, `source .env`, …)   |
+|               | asks: any `kill` but `kill %1`, `kill $!` or `kill -0` (`kill 1234`, `kill $PID`, `kill $(lsof …)`), since it cannot tell whose process that is |
+|               | asks: a shell that reads its script from a pipe (`curl … \| bash`) or another input it cannot see                                               |
+|               | asks: a shell whose `-c` string or here-string is built from an expansion (`bash -c "$(curl …)"`, `bash -c "$CMD"`)                             |
+| `guard-reads` | the Read and Grep tools opening a secret file (`.env`, `.env.*` in any folder; not `.env.example`, `.env.sample`, `.env.template`)              |
+| `after-edit`  | nothing by itself: if your project has an executable `.claude/after-edit`, it runs it on each edited file and sends any failure back to Claude  |
 
 ## Install
 
