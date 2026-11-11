@@ -147,8 +147,9 @@ operations, growth and your industry. They never see each other's answers.
 
 A separate plugin, `ai-dev-guild-guards`, in the same marketplace. It refuses edits to protected
 files (`.env` by default), `pkill`/`killall`, `--no-verify` and other skipped git hooks, and reading
-or sending `.env` files from the shell or the Read and Grep tools. It asks you before `kill <pid>`,
-since it cannot tell whose process that is, and can run your own formatter after every edit. The main plugin has no hooks or scripts at all.
+or sending `.env` files from the shell or the Read and Grep tools. It asks you before any `kill`
+of a process that is not the agent's own job, since it cannot tell whose process that is, and can
+run your own formatter after every edit. The main plugin has no hooks or scripts at all.
 
 <details>
 <summary><b>Every role, with what it gets and what it returns</b></summary>
