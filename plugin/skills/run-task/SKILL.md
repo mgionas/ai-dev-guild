@@ -35,6 +35,29 @@ The task: $ARGUMENTS
 9. **Merge**, then update the roadmap and the QA board (`progress-boards` skill) in the same turn,
    and the system map if the project has one (`system-map` skill).
 
+## Controller checklist
+
+Paste this into your plan and tick each line as you do it, not from memory:
+
+- [ ] Question sweep (`domain-guardian`, Gaps only; one `decision-batch`)
+- [ ] Brief (`write-brief`), with the choices already made
+- [ ] Build (one fresh builder)
+- [ ] Read **Assumptions** first, then the rest of the report
+- [ ] Choose the panel (`review-panel`); one combined reviewer is not the panel
+- [ ] Reviewers get the diff, brief and rules, never the builder's reasoning or report first
+- [ ] Fix round (`fix-round`) with a fresh fixer
+- [ ] Confirm-only re-check
+- [ ] Local check (`local-ci`) on the final head
+- [ ] Merge
+- [ ] Roadmap and QA board (`progress-boards`) in the same turn
+
+## Dispatching agents
+
+Dispatch each role as its own agent type, `ai-dev-guild:<role>`, so its tool list is enforced. If
+that type is not available, dispatch a general-purpose agent instead. Put the role file's path in
+the prompt, with its `tools:` line as a hard rule: "you may use only these tools: <the list>".
+Tell the user that plugin agent types load only in a new session.
+
 ## Choosing a model
 
 | Work | Model |
@@ -56,9 +79,11 @@ Put these in every brief, because they were each learned the hard way:
   near that point writes a handover file and stops; a fresh agent continues from it.
 - Hand back in a few lines (at most about 1,500 characters): status, commit range, concerns and
   owner questions. The full report stays in its file, so the controller's context stays small.
-- Commit follow-up changes with `git commit --fixup=<sha>`, and squash them before reporting with
-  `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>`, where `<base>` is the commit before
-  the task's first change. Then the controller never has to rewrite history.
+- Follow the project's history rule (the "History" section of its `AGENTS.md`). If the project
+  squashes follow-ups, commit them with `git commit --fixup=<sha>` and squash before reporting
+  with `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>`, where `<base>` is the commit
+  before the task's first change. If it fixes forward, or the section is missing, add new commits
+  and never rewrite history. Say which rule applies in every brief.
 - A build that changes routes, contracts or background jobs runs the integration tests of the
   parts it changed once before its report; fixers stay with the covering tests.
 - Before any heavy run (a full suite, integration, end-to-end or mutation tests), write down which

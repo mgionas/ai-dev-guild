@@ -21,7 +21,7 @@ The designer also writes screen specs. The ux-researcher also does research.
 | [architect](architect.md) | Reviews boundaries, contracts, schemas and structure; drafts decision records | Nothing (read-only) | opus |
 | [security-reviewer](security-reviewer.md) | Reviews access, personal data, secrets, uploads and webhooks | Nothing (read-only) | opus |
 | [domain-guardian](domain-guardian.md) | Checks work against the glossary and rules; lists product questions | Nothing (read-only) | sonnet |
-| [qa-tester](qa-tester.md) | Maps criteria to tests, adds tests, tries to break the change | Tests only | sonnet |
+| [qa-tester](qa-tester.md) | Maps criteria to tests, tries to break the change; adds tests only when run alone after a build | Nothing on a review panel; tests only when run alone | sonnet |
 | [designer](designer.md) | Reviews built screens; also writes screen specs | Design documents and tokens | opus |
 | [ux-researcher](ux-researcher.md) | Reviews flows and screens for usability; also does research | Research documents | sonnet |
 | [docs-keeper](docs-keeper.md) | Keeps documentation true to what was built | Documentation | sonnet |

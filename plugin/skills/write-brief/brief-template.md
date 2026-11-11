@@ -35,6 +35,14 @@
 
 > <question> — "<answer, quoted>" (<date>)
 
+## Choices already made (do not reopen)
+
+- <choice> — made by <who>, because <why>
+
+## History rule
+
+<The project's rule from its `AGENTS.md`: fix forward, or squash follow-ups with `--fixup`.>
+
 ## House rules
 
 - Never kill processes by pattern. Stop only a process you started, by its PID.

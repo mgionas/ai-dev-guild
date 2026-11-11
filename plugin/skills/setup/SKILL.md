@@ -21,6 +21,11 @@ exists. Where one exists, show the user what you would add and ask.
    into `AGENTS.md`. If there is none, create `docs/glossary.md` with a heading and a note that only
    the product owner adds terms.
 
+   Also ask: "Squash follow-ups, or fix forward?" Write the answer into `AGENTS.md` under the
+   "History" heading. Squash means follow-up commits use `--fixup` and are squashed with
+   `rebase -i --autosquash` before the task is reported. Fix forward means new commits, and history
+   is never rewritten. With no answer, write fix forward: it never rewrites history.
+
 6. **A stack**: if the repository shows no stack yet (no lock file, no framework config), offer
    the `stack-advice` skill before the first task, and leave the Stack section as `TODO(owner)`.
 

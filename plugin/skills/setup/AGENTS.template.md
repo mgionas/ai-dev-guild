@@ -35,6 +35,12 @@
 14. **Decisions are the owner's.** If code and a recorded decision disagree, the code is not done
     yet. Report it; do not edit the decision.
 
+## History
+
+<Fix forward: follow-ups are new commits and history is never rewritten. Or: squash follow-ups:
+commit them with `git commit --fixup=<sha>` and squash with `git rebase -i --autosquash <base>`
+before reporting. Setup asks, and writes fix forward when there is no answer.>
+
 ## Mistakes that keep happening
 
 <List each mistake review has caught more than once, with a short example. Start from

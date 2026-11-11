@@ -24,6 +24,7 @@ They read the report's **Assumptions** after their own first pass.
 
 - Block only on correctness and on stated requirements. Low findings go to the carried list, not
   into a fix round; security and money findings of Medium and above are always fixed.
+- `qa-tester` runs in panel mode here: it edits nothing and reports each missing test as a finding.
 - Run reviewers in parallel, each with its own scope. Two reviewers never answer the same question.
 - A reviewer does not rerun tests the builder already ran and pasted, unless they doubt the output.
 - Ask each for findings with a severity and `file:line`. Merge them into one findings file for the
