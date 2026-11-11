@@ -42,7 +42,8 @@ exists. Where one exists, show the user what you would add and ask.
    }
    ```
 
-   - The deny rules keep secret files out of the model's context.
+   - The deny rules keep secret files away from the file tools. They do not cover a shell command
+     such as `cat .env`, so tell the user they are a first line, not a guarantee.
    - The ask rules stop a push or a merge until the user says yes. Ask the user for the command
      that deploys this project, and add it as one more `ask` rule.
    - Builders write their reports under `.work/`; without the allow rule, the permission system
