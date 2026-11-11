@@ -6,7 +6,7 @@
  * reads `.env` and `kill "1234"` kills process 1234. Here a quoted word keeps its text without the
  * quotes, while quotes still stop `;`, `|` and the like from splitting commands, so
  * `echo "kill 1234"` stays one `echo`. A `$(…)` or backtick substitution runs even inside double
- * quotes, so its body is read as commands of its own.
+ * quotes, so its body is read as commands of its own. Comments are dropped first (`withoutHeredocs`).
  *
  * This is not a shell parser. It catches the common spellings, not every possible one. Where it
  * cannot tell what a command runs, it throws `Unclear` and the hook refuses the command.
@@ -16,18 +16,26 @@
 export class Unclear extends Error {}
 
 /**
- * The command with heredoc bodies taken out: their lines are text, not commands. Only a real `<<`
- * starts a heredoc: not one inside quotes, a comment or `$(( ))`, and not `<<<`. A body is dropped
- * only up to a line holding the delimiter; with no such line nothing is dropped. With a quoted
- * delimiter (`<<'EOF'`) the body is plain text. With an unquoted one bash still runs the body's
- * `$(…)` and backticks, so those stay, each on a line of its own.
+ * The command with heredoc bodies and comments taken out: their lines are text, not commands. Only
+ * a real `<<` starts a heredoc: not one inside quotes, a comment or `$(( ))`, and not `<<<`. A body
+ * is dropped only up to a line holding the delimiter; with no such line nothing is dropped. With a
+ * quoted delimiter (`<<'EOF'`) the body is plain text. With an unquoted one bash still runs the
+ * body's `$(…)` and backticks, so those stay, each on a line of its own.
+ *
+ * Each `<<` becomes `<<HEREDOC<n>`, and the n-th body's text goes into `bodies[n]`, so a shell
+ * that runs a heredoc as its script (`bash <<'EOF'`) can be judged on it (`innerScripts`).
+ *
+ * A comment is a `#` that starts a word outside quotes, up to the end of its line. It is dropped
+ * before anything reads quotes: an apostrophe in `# it's` would otherwise open a quote that hides
+ * every later line from the rules.
  */
-export function withoutHeredocs(command) {
+export function withoutHeredocs(command, bodies = []) {
   const s = command;
   const frames = [{ close: '', quote: null }]; // the open `$(`, `(`, backtick, `${` or arithmetic
   let out = '';
   let pending = []; // heredocs started on this line: their bodies begin after its newline
   let lines = null;
+  let started = 0; // heredocs seen so far, which numbers their bodies
   let wordStart = true;
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
@@ -46,13 +54,14 @@ export function withoutHeredocs(command) {
     }
     if (c === '\n' && f.quote === null && pending.length) {
       lines ??= lineIndex(s);
-      const bodies = readBodies(s, i + 1, pending, lines);
+      const read = readBodies(s, i + 1, pending, lines);
       pending = [];
       wordStart = true;
       out += '\n';
-      if (bodies) {
-        out += bodies.text;
-        i = bodies.end - 1;
+      if (read) {
+        for (const [n, body] of read.bodies) bodies[n] = body;
+        out += read.text;
+        i = read.end - 1;
       }
       continue;
     }
@@ -124,9 +133,7 @@ export function withoutHeredocs(command) {
     }
     if (c === '#' && atWordStart) {
       const end = s.indexOf('\n', i);
-      const stop = end === -1 ? s.length : end;
-      out += s.slice(i, stop);
-      i = stop - 1;
+      i = (end === -1 ? s.length : end) - 1;
       continue;
     }
     if (c === '<' && s[i + 1] === '<') {
@@ -137,8 +144,9 @@ export function withoutHeredocs(command) {
       }
       const heredoc = heredocStart(s, i);
       if (heredoc) {
+        heredoc.index = started++;
         pending.push(heredoc);
-        out += '<<HEREDOC';
+        out += `<<HEREDOC${heredoc.index}`;
         i = heredoc.end - 1;
         continue;
       }
@@ -189,21 +197,25 @@ function lineIndex(s) {
 }
 
 /**
- * The bodies of the pending heredocs, read from `from`: what stays of them, and the index of the
- * newline after the last terminator. Null when a terminator is missing.
+ * The bodies of the pending heredocs, read from `from`: what stays of them, each body's text by
+ * its heredoc's number, and the index of the newline after the last terminator. Null when a
+ * terminator is missing.
  */
 function readBodies(s, from, pending, lines) {
   const kept = [];
+  const bodies = [];
   let start = from;
   let end = from;
-  for (const { delimiter, quoted } of pending) {
+  for (const { delimiter, quoted, index } of pending) {
     const terminator = firstFrom(lines.get(delimiter) ?? [], start);
     if (!terminator) return null;
-    if (!quoted) kept.push(...substitutions(s.slice(start, terminator.start)));
+    const body = s.slice(start, terminator.start);
+    bodies.push([index, body]);
+    if (!quoted) kept.push(...substitutions(body));
     end = terminator.end;
     start = terminator.end + 1;
   }
-  return { text: kept.join('\n'), end };
+  return { text: kept.join('\n'), bodies, end };
 }
 
 // The first line in `list` (sorted by start) that starts at `start` or later.
@@ -269,15 +281,18 @@ export function shellCommands(command) {
   return commandParts(command).map((part) => part.words);
 }
 
-/** Like `shellCommands`, with the wrapper words each command dropped: `{ words, dropped }`. */
-export function commandParts(command) {
-  return splitCommands(command)
+/**
+ * Like `shellCommands`, with the wrapper words each command dropped: `{ words, dropped }`. The
+ * heredoc bodies are collected into `bodies` (see `withoutHeredocs`).
+ */
+export function commandParts(command, bodies = []) {
+  return splitCommands(command, bodies)
     .map(stripWrappers)
     .filter((part) => part.words.length);
 }
 
-function splitCommands(command) {
-  const s = withoutHeredocs(command);
+function splitCommands(command, bodies) {
+  const s = withoutHeredocs(command, bodies);
   const commands = [];
   const frames = []; // open substitutions: the command each one interrupted
   let words = [];
@@ -381,6 +396,7 @@ const WRAPPERS = new Map([
   ['command', { value: '', flag: 'pvV', long: [], longFlag: [] }],
   ['exec', { value: 'a', flag: 'cl', long: [], longFlag: [] }],
   ['time', { value: 'fo', flag: 'ahlpqvV', long: ['format', 'output'], longFlag: ['append', 'portability', 'quiet', 'verbose'] }],
+  ['doas', { value: 'aCu', flag: 'Lns', long: [], longFlag: [] }],
   ['xargs', { value: 'adEIJLnPRSs', flag: '0eiloprtx', long: ['arg-file', 'delimiter', 'max-args', 'max-chars', 'max-procs', 'process-slot-var'], longFlag: ['eof', 'exit', 'interactive', 'max-lines', 'no-run-if-empty', 'null', 'open-tty', 'replace', 'show-limits', 'verbose'] }],
 ]);
 
@@ -443,11 +459,17 @@ function dropOptions(wrapper, spec, ws, dropped) {
 
 const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash']);
 const MAX_NESTING = 3;
+// A shell's long options that take the next word as their value; any other long option is a flag.
+const SHELL_LONG_VALUE = new Set(['--rcfile', '--init-file', '--emulate']);
+// Files that are the shell's own input: `bash /dev/stdin` reads its script from the pipe too.
+const STDIN_FILE = /^\/(dev\/stdin|dev\/fd\/0|proc\/self\/fd\/0)$/;
+const REDIRECT = /^(<|<<|<<<|>|>>)$/;
 
 /**
  * The command, and every string it hands to another shell to run (`bash -c '…'`, `sh -c "…"`,
- * `eval …`), with one level of quoting removed, nested up to three levels. Deeper nesting throws:
- * the hook refuses what it will not unwrap.
+ * `eval …`, a heredoc or here-string a shell reads as its script), with one level of quoting
+ * removed, nested up to three levels. Deeper nesting throws: the hook refuses what it will not
+ * unwrap.
  */
 export function scriptsToJudge(command) {
   const all = [command];
@@ -461,29 +483,74 @@ export function scriptsToJudge(command) {
   return all;
 }
 
-// The strings this command's simple commands hand to `bash -c` (and the like) or to `eval`.
+// The strings this command's simple commands hand to a shell (`-c`, a heredoc) or to `eval`.
 function innerScripts(command) {
+  const bodies = [];
   const found = [];
-  for (const [name, ...args] of shellCommands(command)) {
+  for (const { words } of commandParts(command, bodies)) {
+    const [name, ...args] = words;
     if (name === 'eval') {
       if (args.length) found.push(args.join(' '));
-      continue;
-    }
-    if (!SHELLS.has(name)) continue;
-    let withC = false;
-    for (let i = 0; i < args.length; i++) {
-      const w = args[i];
-      if (w === '--') {
-        if (withC && i + 1 < args.length) found.push(args[i + 1]);
-        break;
-      }
-      if (/^[-+][oO]$/.test(w) || w === '--rcfile' || w === '--init-file') i++;
-      else if (/^-[a-zA-Z]*c[a-zA-Z]*$/.test(w)) withC = true;
-      else if (!/^[-+]/.test(w)) {
-        if (withC) found.push(w);
-        break;
-      }
-    }
+    } else if (SHELLS.has(name)) found.push(...shellSource(args, bodies).scripts);
   }
   return found;
+}
+
+/**
+ * The shell in this command that runs a script the guard cannot see, or null: one that reads its
+ * script from its input when that input is not a heredoc, a here-string or a file (`< x`). That
+ * input is a pipe (`curl … | bash`) or whatever the enclosing command feeds it, which the hook
+ * cannot read, so it asks. A shell with `-c` and no string (`xargs bash -c`) counts too.
+ */
+export function unseenScript(command) {
+  for (const { words } of commandParts(command)) {
+    if (SHELLS.has(words[0]) && shellSource(words.slice(1), []).unseen) return words[0];
+  }
+  return null;
+}
+
+/**
+ * Where a shell gets its script, from its words after the name: `{ scripts, unseen }`. With `-c`
+ * the script is the first plain word. Otherwise a plain word is a script file, which the guard
+ * does not open (like `bash script.sh`), and its input is data for it. With no file, or with `-s`
+ * or a file that is the shell's own input, the script is the input: a heredoc's body or a
+ * here-string's word is judged as a script, a file redirect (`< x`) is not opened, and anything
+ * else is `unseen`. A redirect's target and the digits of `2>` are never a script file.
+ */
+function shellSource(args, bodies) {
+  const operands = [];
+  const inputs = [];
+  let withC = false;
+  let withS = false;
+  let optionsDone = false;
+  for (let i = 0; i < args.length; i++) {
+    const w = args[i];
+    if (REDIRECT.test(w)) inputs.push([w, args[++i]]);
+    else if (/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? '')) continue;
+    else if (optionsDone || operands.length) operands.push(w);
+    else if (w === '--' || w === '-') optionsDone = true;
+    else if (SHELL_LONG_VALUE.has(w)) i++;
+    else if (w.startsWith('--')) continue;
+    else if (/^[-+][a-zA-Z]+$/.test(w)) {
+      if (w[0] === '-' && w.includes('c')) withC = true;
+      if (w[0] === '-' && w.includes('s')) withS = true;
+      if (/[oO]/.test(w)) i++; // `-o pipefail`, `-eo pipefail`: the value is not the script
+    } else operands.push(w);
+  }
+  if (withC) return operands.length ? { scripts: [operands[0]], unseen: false } : { scripts: [], unseen: true };
+  if (operands.length && !withS && !STDIN_FILE.test(operands[0])) return { scripts: [], unseen: false };
+  const scripts = [];
+  let seen = false;
+  for (const [op, target] of inputs) {
+    if (op === '<<') {
+      // A heredoc with no terminator line has no body: its lines stayed in the command and were judged there.
+      seen = true;
+      const n = /^HEREDOC(\d+)$/.exec(target ?? '')?.[1];
+      if (n !== undefined && bodies[n] !== undefined) scripts.push(bodies[n]);
+    } else if (op === '<<<' && target !== undefined) {
+      seen = true;
+      scripts.push(target);
+    } else if (op === '<' && target !== undefined) seen = true;
+  }
+  return { scripts, unseen: !seen };
 }

@@ -1,5 +1,5 @@
 /**
- * PreToolUse hook for shell commands: refuses four things agents keep doing, and asks about one.
+ * PreToolUse hook for shell commands: refuses four things agents keep doing, and asks about two.
  *
  * 1. Killing processes by pattern (`pkill -f vitest`, `killall node`, `kill $(pgrep …)`). On a
  *    machine where several agents run, a pattern kill stops every agent's tests and the CI run
@@ -14,35 +14,83 @@
  *    this agent started, so a number, a variable or a substitution (`kill $PID`,
  *    `kill $(lsof -ti :3000)`, `xargs kill`) may name someone else's. A refusal always wins over
  *    the question.
+ * 6. Asked, not refused: a shell that runs a script from its input when that input is not a
+ *    heredoc, a here-string or a file (`curl … | bash`, `echo … | sh -s`): the hook cannot see what
+ *    the pipe sends.
  *
- * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`),
- * up to three levels deep, and the command behind a wrapper (`sudo -u root …`, `env -i …`,
- * `timeout 5 …`). When the guard cannot tell what a command does (an unknown wrapper option,
- * deeper nesting, an error while reading it) it refuses, and a command too long to read is asked
- * about: a hook that fails or runs out of time would let the command through.
+ * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`,
+ * a heredoc a shell runs as its script), up to three levels deep, and the command behind a wrapper
+ * (`sudo -u root …`, `doas …`, `env -i …`, `timeout 5 …`). When the guard cannot tell what a
+ * command does (an unknown wrapper option, deeper nesting, an error while reading it) it refuses,
+ * and a command too long to read is asked about: a hook that fails or runs out of time would let
+ * the command through.
  *
- * This reads the command as text, with heredoc bodies taken out first, and quoted text too except
- * where a rule needs the words a command names (rules 4 and 5, see `shell-words.mjs`); it is not a
- * shell parser. It catches the common spellings, not every possible one, and the project's
- * pre-commit and CI checks remain the authority.
+ * This reads the command as text, with comments and heredoc bodies taken out first, and quoted
+ * text too except for a `$(…)` inside double quotes, which runs, and where a rule needs the words a
+ * command names (rules 4 and 5, see `shell-words.mjs`); it is not a shell parser. It catches the
+ * common spellings, not every possible one, and the project's pre-commit and CI checks remain the
+ * authority.
  */
 import { loadRules, protectingRule } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
 import { secretAccess } from './secrets.mjs';
-import { commandParts, scriptsToJudge, stripWrappers, Unclear, withoutHeredocs } from './shell-words.mjs';
+import { commandParts, scriptsToJudge, stripWrappers, Unclear, unseenScript, withoutHeredocs } from './shell-words.mjs';
 
 // Longer commands get the question without being read: the reading time grows with the length,
 // and no one writes a command this long by hand.
 const MAX_LENGTH = 20_000;
 
 /**
- * The command with the text inside quotes and heredocs blanked out, so that `grep pkill` or a
- * commit message that mentions `--no-verify` is not mistaken for doing it.
+ * The command with the text inside quotes, heredocs and comments blanked out, so that `grep pkill`
+ * or a commit message that mentions `--no-verify` is not mistaken for doing it. A `$(…)` or
+ * backtick substitution inside double quotes runs, so it stays: `echo "$(pkill -f x)"` becomes
+ * `echo "$(pkill -f x)"` and `git commit -m "a $(b) c"` becomes `git commit -m "$(b)"`. Quotes are
+ * read in order, one scan, so an apostrophe inside double quotes (`"it's"`) opens nothing.
  */
 export function withoutQuotedText(command) {
-  return withoutHeredocs(command)
-    .replace(/'[^']*'/g, "''")
-    .replace(/"(?:[^"\\]|\\.)*"/g, '""');
+  const s = withoutHeredocs(command);
+  const frames = [{ close: '', quote: null, depth: 0 }]; // the open `$(` or backtick, innermost last
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    const f = frames.at(-1);
+    if (f.quote === "'") {
+      if (c === "'") {
+        f.quote = null;
+        out += c;
+      }
+      continue;
+    }
+    if (c === '\\') {
+      if (f.quote === null) out += s.slice(i, i + 2);
+      i++;
+      continue;
+    }
+    if (c === '$' && s[i + 1] === '(') {
+      frames.push({ close: ')', quote: null, depth: 0 });
+      out += '$(';
+      i++;
+      continue;
+    }
+    if (c === '`') {
+      if (f.close === '`' && f.quote === null) frames.pop();
+      else frames.push({ close: '`', quote: null, depth: 0 });
+      out += c;
+      continue;
+    }
+    if (f.quote === '"') {
+      if (c === '"') {
+        f.quote = null;
+        out += c;
+      }
+      continue;
+    }
+    if (c === "'" || c === '"') f.quote = c;
+    else if (f.close === ')' && c === '(') f.depth++;
+    else if (f.close === ')' && c === ')' && f.depth-- === 0) frames.pop();
+    out += c;
+  }
+  return out;
 }
 
 /** Each simple command's words, with leading `VAR=value` and wrappers with their options dropped. */
@@ -64,7 +112,7 @@ export function patternKill(command) {
 
 /** Why the command skips git hooks, or null. */
 export function skipsHooks(command) {
-  if (/(^|\s)(HUSKY|LEFTHOOK)=0\b/.test(withoutQuotedText(command))) return 'HUSKY=0 / LEFTHOOK=0';
+  if (/(^|[\s;&|(`])(HUSKY|LEFTHOOK)=0\b/.test(withoutQuotedText(command))) return 'HUSKY=0 / LEFTHOOK=0';
   for (const words of simpleCommands(command)) {
     if (words[0] !== 'git') continue;
     if (words.includes('--no-verify')) return '--no-verify';
@@ -139,6 +187,8 @@ function judge(command, projectDir) {
   for (const script of scripts) {
     const kill = pidKill(script);
     if (kill) ask(`${kill} stops a process the hook cannot trace: it cannot tell whether this agent started it. Allow it only if that process is the agent's own.`);
+    const shell = unseenScript(script);
+    if (shell) ask(`\`${shell}\` runs a script from its input (a pipe, or whatever feeds it), which the hook cannot see. Allow it only if you know what that script does.`);
   }
 }
 

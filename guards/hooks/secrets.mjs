@@ -9,15 +9,19 @@
  *
  * The shell rule fails closed: a command that names a secret file where a file could go is
  * refused, unless it is one of the few commands that do not read what is in the file (`MAY_NAME`):
- * listing, removing, touching or testing it, printing its name, or loading it with `source .env`
- * or `. .env`, which sets variables without printing them. `cp` and `mv` may name it only as the
- * destination, which the protected-paths rule judges, and `git` only to `rm` or `check-ignore` it.
- * For grep-like tools the first plain word is the search pattern, not a file, and the value of an
+ * listing, removing, touching or testing it, printing its name, loading it with `source .env` or
+ * `. .env`, which sets variables without printing them, or opening it with `code` or `open`, which
+ * hand it to the person's editor, not to the model (`vim`, `nano`, `less` and the like print it
+ * into the terminal and stay refused). `cp` may name it only as the destination, which the
+ * protected-paths rule judges; `mv` may also rename it to another secret name (`mv .env .env.bak`);
+ * and `git` may name it only to `rm` or `check-ignore` it. The value of `--env-file` is not a read
+ * either (`node --env-file=.env`): it loads variables without printing them, like `source`. For
+ * grep-like tools the first plain word is the search pattern, not a file, and the value of an
  * exclusion (`--exclude .env`, `--glob '!.env'`) is not a read.
  *
  * Known refusals on the safe side: a URL whose path ends in `.env` (`curl https://host/.env`,
- * `user@host/.env`), `.env` in a comment, a remote path (`scp host:.env .`), and an option value
- * that is not read as a file (`node --env-file=.env`, `docker compose --env-file .env`).
+ * `user@host/.env`), a remote path (`scp host:.env .`), and any other option value that is not
+ * read as a file.
  *
  * Like the rest of these hooks this reads the command as text and catches the common spellings,
  * not every one: a file reached through a variable, a symlink or a directory search is not seen.
@@ -25,7 +29,7 @@
 import { commandParts, Unclear } from './shell-words.mjs';
 
 const TEMPLATE = /\.(example|sample|template)$/;
-const MAY_NAME = new Set(['ls', 'rm', 'touch', 'chmod', 'chown', 'stat', 'test', '[', 'echo', 'printf', 'source', '.']);
+const MAY_NAME = new Set(['ls', 'rm', 'touch', 'chmod', 'chown', 'stat', 'test', '[', 'echo', 'printf', 'source', '.', 'code', 'open']);
 const GIT_MAY_NAME = new Set(['rm', 'check-ignore']);
 
 // Options whose value is something to leave out, not a file to read.
@@ -84,6 +88,7 @@ export function secretAccess(command) {
 function mayName(name, args) {
   if (MAY_NAME.has(name)) return true;
   if (name === 'git') return GIT_MAY_NAME.has(gitSubcommand(args));
+  if (name === 'mv' && isSecretFile(args.at(-1) ?? '')) return true; // still a secret name after the move
   if (name === 'cp' || name === 'mv') return !args.slice(0, -1).some(namesSecret);
   return false;
 }
@@ -99,15 +104,16 @@ function gitSubcommand(args) {
 /**
  * The words that may be files: every word, options' values included, since a wrong guess only
  * refuses. Left out are redirect targets (a write is the protected-paths rule's business, and `<`
- * is checked on its own), an exclusion's value, and a grep-like tool's search pattern.
+ * is checked on its own), an exclusion's value, the value of `--env-file`, and a grep-like tool's
+ * search pattern.
  */
 function filePositions(name, args) {
   const words = [];
   for (let i = 0; i < args.length; i++) {
     const w = args[i];
     const next = args[i + 1] ?? '';
-    if (/^(<|<<|>+)$/.test(w) || EXCLUSIONS.has(w) || (GLOBS.has(w) && next.startsWith('!'))) i++;
-    else if (!/^--exclude(-dir)?=|^(--i?glob=|-g=?)!/.test(w)) words.push(w);
+    if (/^(<|<<|>+)$/.test(w) || EXCLUSIONS.has(w) || w === '--env-file' || (GLOBS.has(w) && next.startsWith('!'))) i++;
+    else if (!/^--exclude(-dir)?=|^--env-file=|^(--i?glob=|-g=?)!/.test(w)) words.push(w);
   }
   const spec = SEARCHERS.get(name);
   return spec ? withoutPattern(spec, words) : words;
