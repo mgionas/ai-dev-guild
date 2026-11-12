@@ -51,8 +51,8 @@ services:
   # Optional, off by default; the `telemetry` profile starts it.
   telemetry:
     container_name: <project>-telemetry
-    image: grafana/otel-lgtm:0.33.0
     profiles: [telemetry]
+    image: grafana/otel-lgtm:0.33.0
     ports:
       # Remap the outside only; the UI keeps listening on 3000 in the container.
       - "127.0.0.1:<telemetry-ui-port>:3000"
