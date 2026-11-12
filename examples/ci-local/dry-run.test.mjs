@@ -10,14 +10,22 @@ import { fileURLToPath } from "node:url";
 
 const script = join(dirname(fileURLToPath(import.meta.url)), "ci-local.mjs");
 
-/** A repository with one commit on `main` and a branch `work` that adds the given files. */
-function repo(files) {
+/**
+ * A repository with one commit on `main` (a README, plus `base` files) and a branch `work` that adds
+ * the given files. `after` runs last, with the repository's path and a git helper, for changes the
+ * commit should not carry (an untracked file) or that need git itself (a rename).
+ */
+function repo(files, { base = {}, after } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "ci-local-repo-"));
   const git = (...args) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
   git("init", "-q", "-b", "main");
   git("config", "user.email", "t@example.test");
   git("config", "user.name", "t");
   writeFileSync(join(dir, "README.md"), "x\n");
+  for (const [path, text] of Object.entries(base)) {
+    mkdirSync(join(dir, dirname(path)), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  }
   git("add", ".");
   git("commit", "-qm", "base");
   git("checkout", "-qb", "work");
@@ -26,7 +34,8 @@ function repo(files) {
     writeFileSync(join(dir, path), text);
   }
   git("add", ".");
-  git("commit", "-qm", "change");
+  git("commit", "-qm", "change", "--allow-empty");
+  after?.(dir, git);
   return dir;
 }
 
@@ -100,4 +109,61 @@ test("an unknown option exits 2 and runs nothing", () => {
   const result = spawnSync("node", [script, "--skip-lint"], { encoding: "utf8" });
   assert.equal(result.status, 2);
   assert.match(result.stderr, /unknown argument/);
+});
+
+const tool = () => stubTool(["//", "@a/one"], ["//", "@a/one", "@a/two"]);
+
+test("a file moved out of a package counts on both sides", () => {
+  const dir = repo(
+    {},
+    {
+      base: { "packages/one/x.ts": "x\n" },
+      after: (path, git) => {
+        mkdirSync(join(path, "docs"));
+        git("mv", "packages/one/x.ts", "docs/x.ts");
+      },
+    },
+  );
+  // The move is not committed: the old path is gone, the new one is staged. A rename listed by its
+  // new name alone would leave only an inert file and skip every package step.
+  const { text } = dryRun(dir, [], tool());
+  assert.match(text, /\(2 changed files, 1 of 2 packages\)/);
+});
+
+test("a committed move out of a package counts on both sides", () => {
+  const dir = repo({}, { base: { "packages/one/x.ts": "x\n" } });
+  const git = (...args) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+  mkdirSync(join(dir, "docs"), { recursive: true });
+  git("mv", "packages/one/x.ts", "docs/x.ts");
+  git("commit", "-qm", "move");
+  const { text } = dryRun(dir, [], tool());
+  assert.match(text, /\(2 changed files, 1 of 2 packages\)/);
+});
+
+test("a lockfile that changes existing lines runs everything; one that only adds does not", () => {
+  const base = { "pnpm-lock.yaml": "a\nb\n" };
+  const changed = dryRun(repo({ "pnpm-lock.yaml": "a\nc\n" }, { base }), [], tool());
+  assert.match(changed.text, /mode: full \(pnpm-lock\.yaml changes existing lines\)/);
+  const added = dryRun(repo({ "pnpm-lock.yaml": "a\nb\nc\n" }, { base }), [], tool());
+  assert.match(added.text, /mode: affected since \w+ \(1 changed files, 1 of 2 packages\)/);
+});
+
+test("an untracked file the branch never committed still counts", () => {
+  const dir = repo({ "docs/a.md": "x\n" }, {
+    after: (path) => writeFileSync(join(path, "Dockerfile"), "FROM scratch\n"),
+  });
+  assert.match(dryRun(dir).text, /mode: full \(Dockerfile is outside the packages and not known to be inert\)/);
+});
+
+test("run from a subdirectory, an untracked file at the root still counts", () => {
+  const dir = repo({ "packages/one/src/x.ts": "x\n" }, {
+    after: (path) => writeFileSync(join(path, "Dockerfile"), "FROM scratch\n"),
+  });
+  const { text } = dryRun(join(dir, "packages/one"), [], tool());
+  assert.match(text, /mode: full \(Dockerfile is outside the packages/);
+});
+
+test("a package folder with a non-ASCII name is still a package", () => {
+  const { text } = dryRun(repo({ "packages/ü/x.ts": "x\n" }), [], tool());
+  assert.match(text, /\(1 changed files, 1 of 2 packages\)/);
 });

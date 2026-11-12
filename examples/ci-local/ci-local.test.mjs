@@ -275,3 +275,15 @@ test("a passing step prints nothing", () => {
   assert.equal(code, 0);
   assert.deepEqual(printed, []);
 });
+
+test("a step killed by a signal fails: it never reads as a pass", () => {
+  const out = mkdtempSync(join(tmpdir(), "ci-local-test-"));
+  const { code } = runStep({
+    name: "killed",
+    command: "kill -9 $$",
+    env: process.env,
+    out,
+    log: () => {},
+  });
+  assert.notEqual(code, 0);
+});

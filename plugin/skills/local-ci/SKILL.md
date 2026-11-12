@@ -82,7 +82,8 @@ heap, jobs at once and what else shares the machine. The guide behind it:
 - **A retry only for tests the branch did not touch.** When a step fails solely on test files the
   branch never changed, run just those files once more. If they pass, mark the step
   `PASS-on-retry`, list them as flaky, and open a task for each. If any failing file was changed by
-  the branch, retry nothing.
+  the branch, retry nothing. Retry nothing either when any other failure is in the log (an
+  unhandled error, or a failed package that names no test file), or when the base is HEAD itself.
 
 ## Running it
 
@@ -114,7 +115,8 @@ project (as `scripts/ci-local/`, or adjust the first line of `ESCALATE`).
   (`retry.mjs`) for the flake retry above, and `--probe` (`probe.mjs`), which fails a step that
   leaves the working tree different from before it ran and names the files. A step opts in to the
   retry with a `retry` entry that says how to read the failed files from its log; the retry
-  refuses to run when the runner's own count of failures differs from the files it found.
+  refuses to run when the runner's own count of failures differs from the files it found. The script
+  always works from the repository root, wherever it is started.
 
 Replace the steps with your CI workflow's, point the affected commands at your build tool, and keep
 the pinned list in the test in step with them.

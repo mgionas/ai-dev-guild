@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
-import { branchTouched, parseFailures, planRetry, retryStep, touchedFiles } from "./retry.mjs";
+import { STEPS } from "./ci-local.mjs";
+import { branchTouched, parseFailures, planRetry, retryStep, sameCommit, touchedFiles } from "./retry.mjs";
 
 const spec = {
   pattern: /^\s*FAIL\s+(\S+\.test\.\w+)/,
@@ -17,7 +22,12 @@ test("parseFailures reads each failed file once, plus the runner's own count", (
     " FAIL  ./src/b.test.ts",
     " Test Files  2 failed | 9 passed (11)",
   );
-  assert.deepEqual(parseFailures(text, spec), { files: ["src/a.test.ts", "src/b.test.ts"], reported: 2 });
+  assert.deepEqual(parseFailures(text, spec), {
+    files: ["src/a.test.ts", "src/b.test.ts"],
+    reported: 2,
+    unhandled: false,
+    unnamed: [],
+  });
 });
 
 test("parseFailures strips terminal colour codes before matching", () => {
@@ -37,27 +47,27 @@ test("branchTouched: the file, or anything in its folder, counts", () => {
 });
 
 test("planRetry: untouched files named by the runner's own count are retried", () => {
-  const plan = planRetry({ files: ["src/a.test.ts"], reported: 1 }, new Set(["docs/a.md"]), exists);
+  const plan = planRetry({ files: ["src/a.test.ts"], reported: 1, unhandled: false, unnamed: [] }, new Set(["docs/a.md"]), exists);
   assert.deepEqual(plan.files, ["src/a.test.ts"]);
 });
 
 test("planRetry: a file the branch touched is never retried, even beside others", () => {
-  const failures = { files: ["src/a.test.ts", "lib/b.test.ts"], reported: 2 };
+  const failures = { files: ["src/a.test.ts", "lib/b.test.ts"], reported: 2, unhandled: false, unnamed: [] };
   const plan = planRetry(failures, new Set(["lib/b.test.ts"]), exists);
   assert.equal(plan.files, null);
   assert.match(plan.note, /lib\/b\.test\.ts is in the branch's change/);
 });
 
 test("planRetry: every doubt means no retry", () => {
-  const ok = { files: ["src/a.test.ts"], reported: 1 };
+  const ok = { files: ["src/a.test.ts"], reported: 1, unhandled: false, unnamed: [] };
   const untouched = new Set(["docs/a.md"]);
   assert.match(planRetry(ok, null, exists).note, /could not work out/);
-  assert.match(planRetry({ files: [], reported: 1 }, untouched, exists).note, /no failing test file/);
+  assert.match(planRetry({ files: [], reported: 1, unhandled: false, unnamed: [] }, untouched, exists).note, /no failing test file/);
   assert.match(planRetry({ ...ok, reported: null }, untouched, exists).note, /no failed-file count/);
   assert.match(planRetry({ ...ok, reported: 2 }, untouched, exists).note, /reports 2 failed, 1 named/);
   assert.match(planRetry(ok, untouched, () => false).note, /not a path from the repository root/);
   assert.match(
-    planRetry({ files: ["a b.test.ts"], reported: 1 }, untouched, exists).note,
+    planRetry({ files: ["a b.test.ts"], reported: 1, unhandled: false, unnamed: [] }, untouched, exists).note,
     /characters a command line cannot carry/,
   );
 });
@@ -84,6 +94,7 @@ test("retryStep: a pass on retry clears the step and lists the flake", () => {
     env: {},
     touched: () => new Set(["docs/a.md"]),
     exists,
+    sameCommit: () => false,
     run: (command) => (ran.push(command), { code: 0, output: "ok" }),
   });
   assert.deepEqual(ran, ["runner src/a.test.ts"]);
@@ -100,6 +111,7 @@ test("retryStep: a failing retry leaves the step failed", () => {
     env: {},
     touched: () => new Set(),
     exists,
+    sameCommit: () => false,
     run: () => ({ code: 1, output: "still red" }),
   });
   assert.equal(outcome.cleared, false);
@@ -108,11 +120,92 @@ test("retryStep: a failing retry leaves the step failed", () => {
 
 test("retryStep: nothing runs for a touched file, or when there is no base", () => {
   const never = () => assert.fail("the retry must not run");
-  const common = { root: "/r", step, logText: failedLog, env: {}, exists, run: never };
+  const common = { root: "/r", step, logText: failedLog, env: {}, exists, sameCommit: () => false, run: never };
   const touchedOutcome = retryStep({ ...common, base: "abc", touched: () => new Set(["src/a.test.ts"]) });
   assert.equal(touchedOutcome.cleared, false);
   assert.match(touchedOutcome.note, /branch's change/);
   const noBase = retryStep({ ...common, base: undefined });
   assert.equal(noBase.cleared, false);
   assert.match(noBase.note, /could not work out/);
+});
+
+// The shipped step's own retry settings, against output kept as Turborepo prints it.
+const shipped = STEPS.find((candidate) => candidate.name === "test").retry;
+const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
+
+test("the shipped pattern reads Turborepo's prefixed lines", () => {
+  const failures = parseFailures(fixture("turbo-test-failure.txt"), shipped);
+  assert.deepEqual(failures.files, ["src/a.test.ts"]);
+  assert.equal(failures.reported, 1);
+  assert.deepEqual(failures.unnamed, []);
+  assert.equal(failures.unhandled, false);
+});
+
+test("planRetry: a failed package that names no test file blocks the retry", () => {
+  const failures = parseFailures(fixture("turbo-two-packages-failure.txt"), shipped);
+  assert.deepEqual(failures.files, ["src/a.test.ts"]);
+  assert.deepEqual(failures.unnamed, ["@a/two"]);
+  const plan = planRetry(failures, new Set(["docs/x.md"]), exists);
+  assert.equal(plan.files, null);
+  assert.match(plan.note, /@a\/two failed without naming a test file/);
+});
+
+test("planRetry: a task that crashed before the runner started blocks the retry", () => {
+  const text = log(
+    "@a/one:test:  FAIL  src/a.test.ts > one",
+    "@a/one:test:  Test Files  1 failed | 2 passed (3)",
+    "@a/two:test: ERROR: command finished with error: command exited (1)",
+  );
+  const plan = planRetry(parseFailures(text, shipped), new Set(), exists);
+  assert.equal(plan.files, null);
+  assert.match(plan.note, /@a\/two failed without naming/);
+});
+
+test("planRetry: an Unhandled Errors section blocks the retry, with or without a prefix", () => {
+  for (const prefix of ["", "@a/one:test: "]) {
+    const text = log(
+      `${prefix} FAIL  src/a.test.ts > one`,
+      `${prefix} Test Files  1 failed | 2 passed (3)`,
+      `${prefix}⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯`,
+    );
+    const plan = planRetry(parseFailures(text, shipped), new Set(), exists);
+    assert.equal(plan.files, null);
+    assert.match(plan.note, /unhandled error/i);
+  }
+});
+
+test("planRetry: without prefixes, more than one failed task cannot be explained by the named files", () => {
+  const text = log(" FAIL  src/a.test.ts", " Test Files  1 failed (3)", "Failed:    pkg-a#test, pkg-b#test");
+  assert.equal(planRetry(parseFailures(text, shipped), new Set(), exists).files, null);
+  const one = log(" FAIL  src/a.test.ts", " Test Files  1 failed (3)", "Failed:    pkg-a#test");
+  assert.deepEqual(planRetry(parseFailures(one, shipped), new Set(), exists).files, ["src/a.test.ts"]);
+});
+
+test("retryStep: the base being HEAD means no retry, and the retry never runs", () => {
+  const outcome = retryStep({
+    root: "/r",
+    base: "abc",
+    step,
+    logText: failedLog,
+    env: {},
+    touched: () => new Set(),
+    exists,
+    sameCommit: () => true,
+    run: () => assert.fail("the retry must not run"),
+  });
+  assert.equal(outcome.cleared, false);
+  assert.match(outcome.note, /same commit as HEAD/);
+});
+
+test("sameCommit: true on the base itself, false for an ancestor, true when git cannot say", () => {
+  const dir = mkdtempSync(join(tmpdir(), "ci-local-same-"));
+  const git = (...args) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+  git("init", "-q", "-b", "main");
+  git("config", "user.email", "t@example.test");
+  git("config", "user.name", "t");
+  git("commit", "-q", "--allow-empty", "-m", "one");
+  git("commit", "-q", "--allow-empty", "-m", "two");
+  assert.equal(sameCommit(dir, "HEAD"), true);
+  assert.equal(sameCommit(dir, "HEAD~1"), false);
+  assert.equal(sameCommit(dir, "no-such-ref"), true);
 });

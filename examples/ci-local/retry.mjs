@@ -9,7 +9,13 @@
  * - `pattern`: a RegExp, one capture group, matching a line of the log that names a failed test file.
  * - `summary`: a RegExp, one capture group, matching the runner's own count of failed files. The
  *   count must equal the files named, or nothing is retried: a failure the pattern missed would
- *   otherwise be hidden by retrying only the ones it caught.
+ *   otherwise be hidden by retrying only the ones it caught. Turborepo prints each line with a
+ *   `<package>:<task>: ` prefix unless `--log-prefix=none` is given, so a pattern anchored at the
+ *   start of the line must allow for it.
+ *
+ * Nothing is retried either when the log has an "Unhandled Errors" section, or when Turborepo's
+ * `Failed:` line (or a "command finished with error" line) names a package with no failed test file:
+ * those are failures the retry of one flaky file would hide.
  * - `command`: what to run; `{files}` becomes the failed files.
  */
 import { spawnSync } from "node:child_process";
@@ -19,23 +25,55 @@ import { join } from "node:path";
 /** Terminal colour and cursor codes, which test runners print even into a pipe under `CI=true`. */
 const ANSI = /\u001B\[[0-9;?]*[ -/]*[@-~]/g;
 
+/** Turborepo's prefix on every line of a task's output: `<package>:<task>: `. Absent with `--log-prefix=none`. */
+const TURBO_PREFIX = /^(\S+?):[\w-]+: /;
+
+/** The runner's heading for errors raised outside any test file: `Unhandled Errors`, or `Unhandled Error`. */
+const UNHANDLED = /\bunhandled errors?\b/i;
+
+/** Turborepo's closing summary of failed tasks: `Failed:    pkg-a#test, pkg-b#test`. */
+const FAILED_TASKS = /^\s*Failed:\s+(.*)$/;
+
 /**
- * Reads the failed test files out of a step's log.
+ * Reads the failed test files out of a step's log, and every failure that names no file.
  *
  * @param {string} log - the whole log.
  * @param {{pattern: RegExp, summary: RegExp}} spec - the step's retry settings.
- * @returns {{files: string[], reported: number | null}} each file once, in first-seen order, and the runner's own count (null when its summary line is missing).
+ * @returns {{files: string[], reported: number | null, unhandled: boolean, unnamed: string[]}} each file once in first-seen order; the runner's own count (null when its summary line is missing); whether an unhandled-error section is present; and the packages the build tool reports as failed that have no named file ("?" when the log cannot say which package a named file belongs to).
  */
 export function parseFailures(log, { pattern, summary }) {
   const files = new Set();
+  const filePackages = new Set();
+  const failedPackages = new Set();
   let reported = null;
-  for (const line of log.replace(ANSI, "").split("\n")) {
+  let unhandled = false;
+  let failedTasks = 0;
+  for (const raw of log.replace(ANSI, "").split("\n")) {
+    const line = raw.trimEnd();
+    const prefix = TURBO_PREFIX.exec(line);
+    if (UNHANDLED.test(line)) unhandled = true;
     const named = pattern.exec(line);
-    if (named) files.add(named[1].replace(/^\.\//, ""));
+    if (named) {
+      files.add(named[1].replace(/^\.\//, ""));
+      filePackages.add(prefix?.[1] ?? null);
+    }
     const count = summary.exec(line);
     if (count) reported = (reported ?? 0) + Number(count[1]);
+    if (prefix && /command finished with error/.test(line)) failedPackages.add(prefix[1]);
+    const failed = FAILED_TASKS.exec(line);
+    if (failed) {
+      for (const task of failed[1].split(",")) {
+        failedTasks += 1;
+        failedPackages.add(task.trim().split("#")[0]);
+      }
+    }
   }
-  return { files: [...files], reported };
+  // A failed package with no named file is a failure the parser cannot explain. A log without
+  // prefixes cannot tell packages apart, so there more than one failed task is unexplained too.
+  const unnamed = filePackages.has(null)
+    ? failedTasks > 1 ? ["?"] : []
+    : [...failedPackages].filter((name) => !filePackages.has(name));
+  return { files: [...files], reported, unhandled, unnamed };
 }
 
 /**
@@ -57,7 +95,7 @@ export function branchTouched(path, touched) {
 /**
  * Decides whether a failure may be retried. Anything uncertain means no retry.
  *
- * @param {{files: string[], reported: number | null}} failures - from {@link parseFailures}.
+ * @param {{files: string[], reported: number | null, unhandled: boolean, unnamed: string[]}} failures - from {@link parseFailures}.
  * @param {ReadonlySet<string> | null} touched - the branch's changed paths; null when unknown.
  * @param {(path: string) => boolean} exists - whether a repository-relative file exists. A name the runner printed relative to some other folder cannot be compared with the changed paths, so it blocks the retry.
  * @returns {{files: string[] | null, note: string}} the files to run again, or null and the reason.
@@ -67,6 +105,9 @@ export function planRetry(failures, touched, exists) {
   if (touched === null) return no("could not work out which files the branch touched");
   if (failures.files.length === 0) return no("no failing test file found in the log");
   if (failures.reported === null) return no("the log has no failed-file count to check against");
+  if (failures.unhandled) return no("the log has an unhandled error section");
+  if (failures.unnamed.length > 0)
+    return no(`${failures.unnamed.join(", ")} failed without naming a test file`);
   if (failures.reported !== failures.files.length)
     return no(`the runner reports ${failures.reported} failed, ${failures.files.length} named`);
   for (const file of failures.files) {
@@ -106,9 +147,26 @@ export function touchedFiles(
 }
 
 /**
+ * Says whether `base` and HEAD are one commit (or cannot be compared). On the base itself the
+ * branch has no commits, so nothing would count as touched and every failure would look like a flake.
+ *
+ * @param {string} root - the checkout.
+ * @param {string} base - the commit the branch left the main branch at.
+ * @returns {boolean} true when they are the same commit or git could not compare them.
+ */
+export function sameCommit(root, base) {
+  const rev = (ref) => {
+    const result = spawnSync("git", ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], { cwd: root, encoding: "utf8" });
+    return result.status === 0 ? result.stdout.trim() : "";
+  };
+  const [resolved, head] = [rev(base), rev("HEAD")];
+  return resolved === "" || head === "" || resolved === head;
+}
+
+/**
  * Runs a failed step's retry, if the plan allows one.
  *
- * @param {{root: string, base: string | undefined, step: object, logText: string, env: object, run?: Function, touched?: Function, exists?: Function}} ctx - the checkout, the base (undefined in a full run with no merge base), the step with its `retry` settings, its log, and the environment. `run`, `touched` and `exists` are replaceable in tests.
+ * @param {{root: string, base: string | undefined, step: object, logText: string, env: object, run?: Function, touched?: Function, exists?: Function, sameCommit?: Function}} ctx - the checkout, the base (undefined in a full run with no merge base), the step with its `retry` settings, its log, and the environment. `run`, `touched`, `exists` and `sameCommit` are replaceable in tests.
  * @returns {{cleared: boolean, flakes: string[], note: string, output: string}} whether the step passed on retry, the flaky files, a line for the summary, and the retry's own output for the log.
  */
 export function retryStep(ctx) {
@@ -119,6 +177,8 @@ export function retryStep(ctx) {
       const r = spawnSync(command, { shell: true, cwd: root, env, encoding: "utf8", maxBuffer: 1 << 30 });
       return { code: r.status ?? 1, output: `${r.stdout ?? ""}${r.stderr ?? ""}` };
     });
+  if (base && (ctx.sameCommit ?? sameCommit)(root, base))
+    return { cleared: false, flakes: [], note: "not retried: the base is the same commit as HEAD, so no change could count as touched", output: "" };
   const touched = base ? (ctx.touched ?? touchedFiles)(root, base) : null;
   const exists = ctx.exists ?? ((path) => existsSync(join(root, path)));
   const plan = planRetry(parseFailures(logText, step.retry), touched, exists);

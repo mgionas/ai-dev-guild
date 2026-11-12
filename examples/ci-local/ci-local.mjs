@@ -68,8 +68,9 @@ export const STEPS = [
     affected:
       "npx turbo run test --concurrency={cores} --filter=...[{base}] -- --maxWorkers={cores}",
     retry: {
-      pattern: /^\s*FAIL\s+(?:\|[^|]*\|\s+)?(\S+\.test\.\w+)/,
-      summary: /Test Files\s+.*?(\d+) failed/,
+      // Turborepo prefixes each line with `<package>:<task>: `, so the pattern allows one.
+      pattern: /^(?:\S+?:[\w-]+:\s+)?\s*FAIL\s+(?:\|[^|]*\|\s+)?(\S+\.test\.\w+)/,
+      summary: /Test Files\s+.*?(\d+) failed/, // matched after the prefix is removed too
       command: "npx vitest run {files}",
     },
   },
@@ -143,6 +144,12 @@ const USAGE =
 const git = (...gitArgs) => {
   const result = spawnSync("git", gitArgs, { encoding: "utf8" });
   return result.status === 0 ? result.stdout.trim() : null;
+};
+
+/** Same as {@link git}, but the output is kept as printed: the NUL-separated lists end in a NUL that trim would not remove, and a name may end in a space. */
+const gitRaw = (...gitArgs) => {
+  const result = spawnSync("git", gitArgs, { encoding: "utf8" });
+  return result.status === 0 ? result.stdout : null;
 };
 
 /**
@@ -246,6 +253,7 @@ export function runStep({ name, command, env, out, log = console.log }) {
   const result = spawnSync(command, { shell: true, env, encoding: "utf8", maxBuffer: 1 << 30 });
   const output = `$ ${command}\n${result.stdout ?? ""}${result.stderr ?? ""}${result.error ? `\n${result.error}` : ""}`;
   writeFileSync(join(out, `${name}.log`), output);
+  // A null status means the step was killed by a signal (or never started): that is a failure, never a pass.
   const code = result.status ?? 1;
   if (code !== 0)
     log(`--- ${name} failed, last lines of its log ---\n${tail(output)}\n--- end of ${name} ---`);
@@ -266,11 +274,12 @@ function chooseScope(opts) {
   if (!base) return { full: true, why: `no merge base with ${refs.join(" or ")}` };
   // Committed changes since the base, plus uncommitted and untracked ones: what the next commit would carry too.
   // --no-renames lists both the old and the new path, so a move out of a package still shows the package path.
-  const committed = git("diff", "--name-only", "--no-renames", base);
-  const untracked = git("ls-files", "--others", "--exclude-standard");
+  // NUL-separated and unquoted, so a non-ASCII name arrives as it is.
+  const committed = gitRaw("-c", "core.quotePath=false", "diff", "--name-only", "-z", "--no-renames", base);
+  const untracked = gitRaw("-c", "core.quotePath=false", "ls-files", "-z", "--others", "--exclude-standard");
   if (committed === null || untracked === null)
     return { full: true, why: "git diff failed" };
-  const files = [...new Set([...committed.split("\n"), ...untracked.split("\n")])].filter(Boolean);
+  const files = [...new Set([...committed.split("\0"), ...untracked.split("\0")])].filter(Boolean);
   let lockfileChange = "none";
   for (const file of files.filter((name) => LOCKFILES.includes(name))) {
     // Without these flags a binary attribute or an external diff tool can hide removed lines.
@@ -310,6 +319,14 @@ function main() {
     console.error(opts.problem);
     return 2;
   }
+  // Every git call below lists paths relative to the working directory, and the probe and the retry
+  // read files from it: from a subdirectory they would miss the rest of the repository.
+  const top = git("rev-parse", "--show-toplevel");
+  if (!top) {
+    console.error("not inside a git repository");
+    return 2;
+  }
+  process.chdir(top);
   // Logs stay outside the checkout so a step cannot be fooled by, or dirty, the files it checks.
   const out = resolve(opts.out ?? join(tmpdir(), "ci-local"));
   mkdirSync(out, { recursive: true });
