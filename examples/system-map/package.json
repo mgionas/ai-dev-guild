@@ -1,0 +1,14 @@
+{
+  "name": "system-map-starter",
+  "private": true,
+  "type": "module",
+  "description": "A starting point for a system map check. Copy it into your project.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "check": "node check.mjs",
+    "test": "node --test '*.test.mjs'"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}

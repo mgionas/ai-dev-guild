@@ -1,0 +1,14 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Lending library", "version": "1.0.0" },
+  "paths": {
+    "/health": { "get": { "tags": ["ops"], "responses": { "200": { "description": "ok" } } } },
+    "/books": {
+      "get": { "tags": ["books"], "responses": { "200": { "description": "list" } } },
+      "post": { "tags": ["books"], "responses": { "201": { "description": "created" } } }
+    },
+    "/books/{bookId}": { "get": { "tags": ["books"], "responses": { "200": { "description": "one" } } } },
+    "/loans": { "post": { "tags": ["loans"], "responses": { "201": { "description": "created" } } } },
+    "/loans/{loanId}/return": { "post": { "tags": ["loans"], "responses": { "200": { "description": "returned" } } } }
+  }
+}

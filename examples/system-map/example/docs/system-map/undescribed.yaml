@@ -1,0 +1,5 @@
+# Operations, screens and tables that existed before the map and no feature describes yet.
+# It only shrinks: describe an item in a feature and delete its line here. Never add to it.
+operations: ['GET /health']
+screens: ['/']
+tables: []

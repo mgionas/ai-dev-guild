@@ -73,3 +73,7 @@ not drawn.
 
 If the project also keeps a `system-map` check (features, operations, screens and tables), this
 page is its picture: build both from the same facts.
+
+This is the lighter version: one page drawn from the code, with no check. When you also need a
+guard that refuses a new operation, screen or table nobody has described, use the `system-map`
+skill instead.
