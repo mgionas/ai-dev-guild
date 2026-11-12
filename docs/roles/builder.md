@@ -5,8 +5,8 @@ Builds one task from a brief file and writes a report file with evidence.
 **Edits:** code in the brief's scope · **Default model:** sonnet · **Tools:** Read, Grep, Glob, Edit, Write, Bash
 
 ## When to use it
-- It assumes no country: UTC and IANA time zones, money with its currency code, locale formatting.
 - Any implementation task that has a brief.
+- A task that must assume no country: UTC and IANA time zones, money with its currency code, locale formatting.
 - One task per agent; split a task that is too large.
 - Never use it to review its own work, or to fix review findings (use `fixer`).
 
@@ -17,6 +17,8 @@ Builds one task from a brief file and writes a report file with evidence.
 - It must not be given a review's findings to fix; those go to a fresh `fixer`.
 
 ## What it returns
+- If the project builds screens: every state the spec names, with any it could not reach listed, and the accessibility checks (keyboard, focus, labels, contrast).
+- If the project asks for it: comments on exported code that give the reason, new files in their feature folder, and a system map updated in the same change with its check run.
 - A report file at the path in the brief, under the headings the brief gives, with six parts:
 - **Done**: what changed, by file.
 - **Evidence**: the commands run and their pasted output. No output, no "done".

@@ -14,8 +14,8 @@ Writes screen specs with every state, layout, interaction, copy and accessibilit
 - For a review: screenshots of the built screen (each width, light and dark, each reachable state) and the spec.
 
 ## What it returns
-- A spec: purpose and persona; layout at each width; every state; components; interactions; copy as translation keys; accessibility notes.
-- A review: findings with the screenshot and region, and whether the screen is ready to show.
+- A spec: purpose and persona; layout at each width; every state; components; interactions; copy as translation keys; accessibility notes; the click count of each main task; one filled button per view; the anatomy of each row and control (its parts in order and what each shows in each state).
+- A review: findings with the screenshot and region, judged against fixed criteria (one filled button, click counts, anatomy, the spacing scale, one empty-state pattern, contrast and focus, long text), and whether the screen is ready to show.
 - If the layout has drifted, one exact corrected spec for the whole screen.
 - **Assumptions** and **Noticed**, as builders report them.
 

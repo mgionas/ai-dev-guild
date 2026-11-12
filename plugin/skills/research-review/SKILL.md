@@ -32,6 +32,36 @@ report it as a question rather than a defect.
    contrast, targets large enough to tap, meaning never carried by colour alone, full keyboard and
    screen-reader use, and layouts that hold up with longer translations and at 200% zoom.
 
+## Heuristics that keep catching things
+
+Run these as a checklist after the four checks. Reviews have missed each of them before.
+
+- [ ] **A submit that only goes grey.** A disabled button that changes nothing else gives the user
+  no information. Keep the button reachable, and let its label or a message say what is happening.
+- [ ] **A model word on screen.** Labels use the user's words, not field, table or status names from
+  the code. Menu entries and the pages they lead to share one name.
+- [ ] **An error with no next step.** Each error says what to do. When a retry cannot help (a link
+  that no longer works, an account that is closed), it names a person or a place to go. It also
+  promises nothing the product does not do, such as an alert that no system sends.
+- [ ] **A one-way action that looks safe.** A destructive or irreversible dialog opens with focus on
+  the safe choice and names what will happen.
+- [ ] **A field that silently changes input.** A length limit that cuts a pasted value, or a refusal
+  with no reason, is a defect. Say why, and send nothing.
+- [ ] **The same action under two names.** Compare the other screens and the message files rather
+  than recalling them. Label text on a control is part of its accessible name.
+- [ ] **A state nobody drew.** For each entity, find every status and every error the screen can
+  show, and mark any that has no place on screen.
+- [ ] **A lookup that gives itself away.** A lookup screen answers the same whether or not the
+  record exists, in content, wording and timing. A friendly "this one is already registered" tells
+  a stranger what they should not learn.
+- [ ] **A secret in an address.** A token placed in the URL path, the query string or a return link will be written to logs.
+- [ ] **Targets too small.** Check tappable things on a phone, especially links inside table cells
+  and row actions.
+- [ ] **Clipped text.** A label that is cut off, clamped or ellipsed cannot be read in the longest
+  translation. Check long translations, 200% zoom and a narrow width.
+- [ ] **A guess written as a finding.** Something said about what users do or want, with no research behind it,
+  goes in as a question marked assumed, not as a defect.
+
 ## What to return
 
 A list of findings. Each has a severity (**blocker**, **should-fix** or **question**), where it is
