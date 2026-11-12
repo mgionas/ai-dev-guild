@@ -64,8 +64,8 @@ exists. Where one exists, show the user what you would add and ask.
      https://code.claude.com/docs/en/permissions.
 
 10. **Worktrees.** If `.gitignore` does not ignore `.claude/worktrees/`, offer to add that line.
-   Advise in one sentence: where the app lets you choose where worktrees go, a folder outside the
-   project keeps them away from committed config.
+    Advise in one sentence: where the app lets you choose where worktrees go, a folder outside the
+    project keeps them away from committed config.
 
 11. **Check the guard hooks**, only if the user has installed `ai-dev-guild-guards`. Run this
     command with the Bash tool:

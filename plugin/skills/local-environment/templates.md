@@ -1,9 +1,9 @@
 # Templates for the local-environment skill
 
 Starting points to copy and adapt. Replace `<project>` and each `<…-port>` placeholder; every port
-comes from the project's ports table, never from here. Image tags were checked on 2026-11-12
-against the registries (`docker manifest inspect`); check them again before you rely on them, and
-pin the exact tag you use.
+comes from the project's ports table, never from here. Image tags were each the newest stable
+release on 2026-11-12 (`docker manifest inspect <image>:<tag>` and the registry's tag list);
+check them again before you rely on them, and pin the exact tag you use.
 
 ## Compose file (`docker-compose.yml`)
 
@@ -14,7 +14,7 @@ name: <project>
 services:
   database:
     container_name: <project>-database
-    image: postgres:17.6-alpine
+    image: postgres:17.11-alpine
     environment:
       POSTGRES_DB: <project>
       POSTGRES_USER: <project>
@@ -33,9 +33,10 @@ services:
 
   proxy:
     container_name: <project>-proxy
-    image: caddy:2.10.2-alpine
+    image: caddy:2.11.9-alpine
     ports:
-      # On macOS a host process needs root for ports under 1024; a container does not.
+      # 80 and 443 must be free on the host (another project's proxy, a local web server). To
+      # remap, change the outside number; the URLs then carry that port.
       - "127.0.0.1:80:80"
       - "127.0.0.1:443:443"
     volumes:
@@ -58,14 +59,17 @@ services:
       - "127.0.0.1:4317:4317" # OTLP over gRPC
       - "127.0.0.1:4318:4318" # OTLP over HTTP
     networks: [<project>-local]
-    image: grafana/otel-lgtm:0.32.0
+    image: grafana/otel-lgtm:0.40.0
 
   # Optional, off by default. Speaks the S3 protocol and forgets everything on restart,
-  # so it suits generated fixtures only. Create the bucket from the app or the test setup.
+  # so it suits generated fixtures only.
   object-store:
     container_name: <project>-object-store
-    image: adobe/s3mock:5.2.2
+    image: adobe/s3mock:5.2.3
     profiles: [object-store]
+    environment:
+      # Creates this bucket at every start, since nothing survives a restart.
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: <project>-local
     ports:
       - "127.0.0.1:<object-store-port>:9090"
     networks: [<project>-local]
@@ -129,8 +133,7 @@ its row. Bind to loopback (`127.0.0.1`) only.
 | `80 / 443`   | proxy, `<project>-proxy`  | `<project>.test` and its subdomains                |
 
 Ranges: application processes, developer tooling, telemetry receivers, datastores. Name the
-number range for each. The proxy alone uses ports under 1024. When other projects share the
-machine, list theirs here and avoid them.
+number range for each. When other projects share the machine, list theirs here and avoid them.
 ```
 
 ## Hosts block (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows)
@@ -143,6 +146,12 @@ machine, list theirs here and avoid them.
 127.0.0.1 api.<project>.test # API
 # --- end <project> ---
 ```
+
+Editing this file needs administrator rights: `sudo` on macOS and Linux, an editor started as
+administrator on Windows. If a name still does not resolve afterwards, flush the DNS cache
+(`sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder` on macOS,
+`sudo resolvectl flush-caches` on Linux with systemd-resolved, `ipconfig /flushdns` on Windows) and
+restart the browser, which may remember a failed lookup.
 
 One line per name: hosts files have no wildcards. A resolver such as dnsmasq can answer for a whole
 `*.<project>.test` from one rule, if the list becomes tiresome.

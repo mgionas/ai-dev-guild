@@ -20,11 +20,12 @@ in this skill's folder.
    `proxy`, and optional ones such as `telemetry` or `object-store`), not by the image behind them,
    so the image can change without renaming anything. Bind every published port to `127.0.0.1`:
    a development password is usually in the repository, and the machine is often on a network.
-2. **Local HTTPS on a `.test` domain.** `localhost` is a special case in browsers, so it cannot
-   exercise `Secure` cookies, cookies shared across subdomains, or sign-in providers that insist on
-   a real hostname with HTTPS. RFC 6761 reserves `.test` and no public authority will issue for
+2. **Local HTTPS on a `.test` domain.** Most browsers treat `localhost` as a secure
+   context, so it covers a lot. It falls short on subdomains, on sign-in providers that require a
+   real hostname over HTTPS, on cookies scoped to a parent domain, and on matching the shape of
+   production. RFC 6761 reserves `.test` and no public authority will issue for
    it, so it never collides with a real site. It takes a block in the hosts file (one line per
-   name, because hosts files have no wildcards), a reverse proxy that issues local certificates
+   name, because hosts files have no wildcards; editing it needs administrator rights), a reverse proxy that issues local certificates
    (for example Caddy with `local_certs`), and a one-time step that makes the machine trust the
    local certificate authority the proxy creates. Keep that authority in a named volume: if it is recreated,
    the one the developer trusted stops matching.
@@ -55,8 +56,15 @@ A local-development page, linked from `AGENTS.md`, holding:
 
 ### Trusting the local certificate authority
 
-Copy the root certificate out of the proxy's volume once, then trust it. The path below is
+Copy the root certificate out of the proxy's container once, then trust it. The path below is
 Caddy's; another proxy keeps its own.
+
+```
+docker cp <project>-proxy:/data/caddy/pki/authorities/local/root.crt ./root.crt
+```
+
+Where Caddy runs on the host instead of in a container, `caddy trust` does the copy and the
+trusting in one step.
 
 - **macOS:** `sudo security add-trusted-cert -k /Library/Keychains/System.keychain -r trustRoot root.crt`.
 - **Linux:** copy it to `/usr/local/share/ca-certificates/<project>.crt` and run
@@ -67,15 +75,26 @@ Caddy's; another proxy keeps its own.
 - **Firefox** keeps its own store on every system: import the file under Settings, Privacy and
   Security, Certificates, or enable `security.enterprise_roots.enabled` in `about:config`.
 
-Say plainly what this does: the machine will believe any certificate that authority signs, for any
+Say plainly what this does, and how to undo it: the machine will believe any certificate that authority signs, for any
 hostname. So the authority's key stays in its volume. Nobody commits the root file or passes it around:
 every developer trusts the one their own machine generated.
+
+To undo the trust, remove the certificate again:
+
+- **macOS:** `sudo security delete-certificate -c "Caddy Local Authority" /Library/Keychains/System.keychain`
+  (add `-Z <sha1>` when several roots carry that name).
+- **Linux:** delete the file you copied, then `sudo update-ca-certificates --fresh` (Debian and
+  Ubuntu) or `sudo update-ca-trust` (Fedora and similar).
+- **Windows:** in an administrator PowerShell,
+  `Get-ChildItem Cert:\LocalMachine\Root | Where-Object Subject -like '*Caddy Local*' | Remove-Item`.
+- **Firefox:** remove the imported entry under Certificates, or switch the setting back.
 
 ## How to check for a clash
 
 Before choosing a port, and when something fails to start, ask what is already listening.
 
-- **macOS and Linux:** `lsof -nP -iTCP -sTCP:LISTEN` (or `ss -ltnp` on Linux).
+- **macOS and Linux:** `lsof -nP -iTCP -sTCP:LISTEN` (or `ss -ltnp` on Linux); add `sudo` to see
+  other users' processes.
 - **Windows (PowerShell):** `Get-NetTCPConnection -State Listen | Sort-Object LocalPort`, or
   `netstat -ano | findstr LISTENING`.
 - **Containers on every system:** `docker ps --format '{{.Names}}\t{{.Ports}}'`.

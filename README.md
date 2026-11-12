@@ -176,25 +176,25 @@ money, the stack advisor, the board's chair, finance and legal seats, design), s
 <details>
 <summary><b>Every skill</b></summary>
 
-| Skill                                                | Use it to                                                 |
-| ---------------------------------------------------- | --------------------------------------------------------- |
-| [`setup`](plugin/skills/setup/SKILL.md)                     | prepare a project for the loop, once                      |
-| [`stack-advice`](plugin/skills/stack-advice/SKILL.md) | get a sourced stack and testing proposal for a new project |
-| [`roadmap`](plugin/skills/roadmap/SKILL.md) | build a roadmap of milestones and steps from a plan or an idea |
-| [`project-map`](plugin/skills/project-map/SKILL.md) | draw a page of the system and its folders, read from the code |
-| [`token-review`](plugin/skills/token-review/SKILL.md) | find where sessions spent tokens and how to spend fewer |
-| [`run-task`](plugin/skills/run-task/SKILL.md)               | run one task through the whole loop                       |
-| [`write-brief`](plugin/skills/write-brief/SKILL.md)         | write a brief a fresh agent can work from alone           |
-| [`review-panel`](plugin/skills/review-panel/SKILL.md)       | choose reviewers by what the change touches               |
-| [`fix-round`](plugin/skills/fix-round/SKILL.md)             | fix findings with a fresh agent, then confirm once        |
-| [`decision-batch`](plugin/skills/decision-batch/SKILL.md)   | ask every open question at once, with recommendations     |
-| [`board`](plugin/skills/board/SKILL.md)                     | put a decision with real trade-offs to the board          |
-| [`design-review`](plugin/skills/design-review/SKILL.md)     | review a built screen from screenshots first              |
-| [`research-review`](plugin/skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
-| [`local-ci`](plugin/skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
+| Skill                                                           | Use it to                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [`setup`](plugin/skills/setup/SKILL.md)                         | prepare a project for the loop, once                                |
+| [`stack-advice`](plugin/skills/stack-advice/SKILL.md)           | get a sourced stack and testing proposal for a new project          |
+| [`roadmap`](plugin/skills/roadmap/SKILL.md)                     | build a roadmap of milestones and steps from a plan or an idea      |
+| [`project-map`](plugin/skills/project-map/SKILL.md)             | draw a page of the system and its folders, read from the code       |
+| [`token-review`](plugin/skills/token-review/SKILL.md)           | find where sessions spent tokens and how to spend fewer             |
+| [`run-task`](plugin/skills/run-task/SKILL.md)                   | run one task through the whole loop                                 |
+| [`write-brief`](plugin/skills/write-brief/SKILL.md)             | write a brief a fresh agent can work from alone                     |
+| [`review-panel`](plugin/skills/review-panel/SKILL.md)           | choose reviewers by what the change touches                         |
+| [`fix-round`](plugin/skills/fix-round/SKILL.md)                 | fix findings with a fresh agent, then confirm once                  |
+| [`decision-batch`](plugin/skills/decision-batch/SKILL.md)       | ask every open question at once, with recommendations               |
+| [`board`](plugin/skills/board/SKILL.md)                         | put a decision with real trade-offs to the board                    |
+| [`design-review`](plugin/skills/design-review/SKILL.md)         | review a built screen from screenshots first                        |
+| [`research-review`](plugin/skills/research-review/SKILL.md)     | check a flow against personas, heuristics and WCAG 2.2 AA           |
+| [`local-ci`](plugin/skills/local-ci/SKILL.md)                   | run, or set up, a local check as strict as CI                       |
 | [`local-environment`](plugin/skills/local-environment/SKILL.md) | advise a local setup: own containers, local HTTPS, a ports registry |
-| [`system-map`](plugin/skills/system-map/SKILL.md)           | keep a map of features, screens and tables current        |
-| [`progress-boards`](plugin/skills/progress-boards/SKILL.md) | keep the roadmap and QA board current with every change   |
+| [`system-map`](plugin/skills/system-map/SKILL.md)               | keep a map of features, screens and tables current                  |
+| [`progress-boards`](plugin/skills/progress-boards/SKILL.md)     | keep the roadmap and QA board current with every change             |
 
 Stack-specific starting points (database migrations, API endpoints, events, screens, a CI runner)
 are in [examples](examples/README.md), clearly marked and not loaded by the plugin.
