@@ -5,6 +5,14 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The roadmap, the QA board and the project map ship as page templates, so every project gets the
+  same pages instead of a sentence describing one. Each page reads its rows from the artifact
+  database when the view can run it, or from a JSON block in the page when it is a plain file; the
+  QA board records results only in the first case and shows read-only controls in the second. The
+  skills carry the data shape for each page and the capabilities to declare when publishing, and
+  the project map template now starts at `<title>` like an artifact, with dark-mode tokens that
+  follow a theme setting. (field-tested)
+
 - The guard hooks ask before a `kill` and refuse secret files from the shell: any kill but the
   agent's own job (`kill %1`, `kill $!`) gets the "ask" answer, because one command does not say
   which processes this agent started (a pattern kill is still refused, and its message no longer
