@@ -73,16 +73,16 @@ h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spac
 h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 section { display: grid; gap: 12px; }
 .track { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px; }
-.ms { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; padding: 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.ms { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
 .ms:hover { border-color: var(--muted); }
 .ms:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ms[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .ms-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; }
-.ms-name { font-weight: 600; font-size: 14px; line-height: 1.3; }
+.ms-name { font-weight: 600; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
 .bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .bar > i { display: block; height: 100%; background: var(--done); }
-.ms-foot { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ms-foot { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .pill { font-family: var(--f-mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
 .s-done { color: var(--done); background: var(--done-soft); }
 .s-active { color: var(--active); background: var(--active-soft); }
@@ -342,8 +342,8 @@ function listen(ref, apply, counted) {
 
 function useDatabase(db) {
   const counted = { n: 0 };
-  listen(db.collection("milestones").orderBy("order"), s => { milestones = s.docs.map(d => ({ id: d.id, ...d.data() })); }, counted);
-  listen(db.collection("items").orderBy("order"), s => { items = s.docs.map(d => ({ id: d.id, ...d.data() })); }, counted);
+  listen(db.collection("milestones").orderBy("order"), s => { milestones = s.docs.map(d => ({ ...d.data(), id: d.id })); }, counted);
+  listen(db.collection("items").orderBy("order"), s => { items = s.docs.map(d => ({ ...d.data(), id: d.id })); }, counted);
   listen(db.doc("meta/info"), s => { meta = s.exists ? s.data() : null; }, counted);
 }
 

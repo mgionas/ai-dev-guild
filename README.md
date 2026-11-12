@@ -129,10 +129,10 @@ staging. You decide and sign up yourself.
 ### 🗺️ See where you are
 
 **Roadmap:** milestones a user can see, each step with its stage (planned, building, review,
-fixing, merged), and what waits on you; it and the QA board ship as ready-made pages that work with
-the artifact database or with rows embedded in a plain file. **Project map:** one page with a diagram of the parts and
-who talks to whom, plus every folder and its job, read from the code. **Token review:** where your
-sessions spent their tokens, and a few rules to spend less.
+fixing, merged), and what waits on you; it and the QA board ship as ready-made pages that work
+with the artifact database or with rows embedded in a plain file. **Project map:** one page with a
+diagram of the parts and who talks to whom, plus every folder and its job, read from the code.
+**Token review:** where your sessions spent their tokens, and a few rules to spend less.
 
 ### 🏛️ The board
 

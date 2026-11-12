@@ -181,7 +181,8 @@ input.note { flex: 1 1 220px; min-width: 0; }
   const data = { updates: new Map(), features: new Map(), checks: new Map() };
   const loaded = { updates: false, features: false, checks: false };
   const view = { by: 'update', filter: 'all', acct: '', q: '' };
-  const pending = new Set();
+  // Writes in flight (check id → fields) and the latest fields asked for meanwhile, written when the first one settles.
+  const pending = new Map(), queued = new Map();
   let db = null, user = null, myId = null, canWrite = false, names = {};
 
   const $ = (id) => document.getElementById(id);
@@ -242,7 +243,7 @@ input.note { flex: 1 1 220px; min-width: 0; }
     const s = statusOf(c);
     const statusGroup = el('div', { class: 'status', role: 'group', 'aria-label': 'Result' });
     for (const k of ['pass', 'fail', 'blocked']) {
-      const b = el('button', { type: 'button', 'data-s': k, 'aria-pressed': String(s === k), disabled: !canWrite || pending.has(c.id), text: STATUS_WORDS[k] });
+      const b = el('button', { type: 'button', 'data-s': k, 'aria-pressed': String(s === k), disabled: !canWrite, text: STATUS_WORDS[k] });
       b.addEventListener('click', () => setStatus(c, s === k ? 'open' : k));
       statusGroup.append(b);
     }
@@ -254,7 +255,8 @@ input.note { flex: 1 1 220px; min-width: 0; }
 
     let who = null;
     if (s !== 'open' && (c.by || c.at)) {
-      const nm = c.by && names[c.by] ? names[c.by].name || 'Someone' : 'Someone';
+      const prof = c.by && Object.hasOwn(names, c.by) ? names[c.by] : null;
+      const nm = (prof && prof.name) || 'Someone';
       who = el('span', { class: 'who', text: `${STATUS_WORDS[s]} · ${nm}${c.at ? ' · ' + when(c.at) : ''}` });
     }
     const steps = str(c.steps) ? el('details', {}, el('summary', { text: 'How to test' }), el('p', { text: str(c.steps) })) : null;
@@ -326,7 +328,16 @@ input.note { flex: 1 1 220px; min-width: 0; }
       out.push(...byArea(fids, (fid) => featureCard(fid, visible.filter((c) => c.featureId === fid))));
       if (!fids.length) out.push(el('div', { class: 'notice empty-filter', text: 'No check matches the filters.' }));
     }
+    // A snapshot rebuilds the board; keep what the tester is typing and where the cursor was.
+    const ae = document.activeElement;
+    const typing = ae && ae.classList && ae.classList.contains('note') && board.contains(ae) ? { id: ae.id, value: ae.value, from: ae.selectionStart, to: ae.selectionEnd } : null;
     board.replaceChildren(...out);
+    const back = typing && document.getElementById(typing.id);
+    if (back && !back.disabled) {
+      back.value = typing.value;
+      back.focus({ preventScroll: true });
+      back.setSelectionRange(typing.from, typing.to);
+    }
   }
 
   async function resolveNames() {
@@ -336,18 +347,28 @@ input.note { flex: 1 1 220px; min-width: 0; }
     try { names = await user.profiles(ids); render(); } catch (_) { /* names stay "Someone" */ }
   }
 
-  async function write(c, fields) {
-    if (!db || pending.has(c.id)) return;
-    pending.add(c.id); render();
-    try { await db.collection('checks').doc(c.id).update(fields); }
+  // The row is not redrawn while a write starts: a note saves on blur, and a redraw then would replace the button the tester is pressing before the click lands.
+  async function write(c, fields, defaults = {}) {
+    if (!db) return;
+    if (pending.has(c.id)) {
+      const q = queued.get(c.id) || {};
+      const statusInFlight = 'status' in pending.get(c.id) || 'status' in q;
+      queued.set(c.id, { ...(statusInFlight ? {} : defaults), ...q, ...fields });
+      return;
+    }
+    pending.set(c.id, { ...defaults, ...fields });
+    try { await db.collection('checks').doc(c.id).update({ ...defaults, ...fields }); }
     catch (e) {
       $('state') && $('state').remove();
       const msg = e && (e.code === 'permission_denied' || e.code === 'not_granted') ? 'You can view this board but not mark checks. Ask an editor for access to record results.' : 'That change was not saved. Check your connection and try again.';
       $('board').prepend(el('div', { class: 'notice', role: 'alert', text: msg }));
-    } finally { pending.delete(c.id); render(); }
+    } finally { pending.delete(c.id); }
+    const next = queued.get(c.id);
+    if (next) { queued.delete(c.id); await write(c, next); return; }
+    render();
   }
   const setStatus = (c, s) => write(c, { status: s, by: s === 'open' ? null : myId, at: s === 'open' ? null : new Date().toISOString() });
-  const setNote = (c, note) => write(c, { note, by: c.by || myId, at: c.at || null });
+  const setNote = (c, note) => write(c, { note }, { by: c.by || myId, at: c.at || null });
 
   function wire() {
     $('by-update').addEventListener('click', () => { view.by = 'update'; $('by-update').setAttribute('aria-pressed', 'true'); $('by-feature').setAttribute('aria-pressed', 'false'); render(); });
@@ -367,7 +388,7 @@ input.note { flex: 1 1 220px; min-width: 0; }
     db.collection(name).onSnapshot((snap) => {
       clearTimeout(timer);
       const m = data[name]; m.clear();
-      for (const d of snap.docs) { const v = d.data(); if (v && typeof v === 'object') m.set(d.id, Object.assign({ id: d.id }, v)); }
+      for (const d of snap.docs) { const v = d.data(); if (v && typeof v === 'object') m.set(d.id, Object.assign({}, v, { id: d.id })); }
       loaded[name] = true;
       render();
       if (name === 'checks') resolveNames();
@@ -408,7 +429,7 @@ input.note { flex: 1 1 220px; min-width: 0; }
       try { myId = await user.id(); } catch (_) { myId = null; }
       try { const w = await user.can('data.write'); if (w === false) canWrite = false; } catch (_) { /* keep inputs; refused writes decide */ }
     }
-    if (!myId) canWrite = false;
+    if (!myId) { canWrite = false; $('mode-note').textContent = 'Sign in to record results.'; $('mode-note').hidden = false; }
     subscribe('updates'); subscribe('features'); subscribe('checks');
   }
   start();
