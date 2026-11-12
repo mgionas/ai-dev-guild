@@ -92,7 +92,7 @@ main { padding-block: 16px 64px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 8px; min-width: 0; align-content: start; }
 .card.click { cursor: pointer; text-align: left; }
 .card.click:hover { border-color: var(--accent); }
-.card h3 { font-size: 16px; font-weight: 600; }
+.card h3 { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
 .card .ex { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pill { font-family: var(--mono); font-size: 11.5px; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
@@ -104,9 +104,9 @@ main { padding-block: 16px 64px; }
 .bar i { display: block; height: 100%; }
 .bar i.b { background: var(--built); }
 .bar i.g { background: var(--building); }
-.foot { font-family: var(--mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.foot { overflow-wrap: anywhere; font-family: var(--mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; font-size: 14px; color: var(--muted); }
-.filters select { min-height: 36px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+.filters select { min-width: 0; max-width: 100%; min-height: 36px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
 .tech { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 4px; font-size: 13px; }
 .tech dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
 .tech dd { margin: 0 0 4px; display: flex; flex-wrap: wrap; gap: 4px; }
@@ -162,7 +162,7 @@ function areaName(id) { const a = areas.find(x => x.id === id); return a ? a.nam
 function featuresOf(id) { return features.filter(f => f.area === id); }
 function matches(f) {
   if (!query) return true;
-  const hay = [f.name, f.explanation, f.milestone, f.id, ...(f.operations || []), ...(f.screens || []), ...(f.tables || [])].join(" ").toLowerCase();
+  const hay = [f.name, f.explanation, f.id, ...(f.operations || []), ...(f.screens || []), ...(f.tables || [])].join(" ").toLowerCase();
   return hay.includes(query);
 }
 
@@ -195,14 +195,13 @@ function renderAreas(main) {
     const card = el("button", "card click"); card.type = "button";
     const top = el("div", "row");
     top.append(el("span", "pill p-" + (a.progress === "all" || a.progress === "part" ? a.progress : "none"), a.progress === "all" ? "all built" : a.progress === "part" ? "partly built" : "not built yet"));
-    if (a.chapter) top.append(el("span", "tag", a.chapter));
     card.append(top, el("h3", null, a.name), el("p", "ex", a.explanation || ""));
     const bar = el("div", "bar"); const total = own.length || 1;
     const b = el("i", "b"); b.style.width = (n("built") / total * 100) + "%";
     const g = el("i", "g"); g.style.width = (n("building") / total * 100) + "%";
     bar.append(b, g); card.append(bar);
     card.append(el("div", "foot", own.length + " features · " + n("built") + " built · " + n("building") + " building · " + n("planned") + " planned"));
-    if (a.buildsOn && a.buildsOn.length) card.append(el("div", "foot", "Builds on: " + a.buildsOn.map(areaName).join(", ")));
+    if (Array.isArray(a.buildsOn) && a.buildsOn.length) card.append(el("div", "foot", "Builds on: " + a.buildsOn.map(areaName).join(", ")));
     card.addEventListener("click", () => { areaFilter = a.id; statusFilter = ""; setTab("features"); });
     grid.append(card);
   }
@@ -213,7 +212,6 @@ function featureCard(f) {
   const card = el("article", "card");
   const top = el("div", "row");
   top.append(el("span", "pill s-" + (STATUS.includes(f.status) ? f.status : "planned"), f.status || "planned"));
-  if (f.milestone) top.append(el("span", "tag", f.milestone));
   top.append(el("span", "tag", areaName(f.area)));
   card.append(top, el("h3", null, f.name), el("p", "ex", f.explanation || ""));
   const groups = [["API operations", f.operations], ["Screens", f.screens], ["Tables", f.tables]].filter(([, v]) => v && v.length);
@@ -261,7 +259,7 @@ function tableSec(main, title, head, rows) {
 function renderSystem(main) {
   if (!system) { main.append(el("div", "empty", loaded ? "No system facts yet." : "Loading…")); return; }
   const q = s => !query || String(s).toLowerCase().includes(query);
-  tableSec(main, "Apps and packages", ["Name", "Kind", "Folder", "Uses"], (system.packages || []).filter(p => q(p.name)).map(p => [p.name, p.kind, p.folder, (p.uses || []).join(", ") || "—"]));
+  tableSec(main, "Apps and packages", ["Name", "Kind", "Folder", "Uses"], (system.packages || []).filter(p => q(p.name)).map(p => [p.name, p.kind, p.folder, (Array.isArray(p.uses) ? p.uses : []).join(", ") || "—"]));
   tableSec(main, "API operations", ["Operation", "Owned by"], (system.operations || []).filter(o => q(o.id)).map(o => [o.id, claimOf("operations", o.id)]));
   tableSec(main, "Screens", ["Route", "App", "Owned by"], (system.screens || []).filter(s => q(s.route)).map(s => [s.route, s.site, claimOf("screens", s.route)]));
   tableSec(main, "Tables", ["Table", "Owned by"], (system.tables || []).filter(t => q(t)).map(t => [t, claimOf("tables", t)]));

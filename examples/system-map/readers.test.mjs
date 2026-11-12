@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import readOpenApi from "./readers/openapi.mjs";
@@ -37,6 +37,20 @@ test("openapi: a path called __proto__ or constructor is data, not a lookup", as
   assert.deepEqual(ids(await readOpenApi(dir, { file: "api.json" })).sort(), ["GET __proto__", "POST constructor"]);
 });
 
+test("openapi: all eight methods are read", async () => {
+  const item = Object.fromEntries(["get", "put", "post", "delete", "options", "head", "patch", "trace"].map((m) => [m, {}]));
+  const dir = folder({ "api.json": JSON.stringify({ paths: { "/a": item } }) });
+  assert.deepEqual(ids(await readOpenApi(dir, { file: "api.json" })).map((i) => i.split(" ")[0]).sort(), ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "TRACE"]);
+});
+test("openapi: a path item key it cannot read refuses, naming the path and file", async () => {
+  for (const key of ["$ref", "query", "additionalOperations", "gett"]) {
+    const dir = folder({ "api.json": JSON.stringify({ paths: { "/loans": { [key]: {} } } }) });
+    await assert.rejects(readOpenApi(dir, { file: "api.json" }), new RegExp(`api\\.json: the path /loans has "\\${key}"|api\\.json: the path /loans has "${key}"`));
+  }
+  const ok = folder({ "api.json": JSON.stringify({ paths: { "/a": { summary: "s", description: "d", parameters: [], servers: [], "x-ext": 1, get: {} } } }) });
+  assert.deepEqual(ids(await readOpenApi(ok, { file: "api.json" })), ["GET /a"]);
+});
+
 // Routes
 test("routes: the folder of each matching file is the screen, the top folder is /", async () => {
   const dir = folder({ "app/page.tsx": "", "app/a/b/page.tsx": "", "app/a/layout.tsx": "", "app/node_modules/x/page.tsx": "" });
@@ -49,6 +63,12 @@ test("routes: a missing folder, a bad pattern and no match each refuse", async (
   await assert.rejects(readRoutes(dir, { root: "nope", pattern: "x" }), /nope: cannot read the route folder/);
   await assert.rejects(readRoutes(dir, { root: "app", pattern: "(" }), /app: the file name pattern .* is not a regular expression/);
   await assert.rejects(readRoutes(dir, { root: "app", pattern: "^page$" }), /app: no file matches/);
+});
+
+test("routes: a symlink under the root refuses with its path", async () => {
+  const dir = folder({ "real/loans/page.tsx": "", "app/page.tsx": "" });
+  symlinkSync(join(dir, "real"), join(dir, "app", "linked"));
+  await assert.rejects(readRoutes(dir, { root: "app", pattern: "^page\\.tsx$" }), /app: cannot read the route folder \(linked: a symbolic link/);
 });
 
 // SQL
@@ -67,7 +87,7 @@ test("sql: comments, strings and $$ blocks cannot hide or fake a statement", asy
   const text = `-- CREATE TABLE ghost (id int);
 /* DROP TABLE real; */
 CREATE TABLE real (note text DEFAULT 'DROP TABLE real; -- not a comment');
-CREATE FUNCTION f() RETURNS void AS $body$ BEGIN CREATE TABLE inner_t (id int); END $body$ LANGUAGE plpgsql;`;
+CREATE FUNCTION f() RETURNS void AS $body$ BEGIN PERFORM 1; END $body$ LANGUAGE plpgsql;`;
   assert.deepEqual(ids(await sql(text)), ["real"]);
 });
 test("sql: harmless TABLE statements and a column called table are accepted", async () => {
@@ -96,6 +116,23 @@ test("sql: a missing folder and a folder with no .sql file refuse", async () => 
   const dir = folder({ "m/readme.md": "" });
   await assert.rejects(readSql(dir, { dir: "nope" }), /nope: cannot read the migrations folder/);
   await assert.rejects(readSql(dir, { dir: "m" }), /m: no \.sql file/);
+});
+
+test("sql: a $$ block that creates, drops or alters a table refuses with the file name", async () => {
+  await assert.rejects(sql("DO $$ BEGIN CREATE TABLE hidden (id int); END $$;"), /m\/0001\.sql: a \$\$ block creates or changes a table/);
+  await assert.rejects(sql("CREATE FUNCTION f() RETURNS void AS $body$ DROP TABLE x $body$;"), /a \$body\$ block creates or changes a table/);
+  await assert.rejects(sql("DO $$ BEGIN ALTER TABLE ONLY x ADD y int; END $$;"), /a \$\$ block creates or changes a table/);
+});
+test("sql: files are found whatever the case of the extension", async () => {
+  const dir = folder({ "m/0001.SQL": "CREATE TABLE a (id int);" });
+  assert.deepEqual(ids(await readSql(dir, { dir: "m" })), ["a"]);
+});
+test("sql: an E-string with a backslash-escaped quote cannot swallow a statement", async () => {
+  const text = "INSERT INTO t VALUES (E'a\\'b'); CREATE TABLE seen (id int); INSERT INTO t VALUES (E'c\\'d');";
+  assert.deepEqual(ids(await sql(text)), ["seen"]);
+});
+test("sql: DROP SCHEMA refuses, because it drops tables the reader cannot list", async () => {
+  await assert.rejects(sql("CREATE TABLE a.t (id int); DROP SCHEMA a CASCADE;"), /m\/0001\.sql: DROP SCHEMA \.\.\. CASCADE is not understood/);
 });
 
 // The project's own reader

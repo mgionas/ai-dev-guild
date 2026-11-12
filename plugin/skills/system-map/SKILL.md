@@ -10,7 +10,10 @@ A working starting point for the check lives in the repository, not in the plugi
 plugin ships Markdown only): <https://github.com/mgionas/ai-dev-guild/tree/main/examples/system-map>.
 It reads operations from an OpenAPI document, screens from a folder of route files and tables from
 SQL migrations, and a project whose code declares them another way writes one small reader. Copy it
-into the project, adapt it, and keep the rules below.
+into the project, adapt it, and keep the rules below. The starter refuses undescribed operations,
+screens and tables; folders, jobs and outside services follow the same idea, but they are rules a
+project adds, with a reader of its own, when it needs them. Run it with `--base <ref>` (the branch
+the change merges into) in the local gate and in CI: that is what makes a growing baseline fail.
 
 ## The shape
 
@@ -19,7 +22,8 @@ into the project, adapt it, and keep the rules below.
 - **Written by people:** a features file per area says, in the product owner's words, which feature
   each item belongs to, and which outside systems and services each feature uses.
 - **A baseline that only shrinks:** items that existed before the map are listed as undescribed.
-  The check fails if the list grows; describing an item takes it off.
+  The check fails if the list grows (it compares the file with the base branch's copy, so it needs
+  that ref); describing an item takes it off.
 
 ## The check refuses
 

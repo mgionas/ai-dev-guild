@@ -14,13 +14,15 @@ import { join, relative, resolve, sep } from "node:path";
 // Folders that never hold a route and can hold thousands of files.
 const SKIP = new Set(["node_modules", ".git"]);
 
-function walk(dir) {
+function walk(dir, top) {
   return readdirSync(dir, { withFileTypes: true })
     .sort((a, b) => (a.name < b.name ? -1 : Number(a.name > b.name)))
     .flatMap((entry) => {
       if (SKIP.has(entry.name)) return [];
       const path = join(dir, entry.name);
-      return entry.isDirectory() ? walk(path) : [path];
+      // A link could lead to routes we would not list, or in a loop: refuse it rather than miss it.
+      if (entry.isSymbolicLink()) throw new Error(`${relative(top, path).split(sep).join("/")}: a symbolic link under the route folder is not followed`);
+      return entry.isDirectory() ? walk(path, top) : [path];
     });
 }
 
@@ -40,7 +42,7 @@ export default async function readRoutes(base, { root, pattern }) {
   let files;
   try {
     if (!statSync(top).isDirectory()) throw new Error("not a folder");
-    files = walk(top);
+    files = walk(top, top);
   } catch (error) {
     throw new Error(`${root}: cannot read the route folder (${error.message})`);
   }

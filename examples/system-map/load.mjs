@@ -123,7 +123,10 @@ export function loadMap(base) {
     const doc = readYaml(dir, "undescribed.yaml");
     if (keys(doc, rel("undescribed.yaml"), KINDS, [], problems)) {
       for (const k of KINDS) {
-        if (isStrings(doc[k])) undescribed[k] = doc[k];
+        if (isStrings(doc[k])) {
+          undescribed[k] = doc[k];
+          for (const id of new Set(doc[k].filter((x, i) => doc[k].indexOf(x) !== i))) problems.push(`${rel("undescribed.yaml")}: lists the ${k.slice(0, -1)} ${id} twice`);
+        }
         else if (Object.hasOwn(doc, k)) problems.push(`${rel("undescribed.yaml")}: ${k} must be a list of strings (an empty list is fine)`);
       }
     }
@@ -158,5 +161,6 @@ export function loadConfig(path) {
     }
     config[kind] = entry;
   }
+  if (problems.length === 0 && Object.keys(config).length === 0) problems.push(`${name}: tracks no kind (name a reader for operations, screens or tables)`);
   return { config, problems };
 }

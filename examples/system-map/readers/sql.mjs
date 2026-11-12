@@ -8,7 +8,8 @@
  * few harmless ones (other `ALTER TABLE` changes, `COMMENT`, `GRANT`, `REVOKE`, `TRUNCATE`,
  * `LOCK`), throws with the file's name rather than being skipped: a table this reader did not
  * understand would be a table the map never sees. So does a drop or rename of a table that was
- * never created, and an unfinished string, comment or `$$` block.
+ * never created, a `DROP SCHEMA ... CASCADE`, a `$$` block that creates or changes a table, and
+ * an unfinished string, comment or `$$` block. Dynamic SQL (`EXECUTE '...'`) is not read.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
@@ -40,9 +41,12 @@ export function statementsOf(text, file) {
     if (two === "/*") { const n = text.indexOf("*/", i + 2); if (n === -1) end("a /* comment"); i = n + 2; cur += " "; continue; }
     if (c === "'") {
       let j = i + 1;
+      // E'...' is the one string where a backslash escapes the next character, quote included.
+      const escapes = /[eE]/.test(text[i - 1] ?? "") && !/[\w$]/.test(text[i - 2] ?? "");
       for (;;) {
         if (j >= text.length) end("a string");
-        if (text[j] === "'" && text[j + 1] === "'") j += 2;
+        if (escapes && text[j] === "\\") j += 2;
+        else if (text[j] === "'" && text[j + 1] === "'") j += 2;
         else if (text[j] === "'") break;
         else j++;
       }
@@ -58,6 +62,10 @@ export function statementsOf(text, file) {
       if (tag) {
         const n = text.indexOf(tag, i + tag.length);
         if (n === -1) end(`a ${tag} block`);
+        // The inside is blanked below, so a table made in there would never be seen: refuse it instead.
+        if (/\b(?:CREATE|DROP|ALTER)\s+(?:\w+\s+)*TABLE\b/i.test(text.slice(i + tag.length, n))) {
+          throw new Error(`${file}: a ${tag} block creates or changes a table; write it as a plain statement`);
+        }
         cur += "''"; i = n + tag.length; continue;
       }
     }
@@ -89,7 +97,7 @@ export default async function readSql(base, { dir }) {
   let files;
   try {
     if (!statSync(top).isDirectory()) throw new Error("not a folder");
-    files = walk(top).filter((f) => f.endsWith(".sql"));
+    files = walk(top).filter((f) => f.toLowerCase().endsWith(".sql"));
   } catch (error) {
     throw new Error(`${dir}: cannot read the migrations folder (${error.message})`);
   }
@@ -98,6 +106,7 @@ export default async function readSql(base, { dir }) {
   for (const path of files) {
     const file = relative(base, path).split(sep).join("/");
     for (const sql of statementsOf(readFileSync(path, "utf8"), file)) {
+      if (/^DROP\s+SCHEMA\b.*\bCASCADE$/i.test(sql)) throw new Error(`${file}: DROP SCHEMA ... CASCADE is not understood: it drops tables this reader cannot list`);
       // Test for the word on a copy without the quoted names, so a column called "table" is not a table statement.
       if (!/\bTABLE\b/i.test(sql.replace(/"[^"]*"/g, '""'))) continue;
       let m;

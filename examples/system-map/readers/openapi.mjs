@@ -2,7 +2,7 @@
  * Reads the API operations from an OpenAPI JSON document, one per method and path, as
  * `METHOD /path` (the method in capitals, the path as the document writes it).
  *
- * Fails closed: a missing file, text that is not JSON, or a document with no `paths` object
+ * Paths are taken as written: a `servers` base path is not added. Fails closed: a missing file, text that is not JSON, or a document with no `paths` object
  * throws with the file's name. An empty `paths` is a real answer (an API with no routes yet).
  */
 import { readFileSync } from "node:fs";
@@ -10,6 +10,9 @@ import { resolve } from "node:path";
 
 // The methods OpenAPI allows on a path. Anything else under a path (parameters, summary) is not an operation.
 const METHODS = ["get", "put", "post", "delete", "options", "head", "patch", "trace"];
+
+// The other keys a path item may hold. Anything else (`$ref`, `query`, `additionalOperations`) may hide operations this reader would miss.
+const ITEM_KEYS = ["parameters", "summary", "description", "servers"];
 
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
@@ -32,6 +35,11 @@ export default async function readOpenApi(root, { file }) {
   const found = [];
   for (const [route, item] of Object.entries(doc.paths)) {
     if (!isObject(item)) throw new Error(`${file}: the path ${route} is not an object`);
+    for (const key of Object.keys(item)) {
+      if (!METHODS.includes(key) && !ITEM_KEYS.includes(key) && !key.startsWith("x-")) {
+        throw new Error(`${file}: the path ${route} has "${key}", which this reader cannot read (an operation could hide in it)`);
+      }
+    }
     for (const method of METHODS) {
       if (!Object.hasOwn(item, method)) continue;
       const op = item[method];

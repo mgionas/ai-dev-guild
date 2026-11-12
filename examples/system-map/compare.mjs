@@ -16,9 +16,13 @@ export function compare(facts, { features, undescribed }) {
     const what = LABEL.get(kind);
     const real = new Set((facts[kind] ?? []).map((f) => f.id));
     const claimed = new Set();
+    const owner = new Map();
     for (const feature of features) {
       for (const id of feature[kind]) {
         claimed.add(id);
+        // A shared item belongs to a feature of its own ("shared ..."): the map says who owns it, once.
+        if (owner.has(id)) problems.push(`${feature.file}: feature "${feature.id}" names the ${what} ${id}, which feature "${owner.get(id)}" already owns`);
+        else owner.set(id, feature.id);
         if (!real.has(id)) problems.push(`${feature.file}: feature "${feature.id}" names the ${what} ${id}, which does not exist in the code`);
       }
     }

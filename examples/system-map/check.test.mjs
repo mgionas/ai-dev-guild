@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -111,3 +111,90 @@ test("the command line exits 1 with the message, 0 when true, 2 on a wrong flag"
   assert.match(bad.stderr, /belongs to no feature/);
   assert.equal(cli(["--nope", "x"]).status, 2);
 });
+
+// The baseline only shrinks
+const git = (dir, ...args) => {
+  const r = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", ...args], { cwd: dir, encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+};
+/** A committed project; returns its folder and config path. */
+const repo = (changes = {}) => {
+  const config = project(changes);
+  const dir = join(config, "..");
+  git(dir, "init", "-q");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "start");
+  return { dir, config };
+};
+const BASELINE = "docs/system-map/undescribed.yaml";
+
+test("--base: an unchanged baseline passes and the ok line says it was compared", async () => {
+  const { config } = repo();
+  const { problems, summary } = await runCheck({ config, base: "HEAD" });
+  assert.deepEqual(problems, []);
+  assert.match(summary, /baseline compared with HEAD/);
+});
+test("without --base the ok line says the baseline was not compared", async () => {
+  const { summary } = await run({});
+  assert.match(summary, /baseline not compared/);
+});
+test("--base: an entry the ref does not have is refused, even when the code has it", async () => {
+  const { dir, config } = repo();
+  mkdirSync(join(dir, "app/loans"), { recursive: true });
+  writeFileSync(join(dir, "app/loans/page.tsx"), "");
+  writeFileSync(join(dir, BASELINE), "operations: ['POST /books', 'GET /health']\nscreens: ['/', '/loans']\ntables: [audit_log]\n");
+  const { problems } = await runCheck({ config, base: "HEAD" });
+  assert.ok(problems.some((p) => p.includes("lists the screen /loans, which HEAD does not") && p.includes("new items go to a feature, not the baseline")), problems.join("\n"));
+  assert.deepEqual((await runCheck({ config })).problems, [], "without --base it passes: that is the hole --base closes");
+});
+test("--base: moving an entry into a feature is a shrink and passes", async () => {
+  const { dir, config } = repo();
+  writeFileSync(join(dir, BASELINE), "operations: ['POST /books']\nscreens: ['/']\ntables: [audit_log]\n");
+  const file = join(dir, "docs/system-map/features/catalog.yaml");
+  writeFileSync(file, readFileSync(file, "utf8").replace("operations: ['GET /books']", "operations: ['GET /books', 'GET /health']"));
+  assert.deepEqual((await runCheck({ config, base: "HEAD" })).problems, []);
+});
+test("--base: a ref that cannot be read refuses", async () => {
+  const { config } = repo();
+  const { problems } = await runCheck({ config, base: "no-such-ref" });
+  assert.ok(problems.some((p) => p.includes("no-such-ref") && p.includes("cannot read")), problems.join("\n"));
+  assert.ok((await runCheck({ config, base: "--all" })).problems.some((p) => p.includes("--all")));
+});
+test("--base outside a git repository refuses", async () => {
+  const { problems } = await runCheck({ config: project({}), base: "HEAD" });
+  assert.ok(problems.some((p) => p.includes("cannot read") && p.includes("HEAD")), problems.join("\n"));
+});
+test("--base: no baseline file at the ref means it is being created, and the ok line says so", async () => {
+  const { dir, config } = repo({ [BASELINE]: null });
+  writeFileSync(join(dir, BASELINE), "operations: ['POST /books', 'GET /health']\nscreens: ['/']\ntables: [audit_log]\n");
+  const { problems, summary } = await runCheck({ config, base: "HEAD" });
+  assert.deepEqual(problems, []);
+  assert.match(summary, /baseline created: HEAD has no undescribed\.yaml/);
+});
+test("--base: a baseline at the ref that cannot be read refuses", async () => {
+  const { config } = repo({ [BASELINE]: "operations: [" });
+  assert.ok((await runCheck({ config, base: "HEAD" })).problems.length > 0);
+  rmSync(join(config, ".."), { recursive: true, force: true });
+});
+test("a baseline entry listed twice is refused", () =>
+  refuses({ [BASELINE]: "operations: ['POST /books', 'GET /health', 'GET /health']\nscreens: ['/']\ntables: [audit_log]\n" }, "lists the operation GET /health twice"));
+test("--base on the command line", () => {
+  const { config } = repo();
+  const r = spawnSync(process.execPath, [join(import.meta.dirname, "check.mjs"), "--config", config, "--base", "HEAD"], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /baseline compared with HEAD/);
+});
+
+// Two features, one item
+test("one item claimed by two features is refused, naming both", () =>
+  refuses({ "docs/system-map/features/shelf.yaml": feature("").replace("id: list-books", "id: second").replace("area: catalog", "area: shelf").replace("screens: ['/books']", "screens: []").replace("tables: [book]", "tables: []") },
+    'feature "second" names the operation GET /books, which feature "list-books" already owns'));
+
+// Rules that nothing exercised
+test("an area id used twice, and an area that builds on itself, are refused", async () => {
+  await refuses({ "docs/system-map/areas.yaml": BASE_AREAS + "  - id: shelf\n    name: Again\n    explanation: x.\n    buildsOn: []\n" }, 'the area id "shelf" is used twice');
+  await refuses({ "docs/system-map/areas.yaml": BASE_AREAS.replace("buildsOn: [catalog]", "buildsOn: [shelf]") }, 'area "shelf" builds on itself');
+});
+
+test("a config that tracks nothing is refused", () =>
+  refuses({ "system-map.config.json": "{}" }, "tracks no kind"));

@@ -39,7 +39,13 @@ branches adding features to different areas never touch the same lines.
 **`undescribed.yaml`**: `operations`, `screens` and `tables`, each a list. When you adopt the
 check on an existing project, list there everything that already exists and no feature describes.
 After that the list only shrinks: describing an item means moving it into a feature and deleting
-its line here. Adding a line is how the check gets switched off, so do not.
+its line here. A line listed twice is refused. Whether the list grew is only known by comparing it
+with an earlier copy, so run the check with `--base <ref>` (the branch the change merges into, for
+example `node check.mjs --base origin/main`) in CI and in the local gate: every entry must also be in
+that ref's `undescribed.yaml`, and a new one is refused ("new items go to a feature, not the
+baseline"). A ref that cannot be read refuses; a ref with no `undescribed.yaml` means the baseline is
+being created, and the ok line says so. Without `--base` the ok line says the baseline was not
+compared. In CI, fetch enough history for the ref to exist (`fetch-depth: 0`, or fetch the base branch).
 
 Every key is required and an unknown key is refused: a misspelt `operatons:` would otherwise
 describe nothing and still pass.
@@ -47,11 +53,14 @@ describe nothing and still pass.
 ## What the check refuses
 
 - an operation, screen or table that no feature claims and that is not in `undescribed.yaml`;
-- a line in `undescribed.yaml` for something that no longer exists, or that a feature now claims;
+- a line in `undescribed.yaml` for something that no longer exists, or that a feature now claims,
+  a line listed twice, and (with `--base`) a line the base ref does not have;
+- one operation, screen or table claimed by two features, naming both. Something truly shared
+  belongs to a feature of its own ("shared ...");
 - a feature naming an operation, screen or table that does not exist in the code;
 - a features file holding a feature of another area, a file in `features/` named after no area,
   an area with no file, a feature id used twice;
-- an unknown or missing key in any YAML file or in the config;
+- an unknown or missing key in any YAML file or in the config, and a config that tracks no kind;
 - a reader that cannot read its input (below). It stops the check and names the file; it never
   skips.
 
@@ -63,7 +72,7 @@ that names something of that kind is then refused.
 
 | Kind | Reader | Config | A fact is |
 | --- | --- | --- | --- |
-| operations | `openapi` | `{"reader": "openapi", "file": "openapi.json"}` | `METHOD /path` from the document's `paths` |
+| operations | `openapi` | `{"reader": "openapi", "file": "openapi.json"}` | `METHOD /path` from the document's `paths`, the path as written (a `servers` base path is not added) |
 | screens | `routes` | `{"reader": "routes", "root": "src/app", "pattern": "^page\\.tsx$"}` | the folder of each file under `root` whose name matches `pattern`, as `/folder/sub` (`/` for the top) |
 | tables | `sql` | `{"reader": "sql", "dir": "db/migrations"}` | a table left after replaying `CREATE TABLE`, `ALTER TABLE ... RENAME TO` and `DROP TABLE` in file-name order |
 
@@ -71,7 +80,13 @@ Paths in the config are relative to the config file's folder, and the map is rea
 `docs/system-map/` beside it. The `sql` reader refuses any statement that mentions `TABLE` and is
 neither one of those nor a harmless one (another `ALTER TABLE`, `COMMENT`, `GRANT`, `REVOKE`,
 `TRUNCATE`, `LOCK`), because a table it did not understand is a table the map would never show.
-Table names are compared without quotes and in lower case, otherwise as written.
+Table names are compared without quotes and in lower case, otherwise as written. Files ending in
+`.sql` are read in any letter case. A table made or changed inside a `$$` block (a function body,
+`DO`) is refused, as is `DROP SCHEMA ... CASCADE`; dynamic SQL (`EXECUTE '...'`) is not read at all.
+
+The `openapi` reader refuses a path item with a key it does not know (`$ref`, `query`,
+`additionalOperations`, a misspelt method), because an operation could hide there. The `routes`
+reader refuses a symbolic link under its folder rather than miss what it leads to.
 
 ### Your own reader
 
