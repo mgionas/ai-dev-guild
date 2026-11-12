@@ -22,9 +22,9 @@ services:
     ports:
       # The password above is committed, so the port must not leave this machine.
       - "127.0.0.1:<database-port>:5432"
+    networks: [<project>-local]
     volumes:
       - <project>-database-data:/var/lib/postgresql/data
-    networks: [<project>-local]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U <project> -d <project>"]
       interval: 4s
@@ -33,25 +33,25 @@ services:
 
   proxy:
     container_name: <project>-proxy
-    image: caddy:2.11.4-alpine
+    image: caddy:2.10.2-alpine
     ports:
-      # macOS keeps ports under 1024 from a non-root process on the host, hence a container.
+      # On macOS a host process needs root for ports under 1024; a container does not.
       - "127.0.0.1:80:80"
       - "127.0.0.1:443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       # The local certificate authority lives here. A new volume means a new root, and the
       # root you already trusted no longer matches.
       - <project>-proxy-data:/data
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
     extra_hosts:
       # Docker Desktop answers for this name itself; Docker Engine on Linux needs the line.
       - "host.docker.internal:host-gateway"
     networks: [<project>-local]
 
-  # Optional, off by default: docker compose --profile telemetry up -d
+  # Optional, off by default; the `telemetry` profile starts it.
   telemetry:
     container_name: <project>-telemetry
-    image: grafana/otel-lgtm:0.33.1
+    image: grafana/otel-lgtm:0.33.0
     profiles: [telemetry]
     ports:
       # Remap the outside only; the UI keeps listening on 3000 in the container.
@@ -61,13 +61,11 @@ services:
     networks: [<project>-local]
 
   # Optional, off by default. Speaks the S3 protocol and forgets everything on restart,
-  # so it suits generated fixtures only.
+  # so it suits generated fixtures only. Create the bucket from the app or the test setup.
   object-store:
     container_name: <project>-object-store
-    image: adobe/s3mock:5.2.3
+    image: adobe/s3mock:5.2.2
     profiles: [object-store]
-    environment:
-      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: <project>-local
     ports:
       - "127.0.0.1:<object-store-port>:9090"
     networks: [<project>-local]
@@ -100,6 +98,7 @@ app.<project>.test {
 }
 
 api.<project>.test {
+	# Same idea: the API is a host process too.
 	reverse_proxy host.docker.internal:<api-port>
 }
 
@@ -138,10 +137,10 @@ machine, list theirs here and avoid them.
 
 ```text
 # --- <project> local setup (remove this block to undo it) ---
-127.0.0.1 <project>.test
-127.0.0.1 app.<project>.test
-127.0.0.1 grafana.<project>.test
-127.0.0.1 api.<project>.test
+127.0.0.1 <project>.test # bare domain
+127.0.0.1 app.<project>.test # web app
+127.0.0.1 grafana.<project>.test # telemetry UI
+127.0.0.1 api.<project>.test # API
 # --- end <project> ---
 ```
 
