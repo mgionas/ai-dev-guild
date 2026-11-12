@@ -5,6 +5,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- A `local-environment` skill that advises, and never requires, how a project's local setup could be
+  written down: its own named Docker Compose group (explicit names, loopback-only ports), local
+  HTTPS on a `.test` domain with the certificate-trust step per operating system, one ports
+  registry, a wiki and a generated API reference. It ships a compose file, proxy config, ports
+  table and hosts block as templates, and `setup` offers it when a project has no written local
+  setup. (field-tested)
+
 - The designer, builder and `research-review` carry more of the practice they were thin on:
   the designer counts clicks per task, keeps one filled button per view, gives each row and control
   an anatomy and reviews screenshots against stated criteria; the builder builds every state the
