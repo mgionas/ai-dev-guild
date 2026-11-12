@@ -28,12 +28,14 @@ folders (count them if useful, do not list them).
 
 1. Collect the facts above into the data shape below.
 2. Take the HTML inside the code block of `map-template.md` in this skill's folder and write it to
-   `docs/map/index.html` (or the path the user gives) and replace only the content of the `<script id="map-data">` block with the data, serialised as
-   JSON with every `<` written as `\u003c`, so no text inside it can end the block.
+   `docs/map/index.html` (or the path the user gives), wrapped in the minimal skeleton the template
+   describes, and replace only the content of the `<script id="map-data">` block with the data,
+   serialised as JSON with every `<` written as `\u003c`, so no text inside it can end the block.
 3. Open the page or describe it, and list the folders with no stated job: each is a small task for
    the docs or the builder who owns that folder.
 4. If the project can publish a page others open in a browser (a hosted page or an artifact),
-   publish the same file there. The repository copy stays the source.
+   publish the same page there, without the skeleton: the template is already in the form an
+   artifact takes. The repository copy stays the source.
 5. Refresh the map after merges that add a part, a link or a folder: the `progress-boards` skill
    lists it beside the roadmap.
 

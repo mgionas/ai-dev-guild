@@ -1,18 +1,20 @@
 # Project map page template
 
-The `project-map` skill writes this page to `docs/map/index.html`. Copy everything inside the
-code block below into that file, unchanged, then replace only the content of the
+The `project-map` skill writes this page to `docs/map/index.html`, or publishes it as an artifact.
+Copy everything inside the code block below, unchanged, then replace only the content of the
 `<script type="application/json" id="map-data">` block with the project's data.
+
+The page has no `<!doctype>`, `<html>`, `<head>` or `<body>`: it starts with `<title>` and
+`<style>`, as an artifact expects, and its colours follow the reader's light or dark setting. A
+plain file at `docs/map/index.html` needs a minimal skeleton around it (`<!doctype html>`,
+`<html lang="en">`, `<head>` with `<meta charset="utf-8">` and `<meta name="viewport"
+content="width=device-width, initial-scale=1">`, then `<body>`). The map's data is always the
+embedded block: it comes from the code, not from an artifact database.
 
 It is kept here as text, inside a Markdown file, so the plugin itself contains no web pages or
 scripts: the page exists only once you create it in your project.
 
 ````html
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project map</title>
 <style>
   :root {
@@ -20,10 +22,16 @@ scripts: the page exists only once you create it in your project.
     --accent: #9a6700; --link: #0969da; --warn-bg: #fff8c5; --warn: #7d4e00;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --muted: #9198a1;
       --accent: #e3b341; --link: #4493f8; --warn-bg: #2e2a1a; --warn: #e3b341;
+      color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --muted: #9198a1;
+    --accent: #e3b341; --link: #4493f8; --warn-bg: #2e2a1a; --warn: #e3b341;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -50,8 +58,6 @@ scripts: the page exists only once you create it in your project.
   .nojob { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 0 6px; font-size: 12px; }
   [hidden] { display: none !important; }
 </style>
-</head>
-<body>
 <main>
   <h1 id="title">Project map</h1>
   <p class="meta" id="meta"></p>
@@ -162,7 +168,8 @@ scripts: the page exists only once you create it in your project.
     graph.closest('.diagram').hidden = true;
   } else {
     try {
-      const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = document.documentElement.dataset.theme;
+      const dark = theme === 'dark' || (matchMedia('(prefers-color-scheme: dark)').matches && theme !== 'light');
       mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'neutral', securityLevel: 'strict' });
       mermaid.run({ nodes: [graph] }).catch(() => { graph.textContent = 'The diagram could not be drawn. The parts are listed below.'; });
     } catch {
@@ -170,6 +177,4 @@ scripts: the page exists only once you create it in your project.
     }
   }
 </script>
-</body>
-</html>
 ````

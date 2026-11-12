@@ -28,8 +28,32 @@ title, steps, the test account or role to use. Testers set pass / fail / blocked
 - Before writing a batch, list the ids already there and refuse a clash.
 - No personal data in checks: test accounts are named by role.
 
+### The published QA board page
+
+The page is the code block in `qa-board-page.md` in this skill's folder: copy it, replace
+`{{PROJECT}}` (twice), change nothing else. It has a totals bar, grouping by update or by feature,
+filters (result, account, search), and for each check Pass / Fail / Blocked buttons, a note that
+saves itself, and who marked it and when.
+
+It reads its rows one of two ways, so it works for every user:
+
+1. **The artifact's database** when the view can run it. Declare
+   `{"db": {"rules": [{"path": "", "read": "view", "write": "admin"}, {"path": "checks", "read": "view", "write": "interact"}]}, "user": {"scopes": ["profile"]}}`
+   when publishing: testers with at least interact access record results, and only editors change
+   updates and features. A tester's result updates the check's document with their id (names are
+   looked up when the page draws, never stored). Seed and change updates, features and checks with
+   the artifact database tool after publishing, never in the page.
+2. **Rows embedded in the page**, when the person does not publish artifacts: write the page as a
+   plain file with the `page-data` block filled in. The controls are then read-only and say that
+   results are saved only on the published page.
+
+| Collection | Fields |
+| --- | --- |
+| `updates` | `date` (YYYY-MM-DD), `title`, `summary`, `branch`, `commit`, `features` (feature ids, in display order), `order` |
+| `features` | `name`, `area` (a group heading), `where` (where to find it), `order` |
+| `checks` | `featureId`, `updateId`, `title`, `steps` (how to test), `account` (the role to test with), `status` (`open` · `pass` · `fail` · `blocked`), `note`, `by` (the tester's user id), `at` (ISO time of the result), `order` |
+
 ## Where they live
 
-Markdown files in the repository (`docs/roadmap.md`, `docs/qa-board.md`) are enough to start.
-A shared page with its own small database works better once testers mark results; keep the same
-fields either way.
+Markdown files in the repository (`docs/roadmap.md`, `docs/qa-board.md`) are enough to start and
+stay the source of truth. Each also ships as a page (above); keep the same fields either way.
