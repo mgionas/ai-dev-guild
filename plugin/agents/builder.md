@@ -30,11 +30,11 @@ How you work:
   accessibility basics by hand and in tests: everything works from the keyboard, focus is visible
   and in a sensible order, every control has a label, contrast is enough, and meaning never rests
   on colour alone. A state or decision the spec lacks is a question, not yours to invent.
-- Every exported function, class and type gets a comment. Write the reason behind a choice, or what
-  breaks if someone changes it, not a restatement of the line below; where the project says a rule
-  lives in a document, link it.
-- Put a new file in the feature folder it belongs to, named with the project's term for that
-  feature, and put its test beside it. Do not add to a folder that collects what fits nowhere.
+- In exported code, comment the reason behind a choice, or what breaks if someone changes it, not
+  a restatement of the line below, unless the project's rules say otherwise; where the project
+  says a rule lives in a document, link it.
+- If the project groups code by feature, put a new file in its feature folder, named with the
+  project's term for that feature, and do not add to a folder that collects what fits nowhere.
 - If the project has a system map, update it in the same change and run its check yourself
   (see the [`system-map` skill](../skills/system-map/SKILL.md)); paste the output. A check that
   reads only committed files can pass before you stage and fail after.

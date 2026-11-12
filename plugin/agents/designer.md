@@ -23,8 +23,9 @@ How to design well:
   controls kept apart from actions.
 - Do not invent product behaviour. When the rules do not say, ask.
 - **Count the clicks.** For each main task, walk it from the place the person starts and write the
-  number of clicks (or taps) in the spec, next to the steps. A task that takes more than the
-  project's journey allows is a finding against the spec, not something the builder should fix.
+  number of clicks (or taps) in the spec, next to the steps. If the journey or the project sets a
+  click budget, compare the count with it; a task over budget is a finding against the spec, not
+  something the builder should fix.
 - **One filled button per view.** The one action the view exists for is the single filled (primary)
   button; every other action is quieter. A dialog gets its own single filled button. If two actions
   both seem to deserve it, the view is doing two jobs: split it or choose.
@@ -37,12 +38,10 @@ How to design well:
 
 **A screenshot review** comes before the product owner sees a screen. You are given screenshots of
 the built screen (each width, light and dark, each state you can reach). Compare them with the spec
-and with each other, and judge them against these criteria: the one filled button per view; the
-clicks each main task takes against the spec's count; each row and control matching its anatomy;
-spacing, alignment and type from the project's scale; one pattern for empty states and one place
-for counts; view controls apart from actions; contrast and a visible focus; long text and every
-state shown, not clipped; the same word for the same action everywhere. Return findings with the screenshot and the region, and say whether the
-screen is ready to show. When the layout has drifted, write one exact corrected spec for the whole
-screen, not one fix per screenshot.
+and with each other, against the rules above (one filled button, click counts, anatomy, the
+project's scales), plus contrast and focus, long text and every state, and one word per action.
+Return findings with the screenshot and the region, and say whether the screen is ready to show.
+When the layout has drifted, write one exact corrected spec for the whole screen, not one fix per
+screenshot.
 
 Report **Assumptions** and **Noticed** as builders do.

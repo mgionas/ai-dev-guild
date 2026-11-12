@@ -10,44 +10,42 @@ description: "EXAMPLE (a backend with modules that own their data): add a module
 Reviewed by `architect`; by `db-migrations` for its tables; by `security-reviewer` too if it touches
 access, money or personal data. The builder never reviews their own module.
 
-1. **Name it from the glossary.** The module, its entities and its states use agreed terms. A
-   concept with no name is a question, not an invention: renaming later touches the schema and
-   every caller.
-2. **Lay out the folder.** One public entry file and nothing else public; everything behind it in
-   feature folders named with the glossary's term for the feature. A new file goes in the feature
-   it belongs to, with its test beside it. Other modules import the entry file only, and a
-   dependency check enforces it. Do not export a test double, or a lookup that takes any id and
-   returns anything: expose the narrow function that does the one thing.
-3. **Give it its own data and say who owns it.** Its tables live in its own namespace, written by
-   this module only. Put every rule the code believes in the database as well (a constraint, not
-   only a type), because a script or a manual session reaches the table without your code. An
-   allowed value that nothing can write does not belong in the constraint.
-4. **Bound every transaction**, reads included. Set a lock wait and a statement time limit, so one
-   stalled request cannot hold every pooled connection and take down unrelated work.
-5. **Design each limit by asking who it refuses.** For every cap, rate or budget write down: can a
-   stranger fill it cheaply? When it is full, who is refused: the one who filled it, or everyone?
-   If everyone, it is an outage waiting for an attacker; make it an alert, or key it by the smaller
-   unit (per user, per requester). Then do the multiplication with real numbers; a cost described
-   in adjectives hides an error of a hundred times. Never count against a limit work that cannot
-   succeed.
-6. **Plan retention before the table exists.** Who deletes old rows, how often, and with which
-   role? Export a prune function that takes the cutoff as a parameter. A table that only grows
-   becomes a full scan, and a full scan under a lock becomes a queue. If the retention period is a
-   product or legal question, record it as an open question; do not pick a number.
-7. **Let no raw error escape.** Assume any error you did not build contains its inputs (a database
-   driver's message may end with every parameter). Recognise the errors you can act on, and wrap
-   the rest in your own error carrying a code and nothing else. Read a record with a key from
-   outside through a map or an own-property check, never a plain index.
-8. **Refuse to start on a configuration that cannot work.** Read the environment once at the wiring
-   edge, give every setting a ceiling as well as a floor, and fail at boot for what would otherwise
-   stay silently broken. Decide what an unrecognised value means, and make it mean "no".
-9. **Test at the boundary.** Unit tests for the pure logic; tests against a real database for
-   anything with a transaction, a lock or a constraint. For each guard, remove it on purpose and
-   watch its test fail, one test per guard. Assert exact values, not "at least".
-10. **Write the folder guide, and make it true.** List the public functions, the events it sends
-    and receives, the invariants, each limit with its setting, and every error a function can
-    throw. State the rule the module exists to enforce and what would break it. A claim the code
-    does not support is worse than none: make the code true first, then soften the sentence.
-11. **Update the project map** in the same change if the project has one (`system-map` skill), and
-    run its check.
-12. **Report** with the build, test and check output pasted.
+1. **Name it from the glossary.** The module, its entities and its states all use agreed terms. A
+   concept with no name yet is a question for the owner: a wrong name costs a rename across the
+   schema and every caller.
+2. **Lay out the folder.** One public entry file; everything behind it sits in feature folders named
+   with the glossary's term for the feature, each new file next to its test. Other modules reach the
+   module through the entry file alone, and a dependency check fails the build when they do not.
+   Export narrow functions that do one job. A fake provider or a "fetch anything by id" helper
+   does not belong on the entry file: whoever imports it can use it anywhere.
+3. **Give it its own data.** Its tables live in a namespace that only this module writes to. Whatever
+   the code relies on, the database should refuse as well, with a constraint, because scripts and
+   hand-run queries never pass through your code. The reverse also holds: a constraint should list
+   only values something can actually write, or it misleads whoever reads the schema.
+4. **Bound every transaction**, reads included. A lock wait and a statement time limit stop one
+   stuck request from holding a pooled connection and starving unrelated work.
+5. **Size each limit by who it turns away.** For every cap, rate or budget, write down two things:
+   whether someone with no account can fill it for free, and who is refused once it is full. If the
+   answer is "everyone", it is an outage an attacker can trigger. Key it by the smaller unit (per
+   user, per requester) or let it raise an alert instead of refusing. Check the sizing with real
+   numbers worked out on paper, and do not charge a limit for work that could not have succeeded.
+6. **Plan retention before the first row.** Decide who deletes old rows, how often and under which
+   role, and export a prune function that takes the cutoff as an argument. A table that only grows
+   ends up scanned in full, and a full scan inside a lock backs everything up behind it. If the
+   retention period is a product or legal choice, record it as an open question and pick no number.
+7. **Contain errors and outside input.** Drivers and adapters can echo the query or request that
+   failed, parameters included. Wrap anything you cannot act on in your own error that carries a
+   code and nothing else. Look up outside strings in a map or with an own-property check, never a
+   plain index, and give a value you do not recognise the refusing outcome. Read the environment
+   once at the wiring edge, give each setting a ceiling as well as a floor, and refuse to boot on a
+   configuration that would fail silently.
+8. **Test at the boundary.** Pure logic gets unit tests; anything with a transaction, a lock or a
+   constraint gets tests against a real database. Remove each guard in turn and confirm a test
+   fails, with each test removing only the guard it covers. Compare exact values rather than
+   lower bounds.
+9. **Write the folder guide, and keep it true.** List the public functions, the events sent and
+   received, the invariants, each limit with its setting and every error a function can throw. Say
+   which property the module protects and which change would remove it. If the guide and the code
+   disagree, change the code first, and edit the guide only when the code cannot move. Finish by
+   updating the project map if there is one (`system-map` skill), then **report** with the build,
+   test and check output pasted.
