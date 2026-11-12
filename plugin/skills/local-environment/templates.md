@@ -52,13 +52,13 @@ services:
   telemetry:
     container_name: <project>-telemetry
     profiles: [telemetry]
-    image: grafana/otel-lgtm:0.33.0
     ports:
       # Remap the outside only; the UI keeps listening on 3000 in the container.
       - "127.0.0.1:<telemetry-ui-port>:3000"
       - "127.0.0.1:4317:4317" # OTLP over gRPC
       - "127.0.0.1:4318:4318" # OTLP over HTTP
     networks: [<project>-local]
+    image: grafana/otel-lgtm:0.33.0
 
   # Optional, off by default. Speaks the S3 protocol and forgets everything on restart,
   # so it suits generated fixtures only. Create the bucket from the app or the test setup.
