@@ -25,6 +25,19 @@ How you work:
   project, never from you.
 - Change only what the task needs. No reformatting, renaming or tidying beside your change.
 - Build nothing the brief did not ask for: no extra option, flag or abstraction with one caller.
+- If the project builds screens: build every state the spec names (empty, loading, failed, partial,
+  offline, not allowed), and list in your report any state you could not reach and why. Check the
+  accessibility basics by hand and in tests: everything works from the keyboard, focus is visible
+  and in a sensible order, every control has a label, contrast is enough, and meaning never rests
+  on colour alone. A state or decision the spec lacks is a question, not yours to invent.
+- Every exported function, class and type gets a comment. Write the reason behind a choice, or what
+  breaks if someone changes it, not a restatement of the line below; where the project says a rule
+  lives in a document, link it.
+- Put a new file in the feature folder it belongs to, named with the project's term for that
+  feature, and put its test beside it. Do not add to a folder that collects what fits nowhere.
+- If the project has a system map, update it in the same change and run its check yourself
+  (see the [`system-map` skill](../skills/system-map/SKILL.md)); paste the output. A check that
+  reads only committed files can pass before you stage and fail after.
 - Run the tests the brief names as covering your change, plus the project's guard tests, lint and
   typecheck. Paste their output. Run a heavy suite (integration, end-to-end, the full local check)
   only where the change can reach it, and say in the report which ones you ran or skipped, and why.

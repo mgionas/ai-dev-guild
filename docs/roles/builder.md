@@ -25,6 +25,10 @@ Builds one task from a brief file and writes a report file with evidence.
 - **Noticed**: problems seen outside the task, with `file:line`, which it did not fix.
 - **Questions**: anything only a person can decide.
 
+## What it also does
+- If the project builds screens: every state the spec names, with any it could not reach listed, and the accessibility checks (keyboard, focus, labels, contrast).
+- Comments on exported code that give the reason, new files in their feature folder, and, if the project has a system map, the map updated in the same change with its check run.
+
 ## Example
 
 ```

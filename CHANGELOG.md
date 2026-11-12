@@ -5,6 +5,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The designer, builder and `research-review` carry more of the practice they were thin on:
+  the designer counts clicks per task, keeps one filled button per view, gives each row and control
+  an anatomy and reviews screenshots against stated criteria; the builder builds every state the
+  spec names, checks accessibility, comments why, keeps feature folders and runs the system-map
+  check; `research-review` ends in a checklist of the findings that keep recurring. A `new-module`
+  example joins the four beside it. The role pages say the same. (field-tested)
+
 - A system map starter in `examples/system-map/`: the `docs/system-map/` layout (areas, one
   features file per area, a baseline of undescribed items that only shrinks), a small checker that
   refuses an API operation, screen or table no feature claims, and three readers that take those
