@@ -58,7 +58,7 @@ services:
       - "127.0.0.1:4317:4317" # OTLP over gRPC
       - "127.0.0.1:4318:4318" # OTLP over HTTP
     networks: [<project>-local]
-    image: grafana/otel-lgtm:0.33.0
+    image: grafana/otel-lgtm:0.32.0
 
   # Optional, off by default. Speaks the S3 protocol and forgets everything on restart,
   # so it suits generated fixtures only. Create the bucket from the app or the test setup.
