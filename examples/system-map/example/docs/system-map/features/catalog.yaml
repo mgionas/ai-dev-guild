@@ -1,0 +1,21 @@
+features:
+  - id: list-the-books
+    area: catalog
+    name: List the books
+    explanation: >-
+      Anyone can see the books on the shelves and open one to read its details.
+    status: built
+    operations: ['GET /books', 'GET /books/{bookId}']
+    screens: ['/books', '/books/[bookId]']
+    tables: [book]
+    decisions: []
+  - id: add-a-book
+    area: catalog
+    name: Add a book
+    explanation: >-
+      A librarian adds a new book to the catalog.
+    status: building
+    operations: ['POST /books']
+    screens: []
+    tables: []
+    decisions: []

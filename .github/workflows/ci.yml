@@ -15,6 +15,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The system map check compares its baseline with main's copy, so it needs main's history.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -23,3 +26,11 @@ jobs:
       - name: Guard hook tests
         working-directory: guards
         run: node --test 'hooks/*.test.mjs'
+      - name: Local CI example tests
+        run: node --test 'examples/ci-local/*.test.mjs'
+      - name: System map starter tests
+        working-directory: examples/system-map
+        run: |
+          npm ci --ignore-scripts
+          node --test '*.test.mjs'
+          node check.mjs --config example/system-map.config.json --base origin/main

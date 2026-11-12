@@ -82,7 +82,11 @@ heap, jobs at once and what else shares the machine. The guide behind it:
 - **A retry only for tests the branch did not touch.** When a step fails solely on test files the
   branch never changed, run just those files once more. If they pass, mark the step
   `PASS-on-retry`, list them as flaky, and open a task for each. If any failing file was changed by
-  the branch, retry nothing.
+  the branch, retry nothing. Retry nothing either when any other failure is in the log (an
+  unhandled error, or a failed package that names no test file), or when the base is HEAD itself.
+  Under a monorepo build tool the runner prints each path relative to its package, so retry inside
+  that package, and judge "touched" by the path from the repository root; when the package or its
+  folder cannot be found, retry nothing.
 
 ## Running it
 
@@ -97,8 +101,26 @@ Paste the summary in the report: the mode line, each step's line and the verdict
 
 ## Setting it up
 
-The ai-dev-guild repository has a small starting point at
-<https://github.com/mgionas/ai-dev-guild/blob/main/examples/ci-local/ci-local.mjs>: a step list
-with whole-repository and affected commands, the escalation list, a cleaned environment, a log per
-step and the verdict line. Copy it into your project, replace its steps with your CI workflow's,
-point the affected commands at your build tool, and add the test that compares the two lists.
+The ai-dev-guild repository has a starting point at
+<https://github.com/mgionas/ai-dev-guild/tree/main/examples/ci-local>. Copy the folder into your
+project (as `scripts/ci-local/`, or adjust the first line of `ESCALATE`).
+
+- `ci-local.mjs` is the runner: a step list with whole-repository and affected commands, a pure
+  `classify()` that decides the scope from the changed files, a check of the build tool's own
+  selection, a cleaned environment with the smallest runner's limits, a log per step (its tail is
+  printed when the step fails) and the verdict line. Flags: `--full`, `--base <ref>`, `--dry-run`,
+  `--out <dir>`; an unknown flag is refused, never ignored.
+- `ci-local.test.mjs` pins the step list in the test itself and compares it with the workflow file
+  the project keeps (the example reads `fixtures/ci.yml`; point it at your own). The workflow
+  installs, then calls the script with `--full`, so the list lives in one place. `dry-run.test.mjs`
+  runs the script in throwaway repositories and checks what it says.
+- Optional, each its own module with its own tests, and off unless a flag turns it on: `--retry`
+  (`retry.mjs`) for the flake retry above, and `--probe` (`probe.mjs`), which fails a step that
+  leaves the working tree different from before it ran and names the files. A step opts in to the
+  retry with a `retry` entry that says how to read the failed files from its log; the retry
+  refuses to run when the runner's own count of failures differs from the files it found, and for a log with
+  Turborepo's package prefixes the step's `packageCommand` runs once per package. The script
+  always works from the repository root, wherever it is started.
+
+Replace the steps with your CI workflow's, point the affected commands at your build tool, and keep
+the pinned list in the test in step with them.

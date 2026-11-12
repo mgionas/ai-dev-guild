@@ -1,0 +1,11 @@
+areas:
+  - id: catalog
+    name: Catalog
+    explanation: >-
+      The books the library owns, and how a reader finds one.
+    buildsOn: []
+  - id: loans
+    name: Loans
+    explanation: >-
+      A member borrows a book and brings it back.
+    buildsOn: [catalog]

@@ -1,0 +1,5 @@
+{
+  "operations": { "reader": "openapi", "file": "openapi.json" },
+  "screens": { "reader": "routes", "root": "src/app", "pattern": "^page\\.tsx$" },
+  "tables": { "reader": "sql", "dir": "db/migrations" }
+}

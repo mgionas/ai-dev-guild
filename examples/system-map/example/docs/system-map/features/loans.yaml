@@ -1,0 +1,11 @@
+features:
+  - id: borrow-and-return
+    area: loans
+    name: Borrow and return
+    explanation: >-
+      A member borrows a book, and the librarian marks it returned. The loan is kept as a record.
+    status: planned
+    operations: ['POST /loans', 'POST /loans/{loanId}/return']
+    screens: ['/loans']
+    tables: [loan, member]
+    decisions: ['Loans last three weeks']
