@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { STEPS } from "./ci-local.mjs";
-import { branchTouched, parseFailures, planRetry, retryStep, sameCommit, touchedFiles } from "./retry.mjs";
+import { branchTouched, packageFolders, parseFailures, planRetry, retryStep, sameCommit, touchedFiles } from "./retry.mjs";
 
 const spec = {
   pattern: /^\s*FAIL\s+(\S+\.test\.\w+)/,
@@ -14,6 +14,7 @@ const spec = {
 };
 const log = (...lines) => lines.join("\n");
 const exists = () => true;
+const at = (file, pkg = null) => ({ pkg, file });
 
 test("parseFailures reads each failed file once, plus the runner's own count", () => {
   const text = log(
@@ -23,7 +24,8 @@ test("parseFailures reads each failed file once, plus the runner's own count", (
     " Test Files  2 failed | 9 passed (11)",
   );
   assert.deepEqual(parseFailures(text, spec), {
-    files: ["src/a.test.ts", "src/b.test.ts"],
+    files: [at("src/a.test.ts"), at("src/b.test.ts")],
+    prefixed: false,
     reported: 2,
     unhandled: false,
     unnamed: [],
@@ -32,7 +34,7 @@ test("parseFailures reads each failed file once, plus the runner's own count", (
 
 test("parseFailures strips terminal colour codes before matching", () => {
   const text = "\u001B[31m FAIL \u001B[39m src/a.test.ts\n Test Files  1 failed (1)";
-  assert.deepEqual(parseFailures(text, spec).files, ["src/a.test.ts"]);
+  assert.deepEqual(parseFailures(text, spec).files, [at("src/a.test.ts")]);
 });
 
 test("a log with no count has no count", () => {
@@ -47,27 +49,27 @@ test("branchTouched: the file, or anything in its folder, counts", () => {
 });
 
 test("planRetry: untouched files named by the runner's own count are retried", () => {
-  const plan = planRetry({ files: ["src/a.test.ts"], reported: 1, unhandled: false, unnamed: [] }, new Set(["docs/a.md"]), exists);
+  const plan = planRetry({ files: [at("src/a.test.ts")], prefixed: false, reported: 1, unhandled: false, unnamed: [] }, new Set(["docs/a.md"]), exists);
   assert.deepEqual(plan.files, ["src/a.test.ts"]);
 });
 
 test("planRetry: a file the branch touched is never retried, even beside others", () => {
-  const failures = { files: ["src/a.test.ts", "lib/b.test.ts"], reported: 2, unhandled: false, unnamed: [] };
+  const failures = { files: [at("src/a.test.ts"), at("lib/b.test.ts")], prefixed: false, reported: 2, unhandled: false, unnamed: [] };
   const plan = planRetry(failures, new Set(["lib/b.test.ts"]), exists);
   assert.equal(plan.files, null);
   assert.match(plan.note, /lib\/b\.test\.ts is in the branch's change/);
 });
 
 test("planRetry: every doubt means no retry", () => {
-  const ok = { files: ["src/a.test.ts"], reported: 1, unhandled: false, unnamed: [] };
+  const ok = { files: [at("src/a.test.ts")], prefixed: false, reported: 1, unhandled: false, unnamed: [] };
   const untouched = new Set(["docs/a.md"]);
   assert.match(planRetry(ok, null, exists).note, /could not work out/);
-  assert.match(planRetry({ files: [], reported: 1, unhandled: false, unnamed: [] }, untouched, exists).note, /no failing test file/);
+  assert.match(planRetry({ files: [], prefixed: false, reported: 1, unhandled: false, unnamed: [] }, untouched, exists).note, /no failing test file/);
   assert.match(planRetry({ ...ok, reported: null }, untouched, exists).note, /no failed-file count/);
   assert.match(planRetry({ ...ok, reported: 2 }, untouched, exists).note, /reports 2 failed, 1 named/);
   assert.match(planRetry(ok, untouched, () => false).note, /not a path from the repository root/);
   assert.match(
-    planRetry({ files: ["a b.test.ts"], reported: 1, unhandled: false, unnamed: [] }, untouched, exists).note,
+    planRetry({ files: [at("a b.test.ts")], prefixed: false, reported: 1, unhandled: false, unnamed: [] }, untouched, exists).note,
     /characters a command line cannot carry/,
   );
 });
@@ -83,6 +85,7 @@ test("touchedFiles joins commits, uncommitted and untracked paths; a git failure
 
 const step = { name: "test", retry: spec };
 const failedLog = log(" FAIL  src/a.test.ts", " Test Files  1 failed (3)");
+const folderOf = (pkg) => ({ "@a/one": "packages/one", "@a/two": "packages/two" })[pkg] ?? null;
 
 test("retryStep: a pass on retry clears the step and lists the flake", () => {
   const ran = [];
@@ -135,7 +138,7 @@ const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta
 
 test("the shipped pattern reads Turborepo's prefixed lines", () => {
   const failures = parseFailures(fixture("turbo-test-failure.txt"), shipped);
-  assert.deepEqual(failures.files, ["src/a.test.ts"]);
+  assert.deepEqual(failures.files, [at("src/a.test.ts", "@a/one")]);
   assert.equal(failures.reported, 1);
   assert.deepEqual(failures.unnamed, []);
   assert.equal(failures.unhandled, false);
@@ -143,7 +146,7 @@ test("the shipped pattern reads Turborepo's prefixed lines", () => {
 
 test("planRetry: a failed package that names no test file blocks the retry", () => {
   const failures = parseFailures(fixture("turbo-two-packages-failure.txt"), shipped);
-  assert.deepEqual(failures.files, ["src/a.test.ts"]);
+  assert.deepEqual(failures.files, [at("src/a.test.ts", "@a/one")]);
   assert.deepEqual(failures.unnamed, ["@a/two"]);
   const plan = planRetry(failures, new Set(["docs/x.md"]), exists);
   assert.equal(plan.files, null);
@@ -179,6 +182,90 @@ test("planRetry: without prefixes, more than one failed task cannot be explained
   assert.equal(planRetry(parseFailures(text, shipped), new Set(), exists).files, null);
   const one = log(" FAIL  src/a.test.ts", " Test Files  1 failed (3)", "Failed:    pkg-a#test");
   assert.deepEqual(planRetry(parseFailures(one, shipped), new Set(), exists).files, ["src/a.test.ts"]);
+});
+
+test("planRetry: a failure line with text before Failed: is still read (review A-H1)", () => {
+  const text = log(" FAIL  src/a.test.ts", " Test Files  1 failed (3)", " ERR_TURBO_TASK_FAILURE Failed: pkg-a#test, pkg-b#test");
+  const plan = planRetry(parseFailures(text, shipped), new Set(), exists);
+  assert.equal(plan.files, null);
+  assert.match(plan.note, /failed without naming/);
+  const prefixed = log(
+    "pkg-a:test:  FAIL  src/a.test.ts",
+    "pkg-a:test:  Test Files  1 failed (3)",
+    "pkg-b:test: ELIFECYCLE Command failed.",
+    " ERR_TURBO_TASK_FAILURE  Failed:    pkg-a#test, pkg-b#test",
+  );
+  const second = planRetry(parseFailures(prefixed, shipped), new Set(), exists, () => "x");
+  assert.equal(second.files, null);
+  assert.match(second.note, /pkg-b failed without naming/);
+});
+
+// What `--retry` does under Turborepo: the runner prints paths relative to its package.
+const prefixedLog = fixture("turbo-test-failure.txt");
+
+test("planRetry: a package-relative failure in an untouched file is retried inside its package", () => {
+  const plan = planRetry(parseFailures(prefixedLog, shipped), new Set(["docs/x.md"]), (path) => path === "packages/one/src/a.test.ts", folderOf);
+  assert.deepEqual(plan.files, ["packages/one/src/a.test.ts"]);
+  assert.deepEqual(plan.runs, [{ pkg: "@a/one", files: ["src/a.test.ts"] }]);
+});
+
+test("planRetry: a file touched in its package is not retried, whatever sits at that path in the root", () => {
+  // A root file src/a.test.ts exists and is untouched; the failing file is packages/one/src/a.test.ts.
+  const rootHasIt = (path) => path === "src/a.test.ts" || path === "packages/one/src/a.test.ts";
+  const touched = planRetry(parseFailures(prefixedLog, shipped), new Set(["packages/one/src/a.test.ts"]), rootHasIt, folderOf);
+  assert.equal(touched.files, null);
+  assert.match(touched.note, /packages\/one\/src\/a\.test\.ts is in the branch's change/);
+  const retried = planRetry(parseFailures(prefixedLog, shipped), new Set(), rootHasIt, folderOf);
+  assert.deepEqual(retried.files, ["packages/one/src/a.test.ts"]);
+});
+
+test("planRetry: a package whose folder is unknown, or a failure with no prefix beside prefixed lines, is not retried", () => {
+  const unknown = planRetry(parseFailures(prefixedLog, shipped), new Set(), exists, () => null);
+  assert.equal(unknown.files, null);
+  assert.match(unknown.note, /folder of package @a\/one is not known/);
+  const mixed = log(prefixedLog, " FAIL  src/c.test.ts", " Test Files  1 failed (1)");
+  const plan = planRetry(parseFailures(mixed, shipped), new Set(), exists, folderOf);
+  assert.equal(plan.files, null);
+});
+
+test("retryStep: a prefixed failure runs the package command for that package only", () => {
+  const ran = [];
+  const outcome = retryStep({
+    root: "/r",
+    base: "abc",
+    step: { name: "test", retry: shipped },
+    logText: prefixedLog,
+    env: {},
+    touched: () => new Set(),
+    exists: (path) => path === "packages/one/src/a.test.ts",
+    folderOf,
+    sameCommit: () => false,
+    run: (command) => (ran.push(command), { code: 0, output: "ok" }),
+  });
+  assert.deepEqual(ran, ["npx turbo run test --filter=@a/one -- src/a.test.ts"]);
+  assert.deepEqual(outcome.flakes, ["packages/one/src/a.test.ts"]);
+});
+
+test("packageFolders maps a package's name to its folder; a name two folders claim is unknown", () => {
+  const files = {
+    "package.json": '{"name":"root"}',
+    "packages/one/package.json": '{"name":"@a/one"}',
+    "packages/two/package.json": '{"name":"dup"}',
+    "packages/three/package.json": '{"name":"dup"}',
+    "packages/bad/package.json": "{",
+    "x-package.json": '{"name":"nope"}',
+  };
+  const lookup = packageFolders(
+    "/r",
+    () => `${Object.keys(files).join("\0")}\0`,
+    (path) => files[path] ?? null,
+  );
+  assert.equal(lookup("@a/one"), "packages/one");
+  assert.equal(lookup("root"), "");
+  assert.equal(lookup("dup"), null);
+  assert.equal(lookup("nope"), null);
+  assert.equal(lookup("missing"), null);
+  assert.equal(packageFolders("/r", () => null)("@a/one"), null);
 });
 
 test("retryStep: the base being HEAD means no retry, and the retry never runs", () => {

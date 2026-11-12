@@ -16,10 +16,16 @@
  * Nothing is retried either when the log has an "Unhandled Errors" section, or when Turborepo's
  * `Failed:` line (or a "command finished with error" line) names a package with no failed test file:
  * those are failures the retry of one flaky file would hide.
- * - `command`: what to run; `{files}` becomes the failed files.
+ * - `command`: what to run when the log has no Turborepo prefixes (one runner at the repository
+ *   root); `{files}` becomes the failed files, as the runner printed them.
+ * - `packageCommand`: what to run for a log whose lines carry the prefix. The runner prints each
+ *   path relative to its own package, so the retry runs in that package: `{package}` becomes the
+ *   package's name, `{files}` its failed files. The package's folder is found from the workspace's
+ *   `package.json` files, and "touched by the branch" is judged on the path from the repository
+ *   root (folder plus relative path). A package that cannot be found means no retry.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** Terminal colour and cursor codes, which test runners print even into a pipe under `CI=true`. */
@@ -32,18 +38,19 @@ const TURBO_PREFIX = /^(\S+?):[\w-]+: /;
 const UNHANDLED = /\bunhandled errors?\b/i;
 
 /** Turborepo's closing summary of failed tasks: `Failed:    pkg-a#test, pkg-b#test`. */
-const FAILED_TASKS = /^\s*Failed:\s+(.*)$/;
+const FAILED_TASKS = /\bFailed:\s+(\S.*)$/;
 
 /**
  * Reads the failed test files out of a step's log, and every failure that names no file.
  *
  * @param {string} log - the whole log.
  * @param {{pattern: RegExp, summary: RegExp}} spec - the step's retry settings.
- * @returns {{files: string[], reported: number | null, unhandled: boolean, unnamed: string[]}} each file once in first-seen order; the runner's own count (null when its summary line is missing); whether an unhandled-error section is present; and the packages the build tool reports as failed that have no named file ("?" when the log cannot say which package a named file belongs to).
+ * @returns {{files: {pkg: string | null, file: string}[], prefixed: boolean, reported: number | null, unhandled: boolean, unnamed: string[]}} each file once in first-seen order with the package its line named (null without a prefix); whether any line of the log carried a prefix; the runner's own count (null when its summary line is missing); whether an unhandled-error section is present; and the packages the build tool reports as failed that have no named file ("?" when the log cannot say which package a named file belongs to).
  */
 export function parseFailures(log, { pattern, summary }) {
-  const files = new Set();
+  const files = new Map();
   const filePackages = new Set();
+  let prefixed = false;
   const failedPackages = new Set();
   let reported = null;
   let unhandled = false;
@@ -51,11 +58,13 @@ export function parseFailures(log, { pattern, summary }) {
   for (const raw of log.replace(ANSI, "").split("\n")) {
     const line = raw.trimEnd();
     const prefix = TURBO_PREFIX.exec(line);
+    if (prefix) prefixed = true;
     if (UNHANDLED.test(line)) unhandled = true;
     const named = pattern.exec(line);
     if (named) {
-      files.add(named[1].replace(/^\.\//, ""));
-      filePackages.add(prefix?.[1] ?? null);
+      const entry = { pkg: prefix?.[1] ?? null, file: named[1].replace(/^\.\//, "") };
+      files.set(`${entry.pkg}\0${entry.file}`, entry);
+      filePackages.add(entry.pkg);
     }
     const count = summary.exec(line);
     if (count) reported = (reported ?? 0) + Number(count[1]);
@@ -73,7 +82,7 @@ export function parseFailures(log, { pattern, summary }) {
   const unnamed = filePackages.has(null)
     ? failedTasks > 1 ? ["?"] : []
     : [...failedPackages].filter((name) => !filePackages.has(name));
-  return { files: [...files], reported, unhandled, unnamed };
+  return { files: [...files.values()], prefixed, reported, unhandled, unnamed };
 }
 
 /**
@@ -95,13 +104,14 @@ export function branchTouched(path, touched) {
 /**
  * Decides whether a failure may be retried. Anything uncertain means no retry.
  *
- * @param {{files: string[], reported: number | null, unhandled: boolean, unnamed: string[]}} failures - from {@link parseFailures}.
+ * @param {{files: {pkg: string | null, file: string}[], prefixed: boolean, reported: number | null, unhandled: boolean, unnamed: string[]}} failures - from {@link parseFailures}.
  * @param {ReadonlySet<string> | null} touched - the branch's changed paths; null when unknown.
- * @param {(path: string) => boolean} exists - whether a repository-relative file exists. A name the runner printed relative to some other folder cannot be compared with the changed paths, so it blocks the retry.
- * @returns {{files: string[] | null, note: string}} the files to run again, or null and the reason.
+ * @param {(path: string) => boolean} exists - whether a repository-relative file exists.
+ * @param {(pkg: string) => string | null} [folderOf] - the repository-relative folder of a workspace package ("" for the root), or null when it is unknown or ambiguous.
+ * @returns {{files: string[] | null, runs: {pkg: string | null, files: string[]}[], note: string}} the files to run again (as paths from the repository root) and, per package, the names the runner printed; or null and the reason.
  */
-export function planRetry(failures, touched, exists) {
-  const no = (note) => ({ files: null, note: `not retried: ${note}` });
+export function planRetry(failures, touched, exists, folderOf = () => null) {
+  const no = (note) => ({ files: null, runs: [], note: `not retried: ${note}` });
   if (touched === null) return no("could not work out which files the branch touched");
   if (failures.files.length === 0) return no("no failing test file found in the log");
   if (failures.reported === null) return no("the log has no failed-file count to check against");
@@ -110,13 +120,65 @@ export function planRetry(failures, touched, exists) {
     return no(`${failures.unnamed.join(", ")} failed without naming a test file`);
   if (failures.reported !== failures.files.length)
     return no(`the runner reports ${failures.reported} failed, ${failures.files.length} named`);
-  for (const file of failures.files) {
+  const paths = [];
+  const runs = new Map();
+  for (const { pkg, file } of failures.files) {
     // The name goes into a shell command line, so only plain path characters are accepted.
     if (!/^[\w@./-]+$/.test(file)) return no(`${file} has characters a command line cannot carry safely`);
-    if (!exists(file)) return no(`${file} is not a path from the repository root`);
-    if (branchTouched(file, touched)) return no(`${file} is in the branch's change`);
+    if (pkg === null && failures.prefixed) return no(`${file} has no package prefix while other lines do`);
+    if (pkg !== null && !/^[\w@./-]+$/.test(pkg)) return no(`${pkg} has characters a command line cannot carry safely`);
+    const folder = pkg === null ? "" : folderOf(pkg);
+    if (folder === null) return no(`the folder of package ${pkg} is not known`);
+    const path = folder === "" ? file : `${folder}/${file}`;
+    if (!exists(path)) return no(`${path} is not a path from the repository root`);
+    if (branchTouched(path, touched)) return no(`${path} is in the branch's change`);
+    paths.push(path);
+    if (!runs.has(pkg)) runs.set(pkg, { pkg, files: [] });
+    runs.get(pkg).files.push(file);
   }
-  return { files: failures.files, note: `retrying ${failures.files.length} file(s) the branch did not touch` };
+  return { files: paths, runs: [...runs.values()], note: `retrying ${paths.length} file(s) the branch did not touch` };
+}
+
+/**
+ * Finds each workspace package's folder from the tracked and untracked `package.json` files: the
+ * package's `name` is the key. A name two folders claim is left out, so it counts as unknown.
+ *
+ * @param {string} root - the checkout.
+ * @param {(args: string[]) => string | null} [git] - git's stdout or null on failure; replaceable in tests.
+ * @param {(path: string) => string | null} [read] - a file's text relative to `root`, or null; replaceable in tests.
+ * @returns {(pkg: string) => string | null} the lookup: the folder relative to the root ("" for the root itself), or null.
+ */
+export function packageFolders(
+  root,
+  git = (args) => {
+    const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    return result.status === 0 ? result.stdout : null;
+  },
+  read = (path) => {
+    try {
+      return readFileSync(join(root, path), "utf8");
+    } catch {
+      return null;
+    }
+  },
+) {
+  const listing = git(["-c", "core.quotePath=false", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*package.json"]);
+  const folders = new Map();
+  const ambiguous = new Set();
+  for (const path of (listing ?? "").split("\0").filter(Boolean)) {
+    if (path !== "package.json" && !path.endsWith("/package.json")) continue;
+    let name;
+    try {
+      name = JSON.parse(read(path) ?? "").name;
+    } catch {
+      continue;
+    }
+    if (typeof name !== "string") continue;
+    const folder = path === "package.json" ? "" : path.slice(0, -"/package.json".length);
+    if (folders.has(name)) ambiguous.add(name);
+    folders.set(name, folder);
+  }
+  return (pkg) => (folders.has(pkg) && !ambiguous.has(pkg) ? folders.get(pkg) : null);
 }
 
 /**
@@ -166,7 +228,7 @@ export function sameCommit(root, base) {
 /**
  * Runs a failed step's retry, if the plan allows one.
  *
- * @param {{root: string, base: string | undefined, step: object, logText: string, env: object, run?: Function, touched?: Function, exists?: Function, sameCommit?: Function}} ctx - the checkout, the base (undefined in a full run with no merge base), the step with its `retry` settings, its log, and the environment. `run`, `touched`, `exists` and `sameCommit` are replaceable in tests.
+ * @param {{root: string, base: string | undefined, step: object, logText: string, env: object, run?: Function, touched?: Function, exists?: Function, folderOf?: Function, sameCommit?: Function}} ctx - the checkout, the base (undefined in a full run with no merge base), the step with its `retry` settings, its log, and the environment. `run`, `touched`, `exists`, `folderOf` and `sameCommit` are replaceable in tests.
  * @returns {{cleared: boolean, flakes: string[], note: string, output: string}} whether the step passed on retry, the flaky files, a line for the summary, and the retry's own output for the log.
  */
 export function retryStep(ctx) {
@@ -181,12 +243,17 @@ export function retryStep(ctx) {
     return { cleared: false, flakes: [], note: "not retried: the base is the same commit as HEAD, so no change could count as touched", output: "" };
   const touched = base ? (ctx.touched ?? touchedFiles)(root, base) : null;
   const exists = ctx.exists ?? ((path) => existsSync(join(root, path)));
-  const plan = planRetry(parseFailures(logText, step.retry), touched, exists);
+  const plan = planRetry(parseFailures(logText, step.retry), touched, exists, ctx.folderOf ?? packageFolders(root));
   if (plan.files === null) return { cleared: false, flakes: [], note: plan.note, output: "" };
-  const command = step.retry.command.replaceAll("{files}", plan.files.join(" "));
-  const result = run(command);
-  const output = `$ ${command}\n${result.output}`;
-  if (result.code !== 0)
-    return { cleared: false, flakes: [], note: "retry failed: the step stays FAIL", output };
+  let output = "";
+  for (const { pkg, files } of plan.runs) {
+    const template = pkg === null ? step.retry.command : step.retry.packageCommand;
+    if (typeof template !== "string")
+      return { cleared: false, flakes: [], note: "not retried: the step has no packageCommand for a prefixed log", output: "" };
+    const command = template.replaceAll("{package}", pkg ?? "").replaceAll("{files}", files.join(" "));
+    const result = run(command);
+    output += `$ ${command}\n${result.output}\n`;
+    if (result.code !== 0) return { cleared: false, flakes: [], note: "retry failed: the step stays FAIL", output };
+  }
   return { cleared: true, flakes: plan.files, note: "retry passed", output };
 }

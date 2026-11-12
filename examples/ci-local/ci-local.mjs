@@ -72,6 +72,8 @@ export const STEPS = [
       pattern: /^(?:\S+?:[\w-]+:\s+)?\s*FAIL\s+(?:\|[^|]*\|\s+)?(\S+\.test\.\w+)/,
       summary: /Test Files\s+.*?(\d+) failed/, // matched after the prefix is removed too
       command: "npx vitest run {files}",
+      // Vitest prints paths relative to the package, so the retry runs inside that package.
+      packageCommand: "npx turbo run test --filter={package} -- {files}",
     },
   },
   {
