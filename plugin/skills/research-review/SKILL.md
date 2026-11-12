@@ -39,7 +39,7 @@ Run these as a checklist after the four checks. Reviews have missed each of them
 - [ ] **A submit that only goes grey.** A disabled button that changes nothing else gives the user
   no information. Keep the button reachable, and let its label or a message say what is happening.
 - [ ] **A model word on screen.** Labels use the user's words, not field, table or status names from
-  the code. The menu item and the page it opens use the same word.
+  the code. Menu entries and the pages they lead to share one name.
 - [ ] **An error with no next step.** Each error says what to do. When a retry cannot help (a link
   that no longer works, an account that is closed), it names a person or a place to go. It also
   promises nothing the product does not do, such as an alert that no system sends.
@@ -54,13 +54,13 @@ Run these as a checklist after the four checks. Reviews have missed each of them
 - [ ] **A lookup that gives itself away.** A lookup screen answers the same whether or not the
   record exists, in content, wording and timing. A friendly "this one is already registered" tells
   a stranger what they should not learn.
-- [ ] **A secret in an address.** A token in a path, a query or a return link ends up in logs.
+- [ ] **A secret in an address.** A token placed in the URL path, the query string or a return link will be written to logs.
 - [ ] **Targets too small.** Check tappable things on a phone, especially links inside table cells
   and row actions.
 - [ ] **Clipped text.** A label that is cut off, clamped or ellipsed cannot be read in the longest
   translation. Check long translations, 200% zoom and a narrow width.
-- [ ] **A guess written as a finding.** A claim about what users do or prefer that no research backs
-  is a question, marked as assumed, not a defect.
+- [ ] **A guess written as a finding.** Something said about what users do or want, with no research behind it,
+  goes in as a question marked assumed, not as a defect.
 
 ## What to return
 

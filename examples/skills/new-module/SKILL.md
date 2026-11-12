@@ -1,6 +1,6 @@
 ---
 name: new-module
-description: "EXAMPLE (a backend with modules that own their data): add a module — a folder with one public entry point, its own data, limits that cannot become outages, retention for anything that grows, tests at its boundary, and a folder guide that is true. Rewrite for your stack before use."
+description: "EXAMPLE (a backend with modules that own their data): add a module — a folder with one public entry point, its own data, caps that cannot turn into an outage, cleanup for anything that grows, tests at its boundary, and a folder guide that is true. Rewrite for your stack before use."
 ---
 
 > Example skill. It assumes a backend split into modules that each own their tables and expose one
@@ -28,23 +28,23 @@ access, money or personal data. The builder never reviews their own module.
    whether someone with no account can fill it for free, and who is refused once it is full. If the
    answer is "everyone", it is an outage an attacker can trigger. Key it by the smaller unit (per
    user, per requester) or let it raise an alert instead of refusing. Check the sizing with real
-   numbers worked out on paper, and do not charge a limit for work that could not have succeeded.
+   numbers worked out on paper, and never use up budget on requests that were doomed to fail.
 6. **Plan retention before the first row.** Decide who deletes old rows, how often and under which
-   role, and export a prune function that takes the cutoff as an argument. A table that only grows
+   role, and give that role a pruning function that accepts the cutoff date as a parameter. A table that only grows
    ends up scanned in full, and a full scan inside a lock backs everything up behind it. If the
-   retention period is a product or legal choice, record it as an open question and pick no number.
+   length of time to keep rows is a product or legal decision, log it as an unresolved question and choose no figure.
 7. **Contain errors and outside input.** Drivers and adapters can echo the query or request that
    failed, parameters included. Wrap anything you cannot act on in your own error that carries a
    code and nothing else. Look up outside strings in a map or with an own-property check, never a
-   plain index, and give a value you do not recognise the refusing outcome. Read the environment
-   once at the wiring edge, give each setting a ceiling as well as a floor, and refuse to boot on a
-   configuration that would fail silently.
-8. **Test at the boundary.** Pure logic gets unit tests; anything with a transaction, a lock or a
-   constraint gets tests against a real database. Remove each guard in turn and confirm a test
+   plain index, and give a value you do not recognise the refusing outcome. Load the environment
+   a single time where the app is wired together, bound each setting from above and below, and stop
+   startup on a configuration that would otherwise fail unnoticed.
+8. **Test at the boundary.** Pure logic gets unit tests; anything involving transactions, locks or
+   constraints is tested against a real database. Remove each guard in turn and confirm a test
    fails, with each test removing only the guard it covers. Compare exact values rather than
    lower bounds.
-9. **Write the folder guide, and keep it true.** List the public functions, the events sent and
-   received, the invariants, each limit with its setting and every error a function can throw. Say
+9. **Write the folder guide, and keep it true.** List the public functions, which events go out and
+   come in, the invariants, each limit alongside its setting, and all the errors a function may raise. Say
    which property the module protects and which change would remove it. If the guide and the code
    disagree, change the code first, and edit the guide only when the code cannot move. Finish by
    updating the project map if there is one (`system-map` skill), then **report** with the build,

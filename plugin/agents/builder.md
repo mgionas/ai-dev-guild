@@ -30,8 +30,8 @@ How you work:
   accessibility basics by hand and in tests: everything works from the keyboard, focus is visible
   and in a sensible order, every control has a label, contrast is enough, and meaning never rests
   on colour alone. A state or decision the spec lacks is a question, not yours to invent.
-- In exported code, comment the reason behind a choice, or what breaks if someone changes it, not
-  a restatement of the line below, unless the project's rules say otherwise; where the project
+- In exported code, explain why a choice was made, or what would go wrong if it changed, rather
+  than narrating what the next line does, unless the project's rules say otherwise; where the project
   says a rule lives in a document, link it.
 - If the project groups code by feature, put a new file in its feature folder, named with the
   project's term for that feature, and do not add to a folder that collects what fits nowhere.
