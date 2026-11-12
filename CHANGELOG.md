@@ -5,6 +5,20 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- A system map starter in `examples/system-map/`: the `docs/system-map/` layout (areas, one
+  features file per area, a baseline of undescribed items that only shrinks), a small checker that
+  refuses an API operation, screen or table no feature claims, and three readers that take those
+  facts from an OpenAPI document, route files and SQL migrations, each refusing an input it cannot
+  read instead of skipping it. The `system-map` skill now ships its page as a template in the same
+  two modes as the roadmap, and `project-map` says it is the lighter version. The starter's one
+  dependency is `yaml`, pinned. (field-tested)
+
+- The local CI example is rebuilt with tests: one tested function decides what a change reaches, an
+  empty selection is never read as a pass, renames count on both sides, the build tool's own
+  selection is checked against the script's, a failing step prints its log tail, and test workers
+  are capped at the CI runner's cores. A flaky-test retry and a "did a step change the files" probe
+  come as optional parts. CI now runs the example tests. (field-tested)
+
 - The roadmap, the QA board and the project map ship as page templates, so every project gets the
   same pages instead of a sentence describing one. Each page reads its rows from the artifact
   database when the view can run it, or from a JSON block in the page when it is a plain file; the

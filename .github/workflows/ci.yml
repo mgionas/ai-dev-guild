@@ -23,3 +23,11 @@ jobs:
       - name: Guard hook tests
         working-directory: guards
         run: node --test 'hooks/*.test.mjs'
+      - name: Local CI example tests
+        run: node --test 'examples/ci-local/*.test.mjs'
+      - name: System map starter tests
+        working-directory: examples/system-map
+        run: |
+          npm ci --ignore-scripts
+          node --test '*.test.mjs'
+          node check.mjs --config example/system-map.config.json
