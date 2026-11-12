@@ -5,6 +5,15 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The guard hooks ask before a `kill` and refuse secret files from the shell: any kill but the
+  agent's own job (`kill %1`, `kill $!`) gets the "ask" answer, because one command does not say
+  which processes this agent started (a pattern kill is still refused, and its message no longer
+  suggests `kill <pid>`). A command naming `.env` or `.env.*` (not a name ending in `.example`,
+  `.sample` or `.template`) is refused from the shell unless it is one of the few that do not read
+  it (`ls`, `rm`, `source .env`, …), and from the Read and Grep tools, a side door the settings'
+  deny rules left open. Every rule also looks inside `bash -c`, `eval` and wrappers such as
+  `sudo -u`, and a command the hook cannot read is refused instead of let through. (field-tested)
+
 - The loop follows the project, not one habit: `setup` asks "squash follow-ups, or fix forward?"
   and writes the answer under a "History" heading in `AGENTS.md` (default: fix forward); skills and
   roles follow it. `qa-tester` has a panel mode that edits nothing and reports each missing test as

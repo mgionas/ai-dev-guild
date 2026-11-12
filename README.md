@@ -146,8 +146,10 @@ operations, growth and your industry. They never see each other's answers.
 ### 🛡️ Guard hooks (optional)
 
 A separate plugin, `ai-dev-guild-guards`, in the same marketplace. It refuses edits to protected
-files (`.env` by default), `pkill`/`killall`, `--no-verify` and other skipped git hooks, and can run
-your own formatter after every edit. The main plugin has no hooks or scripts at all.
+files (`.env` by default), `pkill`/`killall`, `--no-verify` and other skipped git hooks, and reading
+or sending `.env` files from the shell or the Read and Grep tools. It asks you before any `kill`
+of a process that is not the agent's own job, since it cannot tell whose process that is, and can
+run your own formatter after every edit. The main plugin has no hooks or scripts at all.
 
 <details>
 <summary><b>Every role, with what it gets and what it returns</b></summary>
@@ -199,16 +201,23 @@ are in [examples](examples/README.md), clearly marked and not loaded by the plug
 <details>
 <summary><b>The guard hooks in detail</b> (the optional <code>ai-dev-guild-guards</code> plugin)</summary>
 
-| Hook          | Refuses                                                                                                                               |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `guard-paths` | an edit to a file listed in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included                  |
-| `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`; a shell write to a protected file |
-| `after-edit`  | nothing by itself: it runs your executable `.claude/after-edit` on each edited file and sends any failure back to Claude              |
+| Hook          | Refuses (or asks)                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `guard-paths` | an edit to a file listed in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included                            |
+| `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`; a shell write to a protected file           |
+|               | any command naming a secret file, except the few that do not read it (`ls`, `rm`, `touch`, `chmod`, `stat`, `test`, `echo`, `source .env`, …)   |
+|               | asks: any `kill` but `kill %1`, `kill $!` or `kill -0` (`kill 1234`, `kill $PID`, `kill $(lsof …)`), since it cannot tell whose process that is |
+|               | asks: a shell that reads its script from a pipe (`curl … \| bash`) or another input it cannot see                                               |
+|               | asks: a shell whose `-c` string or here-string is built from an expansion (`bash -c "$(curl …)"`, `bash -c "$CMD"`)                             |
+| `guard-reads` | the Read and Grep tools opening a secret file (`.env`, `.env.*` in any folder; not `.env.example`, `.env.sample`, `.env.template`)              |
+| `after-edit`  | nothing by itself: it runs your executable `.claude/after-edit` on each edited file and sends any failure back to Claude                        |
 
-They ignore text inside quotes and heredocs, so `grep pkill` or a commit message is fine. They fail
+They ignore text inside quotes, heredocs and comments, so `grep pkill` or a commit message is fine
+(a `$(…)` inside double quotes and a heredoc a shell runs are still read). They fail
 open on bad input: your pre-commit hooks and CI stay the authority. With the default rules,
-`cp .env.example .env` is refused too, so create secret files yourself. The hooks do not protect
-their own files or `.claude/protected-paths`.
+`cp .env.example .env` and `mv .env .env.bak` are refused too, since each writes a protected file,
+so create and rename secret files yourself. The hooks do not protect their own files or
+`.claude/protected-paths`.
 </details>
 
 ## Who it's for

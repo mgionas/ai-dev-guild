@@ -39,6 +39,15 @@ Copy `guards/hooks/` to `.claude/hooks/` (you can leave out `hooks.test.mjs`), t
         ]
       },
       {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-reads.mjs\""
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -67,7 +76,9 @@ The hooks need Node.js 22.5 or later.
 
 ## 3. Keep secrets out of the model's context
 
-Hooks stop writes. To stop reads of secret files too, add deny rules to the same settings file:
+The hooks stop writes to protected files, refuse reading secret files from the shell and the Read
+and Grep tools, and ask before killing a process. Deny rules in the same settings file keep the
+reads refused even without the hooks:
 
 ```json
 {

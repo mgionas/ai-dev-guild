@@ -1,5 +1,5 @@
 {
-  "description": "ai-dev-guild guard hooks: refuse edits to protected paths, refuse pattern kills and skipped git hooks, and run the project's own after-edit command if it has one.",
+  "description": "ai-dev-guild guard hooks: refuse edits to protected paths, pattern kills, skipped git hooks and reads or sends of secret files, ask before a kill by process number, and run the project's own after-edit command if it has one.",
   "hooks": {
     "PreToolUse": [
       {
@@ -10,6 +10,19 @@
             "command": "node",
             "args": [
               "${CLAUDE_PLUGIN_ROOT}/hooks/guard-paths.mjs"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/guard-reads.mjs"
             ],
             "timeout": 10
           }
