@@ -34,7 +34,11 @@ exists. Where one exists, show the user what you would add and ask.
    the user for cores, memory and who else uses a self-hosted machine, and leave the rest as
    `TODO(owner)`. Link the page from `AGENTS.md`.
 
-8. **Permission rules** in `.claude/settings.json`, merged with what is there. Show the user the
+8. **A local environment** (optional): if the project has no written local setup (no
+   local-development page, no compose file), offer the `local-environment` skill. Advise, do not
+   create unless the user says yes; a project with a setup that works keeps it.
+
+9. **Permission rules** in `.claude/settings.json`, merged with what is there. Show the user the
    exact JSON you would add and ask before writing. Never remove a rule the user already has.
 
    ```json
@@ -59,11 +63,11 @@ exists. Where one exists, show the user what you would add and ask.
    - Check the syntax against the current documentation before writing:
      https://code.claude.com/docs/en/permissions.
 
-9. **Worktrees.** If `.gitignore` does not ignore `.claude/worktrees/`, offer to add that line.
+10. **Worktrees.** If `.gitignore` does not ignore `.claude/worktrees/`, offer to add that line.
    Advise in one sentence: where the app lets you choose where worktrees go, a folder outside the
    project keeps them away from committed config.
 
-10. **Check the guard hooks**, only if the user has installed `ai-dev-guild-guards`. Run this
+11. **Check the guard hooks**, only if the user has installed `ai-dev-guild-guards`. Run this
     command with the Bash tool:
 
     ```
@@ -73,10 +77,10 @@ exists. Where one exists, show the user what you would add and ask.
     The bash guard refuses a pattern kill, so it must come back refused. If it runs anyway, it
     matches no process and harms nothing. Never probe with a write to a protected file. In a
     session that started before the plugin was installed the hooks are not loaded yet, so a run
-    that is not refused means "not running yet": say so, and repeat the check in step 11's new
+    that is not refused means "not running yet": say so, and repeat the check in step 12's new
     session. Record `guards: running` or `guards: not running`.
 
-11. **Start a new session.** Claude Code reads plugins, project agents, project skills, permission
+12. **Start a new session.** Claude Code reads plugins, project agents, project skills, permission
     rules and hooks only when a session starts. Whatever was installed, copied or written during
     this setup does nothing until then. Tell the user plainly, and give the check to run in the new
     session: `/ai-dev-guild:run-task` resolves (or `/run-task`, where the folders were copied), and
@@ -84,4 +88,4 @@ exists. Where one exists, show the user what you would add and ask.
 
 Finish with a short list of what you created, what still says `TODO(owner)`, the guard result
 (`guards: running`, `guards: not running`, or not installed), and the last line: start a new
-session, then run the check from step 11.
+session, then run the check from step 12.

@@ -142,7 +142,7 @@ operations, growth and your industry. They never see each other's answers.
 ### ⚙️ Skills
 
 `stack-advice` · `roadmap` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
-`design-review` · `research-review` · `local-ci` · `system-map` · `progress-boards` · `setup`
+`design-review` · `research-review` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
 
 ### 🛡️ Guard hooks (optional)
 
@@ -192,6 +192,7 @@ money, the stack advisor, the board's chair, finance and legal seats, design), s
 | [`design-review`](plugin/skills/design-review/SKILL.md)     | review a built screen from screenshots first              |
 | [`research-review`](plugin/skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
 | [`local-ci`](plugin/skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
+| [`local-environment`](plugin/skills/local-environment/SKILL.md) | advise a local setup: own containers, local HTTPS, a ports registry |
 | [`system-map`](plugin/skills/system-map/SKILL.md)           | keep a map of features, screens and tables current        |
 | [`progress-boards`](plugin/skills/progress-boards/SKILL.md) | keep the roadmap and QA board current with every change   |
 
