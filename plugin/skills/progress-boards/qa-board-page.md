@@ -165,6 +165,8 @@ input.note { flex: 1 1 220px; min-width: 0; }
     </div>
   </div>
 
+  <p class="notice" id="write-error" role="alert" hidden></p>
+
   <main id="board">
     <div class="notice" id="state"><strong>Loading the board…</strong> Updates appear here after each change.</div>
   </main>
@@ -347,6 +349,7 @@ input.note { flex: 1 1 220px; min-width: 0; }
     try { names = await user.profiles(ids); render(); } catch (_) { /* names stay "Someone" */ }
   }
 
+  // A failed write is told in #write-error, outside #board: every redraw replaces the board's children, and a notice put inside it vanished at once.
   // The row is not redrawn while a write starts: a note saves on blur, and a redraw then would replace the button the tester is pressing before the click lands.
   async function write(c, fields, defaults = {}) {
     if (!db) return;
@@ -357,11 +360,12 @@ input.note { flex: 1 1 220px; min-width: 0; }
       return;
     }
     pending.set(c.id, { ...defaults, ...fields });
-    try { await db.collection('checks').doc(c.id).update({ ...defaults, ...fields }); }
+    try { await db.collection('checks').doc(c.id).update({ ...defaults, ...fields }); $('write-error').hidden = true; }
     catch (e) {
       $('state') && $('state').remove();
       const msg = e && (e.code === 'permission_denied' || e.code === 'not_granted') ? 'You can view this board but not mark checks. Ask an editor for access to record results.' : 'That change was not saved. Check your connection and try again.';
-      $('board').prepend(el('div', { class: 'notice', role: 'alert', text: msg }));
+      $('write-error').textContent = msg;
+      $('write-error').hidden = false;
     } finally { pending.delete(c.id); }
     const next = queued.get(c.id);
     if (next) { queued.delete(c.id); await write(c, next); return; }
@@ -427,7 +431,7 @@ input.note { flex: 1 1 220px; min-width: 0; }
     canWrite = true;
     if (user) {
       try { myId = await user.id(); } catch (_) { myId = null; }
-      try { const w = await user.can('data.write'); if (w === false) canWrite = false; } catch (_) { /* keep inputs; refused writes decide */ }
+      try { const w = await user.can('data.write'); if (w === false) { canWrite = false; $('mode-note').textContent = 'You can view this board but not mark checks. Ask an editor for access to record results.'; $('mode-note').hidden = false; } } catch (_) { /* keep inputs; refused writes decide */ }
     }
     if (!myId) { canWrite = false; $('mode-note').textContent = 'Sign in to record results.'; $('mode-note').hidden = false; }
     subscribe('updates'); subscribe('features'); subscribe('checks');
