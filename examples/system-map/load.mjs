@@ -90,8 +90,10 @@ export function loadMap(base) {
 
   // features/<area-id>.yaml, one per area, read in the order of areas.yaml
   const featureDir = join(dir, "features");
-  const present = existsSync(featureDir) ? readdirSync(featureDir).filter((f) => f !== IGNORED).sort() : [];
+  const featuresIsFolder = existsSync(featureDir) && statSync(featureDir).isDirectory();
+  const present = featuresIsFolder ? readdirSync(featureDir).filter((f) => f !== IGNORED).sort() : [];
   if (!existsSync(featureDir)) problems.push(`${rel("features")}: folder not found`);
+  else if (!featuresIsFolder) problems.push(`${rel("features")}: is a file, not a folder of <area-id>.yaml files`);
   for (const f of present) {
     if (!f.endsWith(".yaml") || !areaIds.has(f.slice(0, -5))) problems.push(`${rel("features/" + f)}: is not named after an area (<area-id>.yaml)`);
   }

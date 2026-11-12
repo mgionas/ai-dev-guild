@@ -20,6 +20,15 @@ test("the base project passes", async () => {
   assert.match(summary, /2 areas, 1 features, 3 operations, 2 screens, 2 tables/);
 });
 
+test("a features path that is a file is refused in a sentence, not a crash", async () => {
+  const config = project({});
+  const path = join(config, "..", "docs/system-map/features");
+  rmSync(path, { recursive: true });
+  writeFileSync(path, "x");
+  const { problems } = await runCheck({ config });
+  assert.ok(problems.some((p) => p.includes("docs/system-map/features: is a file, not a folder")), problems.join("\n"));
+});
+
 test("the worked example passes", async () => {
   const { problems } = await runCheck({ config: join(import.meta.dirname, "example/system-map.config.json") });
   assert.deepEqual(problems, []);
