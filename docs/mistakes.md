@@ -213,6 +213,13 @@ reaches everything or the base is unknown; report each step as ran, skipped (why
 never run two heavy suites at once on a shared machine. (The
 [`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
 
+The same waste comes from places that each run the suite for one change. One pull request ran its
+unit tests four times on one machine: a local full run, the pre-push hook, remote CI on a runner on
+that machine, and remote CI on main. Two failures on one day were load, not defects, and a
+module-boundary check in the hook failed while another session's integration run was going. Count
+the places the suite runs and give each one run; keep git hooks to fast checks; before a heavy run,
+check for other sessions' runs and, when CI runs on the same machine, for a CI run in progress.
+
 ## Believing the label instead of the artifact
 
 A package's README says it is tree-shaken; the bundle still contains all of it. A config comment

@@ -29,6 +29,27 @@ skill's folder, linked from `AGENTS.md`: each runner's kind, labels, OS, cores, 
 heap, jobs at once and what else shares the machine. The guide behind it:
 <https://github.com/mgionas/ai-dev-guild/blob/main/docs/where-ci-runs.md>.
 
+## Count the runs one change gets
+
+List every place the suite runs for a change: the git hooks, the local check, remote CI on the pull
+request, and remote CI on the main branch after the merge. Give each place that needs a full run
+one, and no place a second. One project found a single pull request running its unit tests four
+times on one machine: a local `--full`, the pre-push hook, remote CI on a self-hosted runner on the
+same machine, and remote CI on main. The overlap caused load failures that were not defects.
+
+- **A git hook holds fast checks only:** the tool version, refusing a push to the main branch,
+  format, protected files and text checks. Typecheck, the test suites and module-boundary checks run
+  in the local check and in remote CI, not in a hook.
+- **Remote CI on main after a merge stays.** It catches a merge that went in out of date.
+- **One heavy run at a time on a machine, across sessions.** This is a rule with a check before you
+  start, not a lock. If remote CI runs on this machine (a self-hosted runner), ask the CI host
+  whether a run is in progress (for GitHub,
+  `gh run list --repo <owner/repo> --status in_progress --limit 1`) and start only if it printed
+  nothing. Read the output, not the exit code. Hosted runners don't load this machine, so their
+  runs don't count. Also look for other sessions' test containers
+  (`docker ps`) and other projects' test runners (`ps`). The check does not cover git hooks, which
+  is one more reason they stay light.
+
 ## What makes it strict
 
 - **The same steps as CI, in the same order, with the same commands.** Keep a test that reads the CI
@@ -61,9 +82,9 @@ heap, jobs at once and what else shares the machine. The guide behind it:
   `--dry=json`, Nx `nx show projects --affected`). If the list is empty while package files
   changed, misses a workspace package, or drops one the selection chose, run everything and say why.
 - **`--full` where nothing else runs the full suite.** If remote CI runs every step on each pull
-  request into the main branch, the narrow local run is safe before that pull request. A merge
-  that no remote CI checks (into a long-lived feature or milestone branch, a release cut by hand)
-  runs with `--full`.
+  request into the main branch, the narrow local run is safe before that pull request, and a local
+  `--full` just before opening one only repeats the run CI is about to do. A merge that no remote CI
+  checks (into a long-lived feature or milestone branch, a release cut by hand) runs with `--full`.
 - **No other shortcuts.** Nothing lets you leave out a named step or cut one short. When a step
   fails, the rest still run, so a single run shows every problem.
 - **Every step says what happened:** ran in full, ran on the affected part, or skipped and why. The
