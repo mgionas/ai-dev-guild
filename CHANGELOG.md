@@ -5,6 +5,11 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The `local-ci` skill counts the runs one change gets: it lists the places the suite runs (git hooks,
+  the local check, remote CI on the pull request, remote CI on main), keeps git hooks to fast checks,
+  and says to check whether a run is in progress before starting a heavy one. The rule and the
+  matching mistake entry say the same. (field-tested)
+
 - A `local-environment` skill that advises, and never requires, how a project's local setup could be
   written down: its own named Docker Compose group (explicit names, loopback-only ports), local
   HTTPS on a `.test` domain with the certificate-trust step per operating system, one ports
