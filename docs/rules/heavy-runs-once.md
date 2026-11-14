@@ -21,8 +21,8 @@ and on a machine shared by several agents it starves everyone else's runs.
 - Every report says, step by step, what ran, what was skipped and why. A skip never reads as a pass.
 - Count the places the suite runs (git hooks, the local check, remote CI on the pull request, remote
   CI on main) and give each one full run, no more. A git hook holds fast checks only.
-- Never run two heavy suites at once on a shared machine. Before starting one, ask the CI host
-  whether a run is in progress.
+- Never run two heavy suites at once on a shared machine. Before starting one, check for other
+  sessions' runs, and if CI runs on this machine, ask the CI host whether a run is in progress.
 
 **Where it lives:** the `local-ci`, `write-brief` and `fix-round` skills.
 

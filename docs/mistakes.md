@@ -218,7 +218,7 @@ unit tests four times on one machine: a local full run, the pre-push hook, remot
 that machine, and remote CI on main. Two failures on one day were load, not defects, and a
 module-boundary check in the hook failed while another session's integration run was going. Count
 the places the suite runs and give each one run; keep git hooks to fast checks; before a heavy run,
-ask the CI host whether one is in progress.
+check for other sessions' runs and, when CI runs on the same machine, for a CI run in progress.
 
 ## Believing the label instead of the artifact
 

@@ -42,9 +42,11 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   in the local check and in remote CI, not in a hook.
 - **Remote CI on main after a merge stays.** It catches a merge that went in out of date.
 - **One heavy run at a time on a machine, across sessions.** This is a rule with a check before you
-  start, not a lock. Ask the CI host whether a run is in progress (for GitHub,
+  start, not a lock. If remote CI runs on this machine (a self-hosted runner), ask the CI host
+  whether a run is in progress (for GitHub,
   `gh run list --repo <owner/repo> --status in_progress --limit 1`) and start only if it printed
-  nothing. Read the output, not the exit code. Also look for other sessions' test containers
+  nothing. Read the output, not the exit code. Hosted runners don't load this machine, so their
+  runs don't count. Also look for other sessions' test containers
   (`docker ps`) and other projects' test runners (`ps`). The check does not cover git hooks, which
   is one more reason they stay light.
 
