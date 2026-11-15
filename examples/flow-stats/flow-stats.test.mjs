@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
+  chmodSync,
   cpSync,
   mkdirSync,
   mkdtempSync,
@@ -121,7 +122,7 @@ test("parseRecheck reads the count, and null when the line is missing", () => {
 
 test("parseDecision reads the title's day and the answer", () => {
   const head = "# Decisions needed: retention (2026-01-10)\n\n";
-  assert.deepEqual(parseDecision(head), { date: "2026-01-10", answered: null });
+  assert.deepEqual(parseDecision(head), { date: "2026-01-10", badTitleDate: false, answered: null });
   assert.deepEqual(parseDecision(`${head}**Answered:** 2026-01-11, accept all\n`).answered, {
     date: "2026-01-11",
     kind: "all",
@@ -134,7 +135,7 @@ test("parseDecision reads the title's day and the answer", () => {
   });
   // "changed 0" changed nothing: it is the same as accepting all.
   assert.equal(parseDecision(`${head}**Answered:** 2026-01-14, changed 0\n`).answered.kind, "all");
-  assert.deepEqual(parseDecision("no title"), { date: null, answered: null });
+  assert.deepEqual(parseDecision("no title"), { date: null, badTitleDate: false, answered: null });
   assert.equal(parseDecision("# Decisions needed: x (2026-13-40)\n").date, null);
 });
 
@@ -151,12 +152,13 @@ test("parseTokenReport reads the median and the shares, and skips rows that are 
 | Broken | n/a |
 `);
   assert.equal(parsed.perTaskMedian, 1250000);
+  assert.equal(parsed.rejected, 1);
   assert.deepEqual(parsed.byModel, [
     { model: "Big", share: 62 },
     { model: "Middle", share: 30 },
     { model: "Small", share: 8.5 },
   ]);
-  assert.deepEqual(parseTokenReport("nothing"), { perTaskMedian: null, byModel: [] });
+  assert.deepEqual(parseTokenReport("nothing"), { perTaskMedian: null, byModel: [], rejected: 0 });
 });
 
 test("parseCiLedger keeps real runs and counts the rest as malformed", () => {
@@ -586,4 +588,98 @@ test("files that are links are not read, so a link cannot lead a read out of the
   mkdirSync(join(root2, ".work/spare"));
   symlinkSync(join(outside, "ci2.jsonl"), join(root2, ".work/spare/ci-runs.jsonl"));
   assert.equal(loadRecords({ root: root2, noGh: true }).ci.runs.length, 9);
+});
+
+// --- fix round 1 ---------------------------------------------------------------------------
+
+test("an unreadable record is a gap that names the file, and the record is skipped", (t) => {
+  const root = copyFixture();
+  const bad = join(root, ".work/tasks/alpha-search/findings-1.md");
+  const ledger = join(root, ".work/ci-runs.jsonl");
+  chmodSync(bad, 0o000);
+  chmodSync(ledger, 0o000);
+  try {
+    // Some systems ignore the mode (running as root): there is nothing to prove there.
+    try {
+      readFileSync(bad);
+      t.skip("this system lets the file be read despite mode 000");
+      return;
+    } catch {}
+    const records = loadRecords({ root, noGh: true });
+    const alpha = records.tasks.find((x) => x.id === "alpha-search");
+    assert.equal(alpha.findingFiles.length, 1, "the unreadable round is skipped, not counted as empty");
+    assert.equal(records.ci, null);
+    const lines = records.problems.filter((p) => p.includes("could not be read"));
+    assert.equal(lines.length, 2);
+    assert.ok(lines.some((l) => l.startsWith(".work/tasks/alpha-search/findings-1.md:")), lines.join("\n"));
+    assert.ok(lines.some((l) => l.startsWith(".work/ci-runs.jsonl:")), lines.join("\n"));
+    assert.ok(!records.problems.join("\n").includes("EACCES"));
+    assert.ok(!records.problems.join("\n").includes(root), "a relative path, not the machine's");
+    const { result, json } = runCli(root);
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(json.gaps.some((g) => g.includes("findings-1.md")));
+  } finally {
+    chmodSync(bad, 0o644);
+    chmodSync(ledger, 0o644);
+  }
+});
+
+test("parseDecision: a title or answer date that is not a real day is flagged, never read as a day", () => {
+  const bad = parseDecision("# Decisions needed: x (2026-13-45)\n\n**Answered:** 2026-01-02, accept all\n");
+  assert.equal(bad.date, null);
+  assert.equal(bad.badTitleDate, true);
+  assert.equal(parseDecision("no title").badTitleDate, false);
+  assert.equal(parseDecision("# Decisions needed: x (2026-01-10)\n").badTitleDate, false);
+  const worse = parseDecision("# Decisions needed: x (2026-01-10)\n\n**Answered:** 2026-02-31, changed 2\n");
+  assert.deepEqual(worse.answered, { date: null, kind: "changed", changed: 2 });
+});
+
+test("questions: a batch with a bad title date or answer date gets its own gap, never a silent file-time wait", () => {
+  const decisions = [
+    // The file time put this batch in the period; its title date is not a day. A wait read from it would be 19 days.
+    { date: "2026-03-01", badTitleDate: true, answered: { date: "2026-03-20", kind: "all", changed: 0 } },
+    { date: "2026-03-02", badTitleDate: false, answered: { date: null, kind: "all", changed: 0 } },
+    { date: "2026-03-05", badTitleDate: false, answered: { date: "2026-03-08", kind: "all", changed: 0 } },
+  ];
+  const out = compute(records({ decisions }), opts);
+  assert.equal(out.questions.answered, 3);
+  assert.equal(out.questions.medianWaitDays, 3, "only the sound batch has a wait");
+  assert.ok(out.gaps.some((g) => g.includes("title date is not a real day")), out.gaps.join("\n"));
+  assert.ok(out.gaps.some((g) => g.includes("answered date is not a real day")), out.gaps.join("\n"));
+  assert.ok(!out.gaps.some((g) => g.includes("answered before it was asked")));
+});
+
+test("loadRecords: a bad title date keeps the file's day for the period but is flagged", () => {
+  const root = copyFixture();
+  writeFileSync(
+    join(root, ".work/decisions/bad-date.md"),
+    "# Decisions needed: x (2026-13-45)\n\n**Answered:** 2026-01-02, accept all\n",
+  );
+  const found = loadRecords({ root, noGh: true }).decisions.find((d) => d.badTitleDate);
+  assert.ok(found, "the batch is read");
+  assert.match(found.date, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test("parseTokenReport: only plain integers and shares from 0 to 100 are read, the rest is counted as rejected", () => {
+  const report = (median, rows) =>
+    parseTokenReport(`**Tokens per task (median):** ${median}\n\n| Model | Share |\n| --- | --- |\n${rows}\n`);
+  for (const bad of ["1e99", "1.5", "-3", "12abc", "0x10", "1,2", ""]) {
+    const parsed = report(bad, "| Big | 60% |");
+    assert.equal(parsed.perTaskMedian, null, bad);
+    assert.equal(parsed.rejected, 1, bad);
+  }
+  for (const [good, value] of [["1,250,000", 1250000], ["1_250_000", 1250000], ["42", 42], ["0", 0]]) {
+    const parsed = report(good, "| Big | 60% |");
+    assert.equal(parsed.perTaskMedian, value, good);
+    assert.equal(parsed.rejected, 0, good);
+  }
+  const shares = report("5", "| A | 100% |\n| B | 0 |\n| C | 101% |\n| D | 1e3 |\n| E | n/a |");
+  assert.deepEqual(shares.byModel, [{ model: "A", share: 100 }, { model: "B", share: 0 }]);
+  assert.equal(shares.rejected, 3);
+});
+
+test("tokens: rejected values become a gap, and a share above 100 never reaches the strong-model measure", () => {
+  const tokens = [{ date: "2026-03-05", perTaskMedian: null, byModel: [{ model: "Big", share: 40 }], rejected: 2 }];
+  const out = compute(records({ tokens }), opts);
+  assert.ok(out.gaps.some((g) => g.startsWith("tokens:") && g.includes("2")), out.gaps.join("\n"));
 });

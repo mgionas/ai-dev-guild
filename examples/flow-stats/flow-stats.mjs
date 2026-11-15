@@ -25,7 +25,7 @@ import {
   realpathSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const USAGE =
@@ -95,6 +95,9 @@ export function p90(values) {
 }
 
 /** Days between two times, or null when either is missing or the order is wrong (file times can lie). */
+/** A batch's wait in days: null with no real title date or answer date, and when the answer came first. */
+const waitOf = (d) => (d.badTitleDate || !d.answered?.date ? null : span(parseDay(d.date), parseDay(d.answered.date)));
+
 const span = (from, to) => (from == null || to == null || to < from ? null : (to - from) / DAY_MS);
 
 /** Cells of one Markdown table row; an escaped `\|` stays inside its cell. */
@@ -178,34 +181,54 @@ export function parseRecheck(text) {
  * Reads a decision batch: the day it was asked (the title's date) and, once answered, the day and how.
  * "changed 0" is the same as accepting all, so it reads as `all`.
  *
+ * A date of the right shape that is not a real day (`2026-13-45`) is never read as one: the title's
+ * gives `date: null` with `badTitleDate: true`, the answer's gives `answered.date: null`. The
+ * batch was still answered; only its wait cannot be told.
+ *
  * @param {string} text - the file.
- * @returns {{date: string | null, answered: null | {date: string, kind: "all" | "changed", changed: number}}} the batch.
+ * @returns {{date: string | null, badTitleDate: boolean, answered: null | {date: string | null, kind: "all" | "changed", changed: number}}} the batch.
  */
 export function parseDecision(text) {
   const title = /^# Decisions needed:.*\((\d{4}-\d{2}-\d{2})\)[ \t]*$/m.exec(text);
   const date = title && parseDay(title[1]) !== null ? title[1] : null;
+  const badTitleDate = title !== null && date === null;
   const answer = /^\*\*Answered:\*\*[ \t]*(\d{4}-\d{2}-\d{2})[ \t]*,[ \t]*(accept all|changed[ \t]+(\d+))/im.exec(text);
-  if (!answer || parseDay(answer[1]) === null) return { date, answered: null };
+  if (!answer) return { date, badTitleDate, answered: null };
   const changed = answer[3] === undefined ? 0 : Number(answer[3]);
-  return { date, answered: { date: answer[1], kind: changed > 0 ? "changed" : "all", changed } };
+  const answeredDate = parseDay(answer[1]) === null ? null : answer[1];
+  return { date, badTitleDate, answered: { date: answeredDate, kind: changed > 0 ? "changed" : "all", changed } };
 }
 
 /**
  * Reads a token report: the median tokens per task and each model's share in percent.
  *
  * @param {string} text - the file.
- * @returns {{perTaskMedian: number | null, byModel: {model: string, share: number}[]}} what it holds.
+ * Only a plain non-negative integer is a token count (digits, with `,`, `_` or a space between
+ * groups of three) and only 0 to 100 is a share: `1e99` is not read as 1, and 250% never feeds the
+ * strong-model threshold. Whatever else is there is left out and counted in `rejected`.
+ *
+ * @param {string} text - the file.
+ * @returns {{perTaskMedian: number | null, byModel: {model: string, share: number}[], rejected: number}} what it holds, and how many values were left out.
  */
 export function parseTokenReport(text) {
-  const median = /\*\*Tokens per task \(median\):\*\*[ \t]*(\d[\d,_ ]*)/.exec(text);
+  let rejected = 0;
+  const line = /\*\*Tokens per task \(median\):\*\*[ \t]*([^\n]*)/.exec(text);
+  let perTaskMedian = null;
+  if (line) {
+    const value = line[1].trim();
+    if (/^(?:\d+|\d{1,3}(?:[,_ ]\d{3})+)$/.test(value)) perTaskMedian = Number(value.replace(/[,_ ]/g, ""));
+    else rejected += 1;
+  }
   const table = tableRows(text, ["model", "share"]);
   const byModel = [];
   for (const row of table?.rows ?? []) {
     const model = row[table.index.get("model")] ?? "";
     const share = /^(\d+(?:\.\d+)?)[ \t]*%?$/.exec(row[table.index.get("share")] ?? "");
-    if (model && share) byModel.push({ model, share: Number(share[1]) });
+    if (!model) continue;
+    if (share && Number(share[1]) <= 100) byModel.push({ model, share: Number(share[1]) });
+    else rejected += 1;
   }
-  return { perTaskMedian: median ? Number(median[1].replace(/[^\d]/g, "")) : null, byModel };
+  return { perTaskMedian, byModel, rejected };
 }
 
 /**
@@ -406,7 +429,7 @@ export function suggest(raw) {
  *
  * Records, as the loader builds them:
  * - `tasks`: `{id, start, times: {brief, report, findings1, lastFix, last, merged}, findingFiles: [{reviewers, findings}], rechecks, hasReport}`, times in milliseconds or null. One findings file is one fix round.
- * - `decisions`: `{date, answered}` as parseDecision gives, with `date` filled in.
+ * - `decisions`: `{date, badTitleDate, answered}` as parseDecision gives, with `date` filled in.
  * - `ci`: `{runs, malformed}` or null.
  * - `tokens`: `[{date, perTaskMedian, byModel}]`.
  * - `problems`: gap lines the loader already has (unreadable files, unrecognized severities).
@@ -514,8 +537,13 @@ export function compute(records, options) {
   let questions = null;
   if (decisions.length > 0) {
     const answered = decisions.filter((d) => d.answered);
-    const waits = answered.map((d) => span(parseDay(d.date), parseDay(d.answered.date))).filter((w) => w != null);
-    if (waits.length < answered.length) gaps.push("questions: a batch was answered before it was asked, its wait is left out");
+    const badAsked = answered.filter((d) => d.badTitleDate).length;
+    const badAnswered = answered.filter((d) => d.answered.date === null).length;
+    const waits = answered.map(waitOf).filter((w) => w != null);
+    const backwards = answered.filter((d) => !d.badTitleDate && d.answered.date !== null && waitOf(d) === null).length;
+    if (badAsked > 0) gaps.push(`questions: title date is not a real day in ${badAsked} answered batch(es), the wait is left out`);
+    if (badAnswered > 0) gaps.push(`questions: answered date is not a real day in ${badAnswered} answered batch(es), the wait is left out`);
+    if (backwards > 0) gaps.push("questions: a batch was answered before it was asked, its wait is left out");
     if (waits.length === 0) gaps.push("questions.medianWaitDays: no answered batch");
     questions = {
       batches: decisions.length,
@@ -531,6 +559,7 @@ export function compute(records, options) {
   if (latest) {
     if (latest.perTaskMedian == null) gaps.push("tokens.perTaskMedian: the report has no 'Tokens per task (median)' line");
     if (latest.byModel.length === 0) gaps.push("tokens.byModel: the report has no model table");
+    if (latest.rejected > 0) gaps.push(`tokens: ${latest.rejected} value(s) in the report are not a plain whole number or a share from 0 to 100, left out`);
     tokens = {
       perTaskMedian: latest.perTaskMedian,
       byModel: [...latest.byModel].sort((a, b) => b.share - a.share || a.model.localeCompare(b.model)),
@@ -550,7 +579,7 @@ export function compute(records, options) {
     ciRuns: ci?.runs ?? 0,
     flaky: ci?.flaky ?? 0,
     medianWait: median(
-      decisions.filter((d) => d.answered).map((d) => span(parseDay(d.date), parseDay(d.answered.date))).filter((w) => w != null),
+      decisions.filter((d) => d.answered).map(waitOf).filter((w) => w != null),
     ),
     strongShare: latest?.byModel.length
       ? latest.byModel.filter((m) => m.model.toLowerCase().includes(needle)).reduce((sum, m) => sum + m.share, 0)
@@ -643,7 +672,7 @@ function listFiles(root, dir, kind) {
   }
   return entries
     .filter((e) => (kind === "dir" ? e.isDirectory() : e.isFile()))
-    .map((e) => ({ name: e.name, path: join(dir, e.name) }))
+    .map((e) => ({ name: e.name, path: join(dir, e.name), rel: relative(root, join(dir, e.name)) }))
     .filter((e) => within(root, e.path))
     .map((e) => {
       const stat = lstatSync(e.path);
@@ -653,13 +682,27 @@ function listFiles(root, dir, kind) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** The text of a file, or null with a problem line when it is too large to be a report. */
+/**
+ * The text of a file, or null with a problem line when it is too large to be a report or cannot be
+ * read. The line names the file by its path inside the project and quotes no error text, which
+ * could carry a path from the machine.
+ */
 function readText(file, problems) {
   if (file.size > MAX_FILE_BYTES) {
     problems.push(`${file.name}: larger than ${MAX_FILE_BYTES / 1024 / 1024} MiB, not read`);
     return null;
   }
-  return readFileSync(file.path, "utf8");
+  try {
+    return readFileSync(file.path, "utf8");
+  } catch {
+    problems.push(`${file.rel}: could not be read, left out`);
+    return null;
+  }
+}
+
+/** Reads each file and keeps the ones that could be read, as `{file, text}`: an unreadable record is skipped, not read as empty. */
+function readable(files, problems) {
+  return files.map((file) => ({ file, text: readText(file, problems) })).filter((e) => e.text !== null);
 }
 
 /** The commits on the main line with their messages, or null when `root` is not itself a repository's top folder. */
@@ -716,17 +759,20 @@ export function loadRecords({ root, noGh }) {
     if (files.length === 0) continue;
     const named = (pattern) => files.filter((f) => pattern.test(f.name));
     const one = (name) => files.find((f) => f.name === name);
-    const findingsFiles = named(/^findings-\d+\.md$/).sort(
-      (a, b) => Number(a.name.match(/\d+/)[0]) - Number(b.name.match(/\d+/)[0]),
+    const findingsRead = readable(named(/^findings-\d+\.md$/), problems).sort(
+      (a, b) => Number(a.file.name.match(/\d+/)[0]) - Number(b.file.name.match(/\d+/)[0]),
     );
-    const fixFiles = [...named(/^fix-report(-\d+)?\.md$/), ...named(/^recheck-\d+\.md$/)];
-    const parsed = findingsFiles.map((f) => parseFindings(readText(f, problems) ?? ""));
+    const findingsFiles = findingsRead.map((e) => e.file);
+    const rechecksRead = readable(named(/^recheck-\d+\.md$/), problems);
+    const fixFiles = [...named(/^fix-report(-\d+)?\.md$/), ...rechecksRead.map((e) => e.file)];
+    const parsed = findingsRead.map((e) => parseFindings(e.text));
     const unrecognized = parsed.reduce((sum, p) => sum + p.unrecognized, 0);
     if (unrecognized > 0) problems.push(`${dir.name}: ${unrecognized} finding(s) with a severity this script does not know, left out`);
-    const rechecks = named(/^recheck-\d+\.md$/).map((f) => parseRecheck(readText(f, problems) ?? ""));
+    const rechecks = rechecksRead.map((e) => parseRecheck(e.text));
     if (rechecks.includes(null)) problems.push(`${dir.name}: a re-check has no "New problems" line, left out`);
     const brief = one("brief.md");
-    const branch = brief ? parseBranch(readText(brief, problems) ?? "") : null;
+    const briefText = brief ? readText(brief, problems) : null;
+    const branch = briefText === null ? null : parseBranch(briefText);
     tasks.push({
       id: dir.name,
       start: Math.min(...files.map((f) => f.ms)),
@@ -745,19 +791,27 @@ export function loadRecords({ root, noGh }) {
   }
   const decisions = listFiles(root, join(work, "decisions"), "file")
     .filter((f) => f.name.endsWith(".md"))
-    .map((f) => {
-      const parsed = parseDecision(readText(f, problems) ?? "");
-      return { ...parsed, date: parsed.date ?? dayOf(f.ms) };
+    .flatMap((f) => {
+      const text = readText(f, problems);
+      if (text === null) return [];
+      // A title date that is no real day keeps the file's day only to place the batch in a period;
+      // `badTitleDate` stops it from being used as the day it was asked.
+      const parsed = parseDecision(text);
+      return [{ ...parsed, date: parsed.date ?? dayOf(f.ms) }];
     });
 
   const ledgerFile = listFiles(root, work, "file").find((f) => f.name === "ci-runs.jsonl");
-  const ci = ledgerFile ? parseCiLedger(readText(ledgerFile, problems) ?? "") : null;
+  const ledgerText = ledgerFile ? readText(ledgerFile, problems) : null;
+  const ci = ledgerText === null ? null : parseCiLedger(ledgerText);
   if (ci && ci.malformed > 0) problems.push(`ci: ${ci.malformed} line(s) in ci-runs.jsonl are not a run, left out`);
 
   const tokens = listFiles(root, join(work, "token-review"), "file")
     .map((f) => ({ file: f, date: f.name.match(/^(\d{4}-\d{2}-\d{2})\.md$/)?.[1] ?? null }))
     .filter((e) => e.date && parseDay(e.date) !== null)
-    .map((e) => ({ date: e.date, ...parseTokenReport(readText(e.file, problems) ?? "") }));
+    .flatMap((e) => {
+      const text = readText(e.file, problems);
+      return text === null ? [] : [{ date: e.date, ...parseTokenReport(text) }];
+    });
 
   return { tasks, decisions, ci, tokens, problems };
 }
