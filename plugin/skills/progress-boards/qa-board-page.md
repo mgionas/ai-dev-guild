@@ -85,8 +85,8 @@ h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spac
 .count.blocked { color: var(--blocked); background: var(--blocked-bg); }
 .count.open { color: var(--open); background: var(--open-bg); }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
-.seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 6px 10px; cursor: pointer; }
+.seg { display: inline-flex; max-width: 100%; border: 1px solid var(--line); border-radius: var(--r); overflow-x: auto; background: var(--surface); }
+.seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 select, input[type="search"], input.note {
@@ -133,6 +133,8 @@ details p { margin: 6px 0 0; white-space: pre-line; font-size: 14px; max-width: 
 input.note { flex: 1 1 220px; min-width: 0; }
 .who { font-size: 12px; color: var(--muted); }
 .empty-filter { padding: 14px; color: var(--muted); }
+/* On a phone the sticky bar would cover most of the screen, so it scrolls away with the page. */
+@media (max-width: 620px) { .bar { position: static; } }
 @media (max-width: 520px) { h1 { font-size: 22px; } .status button { padding: 5px 10px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
