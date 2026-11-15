@@ -10,8 +10,11 @@ accept. A long chain of single questions stalls the work.
    Questions, and assumptions that were really product choices.
 2. **De-duplicate** and order them, most decision-relevant first.
 3. **Write one file**, `.work/decisions/<date>-<topic>.md`, from `batch-template.md`: for each
-   item, the question, your recommendation, and why in one or two sentences. Where two reviewers
-   disagree, show both and give one combined recommendation.
+   item, the question, its options with the recommended one first and marked "(recommended)", and
+   why in one or two sentences. Where two reviewers disagree, show both and give one combined
+   recommendation. Each question is multiple choice, so the owner picks rather than types.
+   Each question also stands on its own: it names the thing it asks about and why the answer
+   matters, because the owner may see only the question dialog and not the chat or file around it.
 4. **Send the file and ask once**, with a single question: "Accept all (recommended)" or "I'll
    change some". If the owner changes some, ask only about those.
 5. **Record the answers the same turn** in the project's decision log, quoting the owner.

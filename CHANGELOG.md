@@ -5,6 +5,17 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- New `analysis-page` skill: when the owner must decide something that rests on facts, the controller
+  asks what the decision is and what the page must show, then publishes a page where every figure is
+  tagged sourced, assumption or gap, sources are numbered at the end, and each recommendation is
+  marked "for you to decide". The owner's answer is written back onto the page with its date. The
+  `setup` skill asks which living pages a project wants. (field-tested)
+
+- Questions to the owner: agents ask as soon as a product detail is unclear, not only in the sweep
+  before a build. Each question is multiple choice with the recommended option first and marked, and
+  stands on its own, since the owner may see only the question dialog. The `decision-batch` skill,
+  its template and the `ask-dont-invent` rule say so. (field-tested)
+
 - The `local-ci` skill says to tell the other agent sessions before a heavy run and to wait for the
   "done" of any that is running its own, checked right before each run. (field-tested)
 

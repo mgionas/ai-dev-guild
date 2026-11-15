@@ -86,6 +86,9 @@ exists. Where one exists, show the user what you would add and ask.
     session: `/ai-dev-guild:run-task` resolves (or `/run-task`, where the folders were copied), and
     the `pkill` probe above is refused.
 
+Setup also asks which living pages the project wants (roadmap, QA board, project map, analysis
+pages) and sets up only those, instead of all of them.
+
 Finish with a short list of what you created, what still says `TODO(owner)`, the guard result
 (`guards: running`, `guards: not running`, or not installed), and the last line: start a new
 session, then run the check from step 12.

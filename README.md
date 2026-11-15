@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
   <img alt="22 roles" src="https://img.shields.io/badge/roles-22-9a6700">
-  <img alt="16 skills" src="https://img.shields.io/badge/skills-16-9a6700">
+  <img alt="18 skills" src="https://img.shields.io/badge/skills-18-9a6700">
 </p>
 
 <p align="center">
@@ -181,6 +181,7 @@ money, the stack advisor, the board's chair, finance and legal seats, design), s
 | [`setup`](plugin/skills/setup/SKILL.md)                     | prepare a project for the loop, once                      |
 | [`stack-advice`](plugin/skills/stack-advice/SKILL.md) | get a sourced stack and testing proposal for a new project |
 | [`roadmap`](plugin/skills/roadmap/SKILL.md) | build a roadmap of milestones and steps from a plan or an idea |
+| [`analysis-page`](plugin/skills/analysis-page/SKILL.md) | publish the facts behind a decision, each figure tagged, and record the answer |
 | [`project-map`](plugin/skills/project-map/SKILL.md) | draw a page of the system and its folders, read from the code |
 | [`token-review`](plugin/skills/token-review/SKILL.md) | find where sessions spent tokens and how to spend fewer |
 | [`run-task`](plugin/skills/run-task/SKILL.md)               | run one task through the whole loop                       |
