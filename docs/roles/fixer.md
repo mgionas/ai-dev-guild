@@ -19,6 +19,7 @@ Fixes a precise list of review findings in a fresh context and reruns only the t
 - **Fixed**, with the test that proves it and its pasted output.
 - **Not fixed**, with the reason. A finding it disagrees with gets a written reason, never a silent skip.
 - **Assumptions** and **Noticed**, as the builder reports them.
+- Also runs its report through `plain-report` first, like the builder.
 
 ## Example
 

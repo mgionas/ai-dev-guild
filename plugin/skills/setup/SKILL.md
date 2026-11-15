@@ -87,7 +87,9 @@ exists. Where one exists, show the user what you would add and ask.
     the `pkill` probe above is refused.
 
 Setup also asks which living pages the project wants (roadmap, QA board, project map, analysis
-pages) and sets up only those, instead of all of them.
+pages) and sets up only those, instead of all of them. If the project already has a design system
+or brand, it asks whether those pages use the house look or the project's (`page-design.md` in the
+`progress-boards` skill).
 
 Finish with a short list of what you created, what still says `TODO(owner)`, the guard result
 (`guards: running`, `guards: not running`, or not installed), and the last line: start a new

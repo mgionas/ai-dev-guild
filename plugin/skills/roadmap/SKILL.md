@@ -55,7 +55,8 @@ an artifact), render the same content there as well, with a progress bar per mil
 
 Every roadmap page uses one design: the code block in `roadmap-page.md` in this skill's folder.
 Copy it, replace `{{PROJECT}}` (twice) and `{{PHASE}}` (once), and change nothing else: not the
-tokens, fonts, lanes, labels or script. The page is:
+tokens, fonts, lanes, labels or script. The design is the house design for every published page,
+written out in `page-design.md` in the `progress-boards` skill's folder. The page is:
 
 - a header: eyebrow `<PHASE> · delivery roadmap`, the title `<Project> Roadmap`, a one-line
   headline of where things stand, and the "Last updated" date;

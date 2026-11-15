@@ -52,6 +52,9 @@ recommend nothing. A recommendation rests on a stated reason, and an option the 
 for a reason you cannot see (a legal duty, a promise already made) is listed as an option, not
 dropped.
 
+The page uses the house design (`page-design.md` in the `progress-boards` skill's folder): keep its
+tokens, and read sourced, assumption and gap as it maps them to green, amber and red.
+
 The page works with embedded data only, so it needs no artifact database. Publish it where the owner
 can open it (an artifact or a hosted page). If the person does not publish pages, write it as a
 plain file.

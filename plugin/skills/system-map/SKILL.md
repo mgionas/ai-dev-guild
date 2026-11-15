@@ -50,7 +50,8 @@ shape of each file and a small worked example.
 ## The published page
 
 If the project can publish a page that others open in a browser, the map has one design: the code
-block in `system-map-page.md` in this skill's folder. Copy it, replace `{{PROJECT}}` (twice) and
+block in `system-map-page.md` in this skill's folder, in the house design (`page-design.md` in the
+`progress-boards` skill's folder). Copy it, replace `{{PROJECT}}` (twice) and
 change nothing else. It has a header (what the map is, last refresh, counts, "what changed"), a
 search box and four tabs: **Areas** (one card per area with a built, building and planned bar; a
 click filters Features), **Features** (cards with status, area, explanation, the operations,
