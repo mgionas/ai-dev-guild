@@ -1,0 +1,17 @@
+{
+  "updates": [
+    { "id": "u1", "date": "2026-01-14", "title": "Orders screen", "summary": "The list and the detail page.", "branch": "orders", "commit": "abc1234", "features": ["f1", "f2"], "order": 1 },
+    { "id": "u0", "date": "2026-01-10", "title": "Sign-in", "features": ["f2"], "order": 2 }
+  ],
+  "features": [
+    { "id": "f1", "name": "Order list", "where": "Orders page", "area": "Orders", "order": 1 },
+    { "id": "f2", "name": "Sign-in", "where": "Sign-in page", "area": "Accounts", "order": 2 }
+  ],
+  "checks": [
+    { "id": "c1", "updateId": "u1", "featureId": "f1", "title": "The list shows the newest order first", "steps": "Open Orders; look at the first row.", "status": "open", "account": "customer", "order": 1 },
+    { "id": "c2", "updateId": "u1", "featureId": "f1", "title": "An empty list says so", "status": "pass", "by": "user-1", "at": "2026-01-14T10:00:00Z", "note": "Fine.", "order": 2 },
+    { "id": "c3", "updateId": "u1", "featureId": "f2", "title": "A wrong code is refused", "status": "fail", "by": "user-2", "at": "2026-01-14T11:30:00Z", "order": 1 },
+    { "id": "c4", "updateId": "u0", "featureId": "f2", "title": "Sign out works", "status": "blocked", "account": "admin", "order": 1 },
+    { "id": "c5", "updateId": "u0", "featureId": "f2", "title": "A typo in the status is a to-test check", "status": "paas", "order": 2 }
+  ]
+}

@@ -10,19 +10,30 @@ permissions:
 
 jobs:
   checks:
-    name: checks
-    runs-on: ubuntu-latest
+    # One cell per system and Node version the guild's scripts say they support (Node 22.5 and later).
+    name: checks (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
+      # Actions are pinned to a full commit so a moved tag cannot change what runs; the version is in the comment.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The system map check compares its baseline with main's copy, so it needs main's history.
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
       - name: Repository checks
         run: node scripts/check-repo.mjs
+      - name: Page template checks
+        run: node scripts/check-pages.mjs
+      - name: Checker tests
+        run: node --test 'scripts/*.test.mjs'
       - name: Guard hook tests
         working-directory: guards
         run: node --test 'hooks/*.test.mjs'

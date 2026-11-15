@@ -1,0 +1,20 @@
+{
+  "meta": { "updated": "2026-01-15", "latestMigration": "0003_orders", "counts": { "areas": 2, "features": 3, "built": 2, "operations": 2, "screens": 1, "tables": 2 }, "changes": ["Added Orders."] },
+  "areas": { "items": [
+    { "id": "accounts", "name": "Accounts", "explanation": "Who can sign in.", "progress": "all" },
+    { "id": "orders", "name": "Orders", "explanation": "What customers buy.", "progress": "part", "buildsOn": ["accounts"] },
+    { "id": "later", "name": "Later", "progress": "none" }
+  ] },
+  "features": { "items": [
+    { "id": "sign-in", "name": "Sign-in", "area": "accounts", "status": "built", "explanation": "A code by text message.", "operations": ["POST /sign-in"], "screens": ["/sign-in"], "tables": ["sessions"], "decisions": ["Codes, not passwords."] },
+    { "id": "order-list", "name": "Order list", "area": "orders", "status": "building", "explanation": "The newest first.", "operations": ["GET /orders"], "tables": ["orders"] },
+    { "id": "refunds", "name": "Refunds", "area": "orders", "status": "planned" }
+  ] },
+  "system": {
+    "packages": [{ "name": "web", "kind": "app", "folder": "apps/web", "uses": ["api"] }, { "name": "api", "kind": "app", "folder": "apps/api" }],
+    "operations": [{ "id": "POST /sign-in" }, { "id": "GET /orders" }],
+    "screens": [{ "route": "/sign-in", "site": "web" }],
+    "tables": ["sessions", "orders"]
+  },
+  "unclaimed": { "operations": ["DELETE /orders"], "screens": [], "tables": [] }
+}

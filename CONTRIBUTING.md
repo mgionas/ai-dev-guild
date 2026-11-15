@@ -17,10 +17,12 @@ with a mistake it prevents.
 
 ## Before you open a pull request
 
-These are the five steps CI runs; run all of them:
+These are the seven steps CI runs, on Ubuntu and macOS with Node 22 and 24; run all of them:
 
 ```bash
 node scripts/check-repo.mjs
+node scripts/check-pages.mjs
+node --test 'scripts/*.test.mjs'
 (cd guards && node --test 'hooks/*.test.mjs')
 node --test 'examples/ci-local/*.test.mjs'
 node --test 'examples/flow-stats/*.test.mjs'
@@ -43,7 +45,7 @@ has not been used in anger yet.
 
 ## How changes get in
 
-`main` is protected. Every change arrives as a pull request, CI must pass (the five steps above), and the maintainer reviews and approves it before it is merged. CI on a pull
+`main` is protected. Every change arrives as a pull request, CI must pass (the seven steps above), and the maintainer reviews and approves it before it is merged. CI on a pull
 request from a first-time or outside contributor runs once the maintainer allows it.
 
 ## The rule we keep ourselves
