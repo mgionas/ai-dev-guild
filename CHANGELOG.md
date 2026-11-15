@@ -11,7 +11,7 @@ heading where it changed.
 
 ## 0.17.1 (2026-11-15)
 
-- CI validates the marketplace and both plugins with `claude plugin validate --strict`, the first check the plugin directory runs, using a pinned Claude Code version; `CONTRIBUTING.md` gives the same command. Guards unchanged (0.3.2). (new)
+- CI validates the marketplace and both plugins with `claude plugin validate --strict`, the first check the plugin directory runs, using a pinned Claude Code version; `CONTRIBUTING.md` gives the same command. The plugin gets its directory listing name, "AI Dev Guild", and a new icon in place of the unused old one (`plugin/.claude-plugin/icon.png`); the install name `ai-dev-guild` is unchanged. Guards unchanged (0.3.2). (new)
 
 ## 0.17.0 (2026-11-15)
 

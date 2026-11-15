@@ -1,6 +1,6 @@
 {
   "name": "ai-dev-guild",
-  "displayName": "ai-dev-guild",
+  "displayName": "AI Dev Guild",
   "version": "0.17.1",
   "description": "A guild of AI agents for Claude Code: one fresh agent builds, a different one reviews, and nothing is done without evidence.",
   "author": {
@@ -20,5 +20,6 @@
   ],
   "documentationUrl": "https://github.com/mgionas/ai-dev-guild#readme",
   "supportUrl": "https://github.com/mgionas/ai-dev-guild/issues",
+  "icon": "./.claude-plugin/icon.png",
   "privacyPolicyUrl": "https://github.com/mgionas/ai-dev-guild/blob/main/PRIVACY.md"
 }
