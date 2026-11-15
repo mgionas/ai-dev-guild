@@ -230,20 +230,27 @@ so create and rename secret files yourself. The hooks do not protect their own f
 
 The guild keeps a few pages current for you, so you can see where a project stands without asking.
 
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/pages-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/pages-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/pages-wide-dark.svg">
+  <img alt="How the living pages stay current: 1 an agent's change (a merge, a stage change, a test result or a decision); 2 written in the same turn into the page's data; 3 the living pages (roadmap, QA board, analysis page, project and system map); 4 you read them on a phone. 5 Testers mark Pass, Fail or Blocked back on the QA board." src="assets/pages-wide-light.svg" width="100%">
+</picture>
+
 | Page | What you see there |
 | --- | --- |
 | **Roadmap** | Milestones a user can see, each step with its stage (planned, building, review, fixing, merged), and what waits on you. |
 | **QA board** | One entry per change, with the features it touched and the checks a tester should run. |
 | **Analysis page** | The facts behind a decision, each figure tagged sourced, assumption or gap, with your dated answer written back. |
 | **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
-| **System map** | Which feature owns each API operation, screen, table and job, with a check that refuses anything new and undescribed. |
+| **System map** | Which feature owns each API operation, screen, table and job. A starter check in [`examples/system-map`](examples/system-map) refuses anything new and undescribed. |
 
 **Why.** Progress, test results and decisions get lost in a chat's scrollback. A page you can open
 on a phone answers "where are we?" without you asking an agent.
 
 **How it works.**
 
-- In Claude Code the pages publish as claude.ai artifacts, private until you share them. Agents write
+- In Claude Code the pages publish as claude.ai artifacts. Agents write
   the rows into the artifact's database in the same turn as each change, unprompted, so a status
   change is a data write and not a new page.
 - If you do not use artifacts, the same page works as a plain file with the rows embedded in it.
@@ -269,6 +276,13 @@ Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/
 
 ### Plain reports
 
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/plain-report-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/plain-report-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/plain-report-wide-dark.svg">
+  <img alt="How plain-report works: 1 a draft report such as “Robust fix. All tests pass.”; 2 check one, plain phrasing; 3 check two, each claim matched to its evidence; 4 the sent report, the plain version with the test count and what was not run." src="assets/plain-report-wide-light.svg" width="100%">
+</picture>
+
 Agents report success with confidence and pad with filler. The [`plain-report`](plugin/skills/plain-report/SKILL.md)
 skill edits every text an agent writes for a person: builder and fixer reports, the controller's
 messages to you, pull request bodies. It makes the wording plain and keeps each claim no stronger than
@@ -279,8 +293,8 @@ with its source. A skipped step is said in the main text, not parked in a linked
 | --- | --- |
 | Robust, comprehensive fix. All tests pass. | Fixed the date parsing for February 29. The new test failed before the change and passes now. Unit tests 212/212; the integration suite was not run. |
 
-Adapted from [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer) and
-[humanizer](https://github.com/blader/humanizer), both MIT.
+Written fresh from the ideas of [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer)
+and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copied.
 
 ## Who it's for
 
