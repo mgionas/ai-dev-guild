@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.17.1 (2026-11-15)
+
+- CI validates the marketplace and both plugins with `claude plugin validate --strict`, the first check the plugin directory runs, using a pinned Claude Code version; `CONTRIBUTING.md` gives the same command. The plugin gets its directory listing name, "AI Dev Guild", and a new icon in place of the unused old one (`plugin/.claude-plugin/icon.png`); the install name `ai-dev-guild` is unchanged. `scripts/check-repo.mjs` now checks that a manifest's `icon` is a real file, because the validator passes a missing one. Guards unchanged (0.3.2). (new)
+
 ## 0.17.0 (2026-11-15)
 
 - Releases and onboarding: this changelog is cut into versions (each merged pull request cuts one, tagged `vX.Y.Z`), `CONTRIBUTING.md` has the release steps, and the skills that need a script (`local-ci`, `flow-stats`, `system-map`) give one command that copies the example folder from the tag matching the installed plugin; `setup` offers the local CI runner when a project has CI and no local check; new pages `docs/upgrade-and-remove.md` (check the version, update, remove what `setup` wrote) and `docs/troubleshooting.md`, linked from the README and `docs/install.md`. (new)
