@@ -23,10 +23,18 @@
  * `user@host/.env`), a remote path (`scp host:.env .`), and any other option value that is not
  * read as a file.
  *
+ * An interpreter's inline program (`node -e`, `python3 -c`, `ruby -e`, `perl -e`, `php -r`, `bun -e`,
+ * `deno eval`), and a heredoc or here-string fed to an interpreter (`python3 - <<'EOF'`), is refused when
+ * a quoted name in it is a secret file. `node --env-file=<secret> -p …` prints what the file loads, so it
+ * is refused when the code mentions `env` and asked about otherwise. A variable set to a secret file's
+ * name and expanded later in the same command line, or by a nested shell (`F=<name> bash -c 'cat $F'`),
+ * is asked about, not refused.
+ *
  * Like the rest of these hooks this reads the command as text and catches the common spellings,
- * not every one: a file reached through a variable, a symlink or a directory search is not seen.
+ * not every one: a file reached through a symlink, a directory search, a name an interpreter builds
+ * at run time or a variable set in an earlier command is not seen.
  */
-import { commandParts, Unclear } from './shell-words.mjs';
+import { commandParts, innerScripts, Unclear, variableUse } from './shell-words.mjs';
 
 const TEMPLATE = /\.(example|sample|template)$/;
 const MAY_NAME = new Set(['ls', 'rm', 'touch', 'chmod', 'chown', 'stat', 'test', '[', 'echo', 'printf', 'source', '.', 'code', 'open']);
@@ -64,9 +72,114 @@ export function isSecretFile(path, { dot = false } = {}) {
   return false;
 }
 
+// Interpreters that run a program given on the command line, and the option that says so.
+const INLINE_CODE = [
+  { name: /^(node|nodejs)$/, option: /^(-[a-zA-Z]*[ep]|--eval|--print)(=|$)/ },
+  { name: /^python[\d.]*$/, option: /^-[a-zA-Z]*c/ },
+  { name: /^ruby$/, option: /^-[a-zA-Z]*e/ },
+  { name: /^perl$/, option: /^-[a-zA-Z]*[eE]/ },
+  { name: /^deno$/, option: /^eval$/ },
+  { name: /^php$/, option: /^-r/ },
+  { name: /^bun$/, option: /^(-[a-zA-Z]*[ep]|--eval|--print)(=|$)/ },
+];
+
+// Interpreters that run the program they are given on their input, so a heredoc or here-string is code.
+const INTERPRETER = /^(node|nodejs|python[\d.]*|ruby|perl|php|bun|deno)$/;
+
+/**
+ * The secret file an interpreter's inline program names (`python3 -c "open('<name>')"`), or null.
+ * The program is a string the other rules take for one word, so its parts are read one by one: the
+ * pieces between quotes and spaces, and again with brackets, commas and operators taken out. A
+ * name built at run time (`'.' + 'env'`) is not seen.
+ */
+function inlineCodeSecret(name, args) {
+  if (!INLINE_CODE.some((spec) => spec.name.test(name) && args.some((a) => spec.option.test(a)))) return null;
+  for (const word of filePositions(name, args)) {
+    const file = secretInText(word);
+    if (file) return file;
+  }
+  return null;
+}
+
+// The first piece of a program's text that is a secret file's name, or null.
+function secretInText(text) {
+  const pieces = [...text.split(/[\s'"`]+/), ...text.split(/[\s'"`(),;=<>|&+]+/)];
+  return pieces.find((piece) => piece && isSecretFile(piece)) ?? null;
+}
+
+// The secret file named by a heredoc or here-string an interpreter reads as its program, or null.
+function inputProgramSecret(name, words, bodies) {
+  if (!INTERPRETER.test(name)) return null;
+  for (const [i, w] of words.entries()) {
+    const target = words[i + 1] ?? '';
+    const n = w === '<<' ? /^HEREDOC(\d+)$/.exec(target)?.[1] : undefined;
+    const text = n !== undefined ? bodies[n] : w === '<<<' ? target : undefined;
+    const file = text === undefined ? null : secretInText(text);
+    if (file) return file;
+  }
+  return null;
+}
+
+// What `node --env-file=<secret>` with inline code (`-p`, `-e`) loads: `{ file, mentionsEnv }`, or null.
+// The file's values are loaded into `process.env`, so code that prints it prints the secrets.
+function envFileInlineCode(name, args) {
+  if (!ENV_FILE_RUNNER.test(name) || !INLINE_CODE.some((spec) => spec.name.test(name) && args.some((a) => spec.option.test(a)))) return null;
+  let file = null;
+  const code = [];
+  for (let i = 0; i < args.length; i++) {
+    const option = /^--env-file(-if-exists)?(=(.*))?$/.exec(args[i]);
+    if (!option) code.push(args[i]);
+    else {
+      const value = option[3] ?? args[++i] ?? '';
+      if (isSecretFile(value)) file ??= value;
+    }
+  }
+  return file === null ? null : { file, mentionsEnv: /\benv\b/i.test(code.join(' ')) };
+}
+
+// The runners whose `--env-file` loads a file into `process.env`.
+const ENV_FILE_RUNNER = /^(node|nodejs|bun)$/;
+
+// Text a shell expands: `$name`, `${…}`, `$(…)`, `$1`, `$@`, or a backtick substitution.
+const EXPANSION = /\$[\w{(@*#?!$-]|`/;
+
+/**
+ * Why the command should be asked about for reaching a secret file through a variable, or null.
+ * `F=<secret name>; cat $F` names the file only inside the variable, where the other rules cannot
+ * see it, so when a variable is set to a secret file's name and a later command expands any
+ * variable, the person is asked. So is a nested shell (`bash -c`, a heredoc fed to a shell, `eval`)
+ * whose script expands one, since single quotes hide the `$F` from the outer command
+ * (`F=<name> bash -c 'cat $F'`).
+ */
+export function secretViaVariable(command) {
+  let set = null;
+  for (const { assigned, expands } of variableUse(command)) {
+    set ??= assigned.find((value) => value.split(/\s+/).some((piece) => piece && isSecretFile(piece))) ?? null;
+    if (set !== null && expands) return `a variable is set to the secret file name ${set} and a command expands a variable`;
+  }
+  if (set !== null && innerScripts(command).some((script) => EXPANSION.test(script))) {
+    return `a variable is set to the secret file name ${set} and a nested shell expands a variable`;
+  }
+  return null;
+}
+
+/**
+ * Why the command should be asked about for loading a secret file with `--env-file` into inline code
+ * that does not mention `env`, or null. One that does is refused (`secretAccess`). The code can still
+ * reach the values by a name built at run time, which the hook cannot tell.
+ */
+export function secretViaEnvFile(command) {
+  for (const { words } of commandParts(command)) {
+    const loaded = envFileInlineCode(words[0], words.slice(1));
+    if (loaded) return `\`${words[0]}\` loads the secret file ${loaded.file} with --env-file and runs inline code`;
+  }
+  return null;
+}
+
 /** Why the command reads or sends a secret file, or null. */
 export function secretAccess(command) {
-  for (const { words: named, dropped, lead } of commandParts(command)) {
+  const bodies = [];
+  for (const { words: named, dropped, lead } of commandParts(command, bodies)) {
     // Redirects written before the command name (`< .env cat`) read the file too.
     const words = [...lead.words, ...named];
     const redirected = words.findIndex((w, i) => w === '<' && namesSecret(words[i + 1] ?? ''));
@@ -79,6 +192,12 @@ export function secretAccess(command) {
       const file = curlUpload(args);
       if (file) return `\`curl\` sends the secret file ${file}`;
     }
+    const inline = inlineCodeSecret(name, args);
+    if (inline) return `\`${name}\` runs a program that names the secret file ${inline}`;
+    const loaded = envFileInlineCode(name, args);
+    if (loaded?.mentionsEnv) return `\`${name}\` loads the secret file ${loaded.file} with --env-file and runs code that prints the environment`;
+    const fed = inputProgramSecret(name, [...lead.words, ...args], bodies);
+    if (fed) return `\`${name}\` runs a program from its input that names the secret file ${fed}`;
     if (mayName(name, args)) continue;
     const file = [name, ...filePositions(name, args)].find(namesSecret);
     if (file) return `\`${name}\` names the secret file ${file}, and may print or send it`;

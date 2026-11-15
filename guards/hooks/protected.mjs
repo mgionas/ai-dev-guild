@@ -10,9 +10,21 @@
  * thing every project has and no agent should ever rewrite.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { join, matchesGlob } from 'node:path';
+import path, { join } from 'node:path';
+import { block } from './read-input.mjs';
 
 const DEFAULT_RULES = ['.env', '.env.*', '!.env.example'];
+
+/**
+ * Refuses the call when this Node has no `path.matchesGlob` (added in 22.5 and in 20.19). A named import of it
+ * would kill the hook while it loads, and a hook that dies lets the call through; reading it from
+ * the `path` object at call time keeps the hook running, so it can say why it refuses.
+ */
+export function requireGlobSupport() {
+  if (typeof path.matchesGlob !== 'function') {
+    block(`these guards need Node 22.5 or later (or 20.19 or later), for path.matchesGlob, and this is Node ${process.version}, so no call can be checked. Upgrade Node, or turn the plugin off.`);
+  }
+}
 
 /** Reads the project's rules, or the defaults when it has none. */
 export function loadRules(projectDir) {
@@ -34,7 +46,7 @@ export function protectingRule(relPath, rules) {
     const negated = raw.startsWith('!');
     const pattern = negated ? raw.slice(1) : raw;
     const glob = pattern.includes('/') ? pattern : `**/${pattern}`;
-    if (matchesGlob(relPath, glob) || matchesGlob(relPath, pattern)) match = negated ? null : raw;
+    if (path.matchesGlob(relPath, glob) || path.matchesGlob(relPath, pattern)) match = negated ? null : raw;
   }
   return match;
 }
