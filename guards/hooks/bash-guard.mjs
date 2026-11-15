@@ -4,8 +4,9 @@
  * 1. Killing processes by pattern (`pkill -f vitest`, `killall node`, `kill $(pgrep …)`). On a
  *    machine where several agents run, a pattern kill stops every agent's tests and the CI run
  *    too. Stop only what you started: your own background task, or a job (`kill %1`).
- * 2. Skipping git hooks (`--no-verify` and its abbreviations, `git commit -n`, `core.hooksPath` set by `-c` or
- *    `git config`, `HUSKY=0`, `LEFTHOOK=0`). The hooks are the check.
+ * 2. Skipping git hooks (`--no-verify` and its abbreviations, `git commit -n`, `core.hooksPath` set by `-c`,
+ *    `--config-env`, `git config` or git's `GIT_CONFIG_KEY_<n>` / `GIT_CONFIG_PARAMETERS`, `HUSKY=0`, `LEFTHOOK=0`).
+ *    The hooks are the check.
  * 3. Writing a protected path from the shell (`> .env`, `tee`, `sed -i`, `cp`/`mv` onto it), the
  *    side door around the file-edit guard.
  * 4. Reading or sending a secret file from the shell (`cat .env`, `curl -d @.env`), the side door
@@ -22,10 +23,12 @@
  *    and `.` of a script from the input, a file descriptor (`/dev/fd/3`) or a `<(…)` / `=(…)`, and a
  *    shell whose script is a descriptor or whose unquoted heredoc body expands something.
  *
- * 7. Asked, not refused: a command that deletes, moves, writes or changes the mode of a git hook
- *    or hook manager file (`rm .git/hooks/pre-commit`, `chmod -x .husky/pre-commit`; see
- *    `hook-files.mjs`), a `git commit` or `push` run with pre-commit's `SKIP=`, and a variable set
- *    to a secret file's name that a later command expands (`F=<name>; cat $F`).
+ * 7. Asked, not refused: a command that deletes, moves, writes or changes the mode of a git hook,
+ *    hook manager file or `.git/config` (`rm .git/hooks/pre-commit`, `chmod -x .husky/pre-commit`; see
+ *    `hook-files.mjs`), `lefthook uninstall` and `pre-commit uninstall`, a `git commit` or `push` run with
+ *    pre-commit's `SKIP=`, a variable set to a secret file's name that a later command or a nested shell
+ *    expands (`F=<name>; cat $F`), and `node --env-file=<secret> -e …` that does not mention `env` (one that
+ *    does is refused; see `secrets.mjs`).
  *
  * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`,
  * a heredoc a shell runs as its script), up to three levels deep, and the command behind a wrapper
@@ -43,7 +46,7 @@
 import { hookFileChange } from './hook-files.mjs';
 import { loadRules, protectingRule, requireGlobSupport } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
-import { secretAccess, secretViaVariable } from './secrets.mjs';
+import { secretAccess, secretViaEnvFile, secretViaVariable } from './secrets.mjs';
 import { commandParts, refuseOpenQuote, scriptsToJudge, Unclear, unseenScript, withoutHeredocs, withoutRedirects } from './shell-words.mjs';
 
 // Longer commands get the question without being read: the reading time grows with the length,
@@ -145,8 +148,14 @@ const NO_VERIFY = '--no-verify';
 const NO_VERIFY_COMMANDS = new Set(['commit', 'push', 'merge', 'am', 'rebase']);
 const abbreviatesNoVerify = (w) => w.length >= '--no-v'.length && NO_VERIFY.startsWith(w);
 
-// `git config` actions that read or remove a value and so cannot set core.hooksPath.
-const CONFIG_READS = new Set(['--unset', '--unset-all', 'unset', '--get', '--get-all', '--get-regexp', '--get-urlmatch', 'get', '--list', '-l', 'list']);
+// `git config` actions that read or remove a value and so cannot set core.hooksPath: a word only
+// straight after `config` (`git config get …`; anywhere else it is a value, as in `config core.hooksPath get`),
+// or an option, which has the dashes to say so.
+const CONFIG_READ_WORDS = new Set(['get', 'unset', 'list']);
+const CONFIG_READ_OPTIONS = new Set(['--unset', '--unset-all', '--get', '--get-all', '--get-regexp', '--get-urlmatch', '--list', '-l']);
+
+// git's environment spellings of `-c core.hooksPath=…`: a numbered key, or the packed list git passes to its children.
+const GIT_ENV_HOOKSPATH = /^(GIT_CONFIG_KEY_\d+=core\.hookspath$|GIT_CONFIG_PARAMETERS=.*core\.hookspath)/i;
 
 /**
  * Why the command skips git hooks, or null. Words are judged as bash reads them, quotes and
@@ -158,13 +167,17 @@ export function skipsHooks(command) {
   if (/(^|[\s;&|(`])(HUSKY|LEFTHOOK)=0\b/.test(withoutQuotedText(command))) return 'HUSKY=0 / LEFTHOOK=0';
   for (const { words, dropped } of commandParts(command)) {
     if (dropped.some((w) => SKIP_ENV.test(w)) || (words[0] === 'export' && words.some((w) => SKIP_ENV.test(w)))) return 'HUSKY=0 / LEFTHOOK=0';
+    // Set on the command, after `env` or `export`, whichever command later runs git.
+    if ([...dropped, ...(words[0] === 'export' ? words.slice(1) : [])].some((w) => GIT_ENV_HOOKSPATH.test(w))) return 'core.hooksPath (set through git\'s environment)';
     if (words[0] !== 'git') continue;
     if (words.includes(NO_VERIFY)) return NO_VERIFY;
     if (words.some(abbreviatesNoVerify) && words.some((w) => NO_VERIFY_COMMANDS.has(w))) return `${NO_VERIFY} (abbreviated)`;
-    if (words.some((w) => /^core\.hookspath=/i.test(w))) return 'core.hooksPath';
+    if (words.some((w) => /^core\.hookspath=/i.test(w) || /^--config-env=core\.hookspath(=|$)/i.test(w))) return 'core.hooksPath';
     // `git config core.hooksPath x` sets it; with the key last, or an action that only reads or removes it, it does not.
     const key = words.findIndex((w) => w.toLowerCase() === 'core.hookspath');
-    if (words.includes('config') && key !== -1 && key < words.length - 1 && !words.some((w) => CONFIG_READS.has(w))) return 'git config core.hooksPath';
+    const config = words.indexOf('config');
+    const reads = CONFIG_READ_WORDS.has(words[config + 1]) || words.some((w) => CONFIG_READ_OPTIONS.has(w));
+    if (config !== -1 && key !== -1 && key < words.length - 1 && !reads) return 'git config core.hooksPath';
     const sub = words.find((w, i) => i > 0 && !w.startsWith('-') && words[i - 1] !== '-c' && words[i - 1] !== '-C');
     if (sub === 'commit' && words.some((w) => /^-[a-zA-Z]*n[a-zA-Z]*$/.test(w))) return 'git commit -n';
   }
@@ -229,6 +242,17 @@ export function pidKill(command) {
   return null;
 }
 
+// The files `perl -i` or `ruby -i` edits in place (as `sed -i` does): its plain words, but not the program after `-e`.
+function inPlaceFiles(args) {
+  if (!args.some((w) => /^-[0-9a-zA-Z]*i/.test(w))) return [];
+  const files = [];
+  for (let k = 0; k < args.length; k++) {
+    if (/^-[0-9a-zA-Z]*[eE]$/.test(args[k])) k++;
+    else if (!args[k].startsWith('-')) files.push(args[k]);
+  }
+  return files;
+}
+
 /** Paths a command may write: redirect targets, `tee` and `sed -i` files, `cp`/`mv` destinations. */
 export function writeTargets(command) {
   const targets = [];
@@ -243,6 +267,7 @@ export function writeTargets(command) {
     const { words, outputs } = withoutRedirects(part);
     targets.push(...outputs);
     if (words[0] === 'tee') targets.push(...words.slice(1).filter((w) => !w.startsWith('-')));
+    if (words[0] === 'perl' || words[0] === 'ruby') targets.push(...inPlaceFiles(words.slice(1)));
   }
   // sed edits in place only with -i; its file is the last word (GNU `-i`, BSD `-i ''` alike).
   for (const m of command.matchAll(/\bsed\s+([^;&|]+)/g)) {
@@ -281,6 +306,8 @@ function judge(command, projectDir) {
     if (hook) ask(`${hook}. Hooks are the project's check: allow it only if the user asked for this change.`);
     const skipped = skipsNamedHooks(script);
     if (skipped) ask(`${skipped}. Allow it only if skipping those hooks is what the user asked for.`);
+    const envFile = secretViaEnvFile(script);
+    if (envFile) ask(`${envFile}. Allow it only if the program does not print the file's values.`);
     const variable = secretViaVariable(script);
     if (variable) ask(`${variable}, which the hook cannot follow. Allow it only if the file is not a secret one.`);
     const kill = pidKill(script);

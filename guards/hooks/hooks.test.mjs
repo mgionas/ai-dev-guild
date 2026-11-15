@@ -1266,7 +1266,7 @@ test('the guards refuse every call when path.matchesGlob is missing (Node older 
   ]) {
     const result = runOld(hook, toolInput);
     assert.equal(result.status, 2, hook);
-    assert.match(result.stderr, /Node 22\.5/, hook);
+    assert.match(result.stderr, /Node 22\.5 or later \(or 20\.19 or later\)/, hook);
     assert.match(result.stderr, new RegExp(process.version.replace(/\./g, '\\.')), hook);
     assert.equal(result.stderr.trim().split('\n').length, 1, `${hook}: one message`);
   }
@@ -1302,5 +1302,140 @@ test('bash-guard lets the everyday commands near these rules through', () => {
     'F=a; echo $F',
     'NAME=world; echo "hello $NAME"',
     'export PATH="$HOME/bin:$PATH"',
+    'git config --get core.hooksPath',
+    'node --env-file=.env server.js',
+    "python3 - <<'EOF'\nprint(1)\nEOF",
+    'lefthook install',
+    'pre-commit run',
+    "perl -ne 'print' README.md",
+    'cat .git/config',
+  ]);
+});
+
+test('bash-guard reads a git config action only as the word after config or as an option', () => {
+  const dir = project();
+  expectBash(dir, 'block', ['git config core.hooksPath get', 'git config core.hooksPath unset', 'git config core.hooksPath list']);
+  expectBash(dir, 'allow', ['git config --get core.hooksPath', 'git config get core.hooksPath', 'git config --unset core.hooksPath', 'git config core.hooksPath', 'git config list']);
+});
+
+test('bash-guard asks when a variable set to a secret file name reaches a nested shell that expands a variable', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    "F=.env bash -c 'cat $F'",
+    `env F=.env bash -c 'cat "$F"'`,
+    "F=.env; export F; bash -c 'cat $F'",
+    "F=.env sh -c 'cat $F'",
+    "F=.env eval 'cat $F'",
+    "F=.env bash <<'X'\ncat $F\nX",
+    "F=.env; bash -c 'cat `echo $F`'",
+  ]);
+  expectBash(dir, 'allow', ["F=.env bash -c 'echo hi'", "F=a bash -c 'cat $F'", "F=.env.example bash -c 'cat $F'", 'F=.env; echo hi']);
+});
+
+test('bash-guard refuses node loading a secret file with --env-file and printing from inline code, and asks when the code does not mention env', () => {
+  const dir = project();
+  expectBash(dir, 'block', [
+    'node --env-file=.env -p process.env',
+    'node --env-file .env -e "console.log(process.env)"',
+    'node --env-file=.env.local -pe process.env',
+    'node --env-file-if-exists=.env --print process.env',
+    `node --env-file=.env --eval 'console.log(process["env"])'`,
+    'node --env-file=.env -p process.env.HOME',
+    'node -p process.env --env-file=.env',
+    'nodejs --env-file=.env -p process.env',
+    'bun --env-file=.env -e "console.log(process.env)"',
+  ]);
+  expectBash(dir, 'ask', ['node --env-file=.env -e "console.log(1)"', 'node --env-file=.env -p 1', 'node --env-file .env --eval "x()"']);
+  expectBash(dir, 'allow', ['node --env-file=.env server.js', 'node --env-file=.env.example -p process.env', 'node --env-file=.env.example -e "console.log(1)"', 'node -p process.env.HOME']);
+});
+
+test('bash-guard asks before a command changes .git/config or .git/config.worktree, and lets reads pass', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    "echo '[core] hooksPath=/dev/null' >> .git/config",
+    'rm .git/config',
+    "sed -i 's/a/b/' .git/config",
+    'cp x .git/config.worktree',
+    'cat x | tee .git/config',
+    'echo x > sub/.git/config',
+    'chmod 600 .git/config',
+  ]);
+  expectBash(dir, 'allow', ['cat .git/config', 'grep hooks .git/config', 'cp .git/config /tmp/backup', 'echo x > .git/config.bak', 'echo x > .gitconfig', 'git config --list']);
+  for (const file of ['.git/config', '.git/config.worktree', 'sub/.git/config']) {
+    assert.equal(answer(run('guard-paths.mjs', { file_path: join(dir, file) }, dir)), 'ask', file);
+  }
+  for (const file of ['src/config', '.gitconfig', '.git/config.bak', 'docs/.git-config.md']) {
+    assert.equal(answer(run('guard-paths.mjs', { file_path: join(dir, file) }, dir)), 'allow', file);
+  }
+});
+
+test('bash-guard asks before lefthook uninstall and pre-commit uninstall, and lets install and run pass', () => {
+  const dir = project();
+  expectBash(dir, 'ask', ['lefthook uninstall', 'pre-commit uninstall', 'pre-commit uninstall -t pre-push', 'sudo lefthook uninstall', "bash -c 'lefthook uninstall'"]);
+  expectBash(dir, 'allow', ['lefthook install', 'lefthook run pre-commit', 'pre-commit run --all-files', 'pre-commit install']);
+});
+
+test('bash-guard asks before perl or ruby edits a hook file in place, as it does for sed -i', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    "perl -pi -e 's/lint//' .husky/pre-commit",
+    "perl -i.bak -pe 's/a//' lefthook.yml",
+    "perl -pi.bak -e 's/a//' .git/hooks/pre-commit",
+    "perl -p -i -e 's/a//' .husky/pre-commit",
+    "ruby -pi -e 'x' .husky/pre-commit",
+    "ruby -i.bak -pe 'x' .pre-commit-config.yaml",
+  ]);
+  expectBash(dir, 'block', ["perl -pi -e 's/a/b/' .env.local"]);
+  expectBash(dir, 'allow', ["perl -ne 'print' README.md", "perl -pi -e 's/a/b/' src/a.txt", "perl -pe 's/a//' .husky/pre-commit", "perl -e 'print 1'"]);
+});
+
+test('bash-guard refuses git config set through git environment variables or --config-env', () => {
+  const dir = project();
+  expectBash(dir, 'block', [
+    'git --config-env=core.hooksPath=HP commit',
+    'git --config-env=core.hookspath=HP commit -m x',
+    'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null git commit',
+    `GIT_CONFIG_PARAMETERS="'core.hooksPath'='/dev/null'" git commit`,
+    'env GIT_CONFIG_KEY_0=CORE.HOOKSPATH git commit',
+    'export GIT_CONFIG_KEY_1=core.hooksPath',
+    `GIT_CONFIG_PARAMETERS="'CORE.hookspath'='x'" git push`,
+    "bash -c 'GIT_CONFIG_KEY_0=core.hooksPath git commit'",
+  ]);
+  expectBash(dir, 'allow', [
+    'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0=x git commit -m x',
+    'git --config-env=user.name=NAME commit',
+    `GIT_CONFIG_PARAMETERS="'user.name'='x'" git status`,
+    'GIT_CONFIG_VALUE_0=core.hooksPath git status',
+  ]);
+});
+
+test('bash-guard refuses php -r and bun -e one-liners that name a secret file', () => {
+  const dir = project();
+  expectBash(dir, 'block', [`php -r "echo file_get_contents('.env');"`, `bun -e "Bun.file('.env')"`, `bun --eval "x('.env')"`, `bun -p "x('.env.local')"`]);
+  expectBash(dir, 'allow', ["php -r 'echo 1;'", 'bun -e "console.log(1)"', 'php artisan test', 'bun run build']);
+});
+
+test('bash-guard refuses a heredoc or here-string fed to an interpreter that names a secret file', () => {
+  const dir = project();
+  expectBash(dir, 'block', [
+    "python3 - <<'EOF'\nprint(open('.env').read())\nEOF",
+    "python <<EOF\nprint(open('.env.local').read())\nEOF",
+    "node <<'EOF'\nrequire('fs').readFileSync('.env')\nEOF",
+    "ruby <<EOF\nputs File.read('.env')\nEOF",
+    "perl <<'EOF'\nopen(F,'.env');\nEOF",
+    "php <<'EOF'\n<?php echo file_get_contents('.env');\nEOF",
+    "bun <<'EOF'\nBun.file('.env')\nEOF",
+    "deno run - <<'EOF'\nDeno.readTextFileSync('.env')\nEOF",
+    "sudo python3 - <<'EOF'\nopen('.env')\nEOF",
+    "<<'EOF' python3\nopen('.env')\nEOF",
+    `python3 <<< "open('.env')"`,
+  ]);
+  expectBash(dir, 'allow', [
+    "python3 - <<'EOF'\nprint(1)\nEOF",
+    "node <<'EOF'\nconsole.log(1)\nEOF",
+    "python3 - <<'EOF'\nopen('.env.example')\nEOF",
+    "cat <<'EOF'\n.env\nEOF",
+    "python3 - <<'EOF'\nprint(1)\nEOF\ncat README.md",
+    `python3 <<< "print(1)"`,
   ]);
 });

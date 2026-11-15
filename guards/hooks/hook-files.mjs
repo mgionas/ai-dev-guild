@@ -8,17 +8,29 @@
  * stays allowed.
  *
  * Covered: anything under `.git/hooks/`, `.husky/` or `.lefthook/` in any folder, `lefthook.yml`
- * (and `.yaml`, `.json`, `.toml`, a leading dot, a `-local` suffix) and `.pre-commit-config.yaml`.
+ * (and `.yaml`, `.json`, `.toml`, a leading dot, a `-local` suffix), `.pre-commit-config.yaml`, and
+ * `.git/config` and `.git/config.worktree`, where a line `hooksPath = …` redirects every hook. Also
+ * asked about: `lefthook uninstall` and `pre-commit uninstall`.
  */
 import { commandParts } from './shell-words.mjs';
 
+// What git itself reads from `.git/`: the hooks, and the config, which can set `core.hooksPath` without any command.
+const GIT_FILES = new Set(['hooks', 'config', 'config.worktree']);
+
 const MANAGER_FILE = /^(\.?lefthook(-local)?\.(ya?ml|json|toml)|\.pre-commit-config\.yaml)$/;
 
-/** True when `path` is inside a hooks folder or is a hook manager's config file. */
+/** True when `path` is inside a hooks folder, is a hook manager's config file, or is git's own `.git/config`. */
 export function isHookFile(path) {
   const parts = path.split(/[\\/]/).filter((part) => part && part !== '.');
-  if (parts.some((part, i) => part === '.husky' || part === '.lefthook' || (part === '.git' && parts[i + 1] === 'hooks'))) return true;
+  if (parts.some((part, i) => part === '.husky' || part === '.lefthook' || (part === '.git' && GIT_FILES.has(parts[i + 1])))) return true;
   return MANAGER_FILE.test(parts.at(-1) ?? '');
+}
+
+/** What kind of file `path` is, as words for the question. */
+export function describeHookFile(path) {
+  const parts = path.split(/[\\/]/).filter(Boolean);
+  const config = parts.some((part, i) => part === '.git' && (parts[i + 1] === 'config' || parts[i + 1] === 'config.worktree'));
+  return config ? 'git config, which can set core.hooksPath' : 'a git hook or hook manager file';
 }
 
 // Commands that change what they are given: every plain word is a path they may write, move,
@@ -44,7 +56,7 @@ function gitSubcommand(words) {
  */
 export function hookFileChange(command, targets) {
   const target = targets.find(isHookFile);
-  if (target) return `the command writes ${target}, a git hook or hook manager file`;
+  if (target) return `the command writes ${target}, ${describeHookFile(target)}`;
   let intoHooks = null;
   let changes = targets.length > 0;
   for (const { words } of commandParts(command)) {
@@ -54,11 +66,13 @@ export function hookFileChange(command, targets) {
       intoHooks ??= plain.find(isHookFile) ?? null;
       continue;
     }
+    // Both delete the installed hooks, which switches the check off like `rm .git/hooks/pre-commit`.
+    if ((name === 'lefthook' || name === 'pre-commit') && args.includes('uninstall')) return `\`${name} uninstall\` removes the installed git hooks`;
     const gitChange = name === 'git' && GIT_CHANGES.has(gitSubcommand(words));
     if (!CHANGES_ITS_ARGUMENTS.has(name) && !gitChange) continue;
     changes = true;
     const file = plain.flatMap(pathsIn).find(isHookFile);
-    if (file) return `\`${gitChange ? `git ${gitSubcommand(words)}` : name}\` changes ${file}, a git hook or hook manager file`;
+    if (file) return `\`${gitChange ? `git ${gitSubcommand(words)}` : name}\` changes ${file}, ${describeHookFile(file)}`;
   }
   if (intoHooks && changes) return `the command changes files after moving into ${intoHooks}, a git hook folder`;
   return null;

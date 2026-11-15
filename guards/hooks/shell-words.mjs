@@ -794,7 +794,7 @@ function decodedView(script) {
 }
 
 // The strings this command's simple commands hand to a shell (`-c`, a heredoc) or to `eval`.
-function innerScripts(command) {
+export function innerScripts(command) {
   const bodies = [];
   const found = [];
   for (const part of commandParts(command, bodies)) {

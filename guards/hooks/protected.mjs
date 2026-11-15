@@ -16,13 +16,13 @@ import { block } from './read-input.mjs';
 const DEFAULT_RULES = ['.env', '.env.*', '!.env.example'];
 
 /**
- * Refuses the call when this Node has no `path.matchesGlob` (added in 22.5). A named import of it
+ * Refuses the call when this Node has no `path.matchesGlob` (added in 22.5 and in 20.19). A named import of it
  * would kill the hook while it loads, and a hook that dies lets the call through; reading it from
  * the `path` object at call time keeps the hook running, so it can say why it refuses.
  */
 export function requireGlobSupport() {
   if (typeof path.matchesGlob !== 'function') {
-    block(`these guards need Node 22.5 or newer (they use path.matchesGlob) and this is Node ${process.version}, so no call can be checked. Upgrade Node, or turn the plugin off.`);
+    block(`these guards need Node 22.5 or later (or 20.19 or later), for path.matchesGlob, and this is Node ${process.version}, so no call can be checked. Upgrade Node, or turn the plugin off.`);
   }
 }
 

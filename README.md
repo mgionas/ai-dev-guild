@@ -316,14 +316,17 @@ are in [examples](examples/README.md), clearly marked and not loaded by the plug
 | `guard-paths` | an edit to a file in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included; asks before a hook file          |
 | `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify` (abbreviated too), `git commit -n`, `core.hooksPath`, `HUSKY=0`; a protected-file write    |
 |               | any command naming a secret file, except the few that do not read it (`ls`, `rm`, `touch`, `chmod`, `stat`, `test`, `echo`, `source .env`, …)   |
-|               | `git config` that sets `core.hooksPath` (unsetting it is fine); `node -e`, `python3 -c`, `ruby -e`, `perl -e`, `deno eval` naming a secret file |
+|               | `core.hooksPath` set by `git config`, `--config-env`, `GIT_CONFIG_KEY_<n>` or `GIT_CONFIG_PARAMETERS` (unsetting or reading it is fine)         |
+|               | `node -e`, `python3 -c`, `ruby -e`, `perl -e`, `php -r`, `bun -e`, `deno eval`, or a heredoc fed to an interpreter, naming a secret file       |
+|               | `node --env-file=.env -p …` when the code mentions `env` (the code prints what the file loads); asks when it does not                           |
 |               | asks: any `kill` but `kill %1`, `kill $!` or `kill -0` (`kill 1234`, `kill $PID`, `kill $(lsof …)`), since it cannot tell whose process that is |
 |               | asks: a shell that reads its script from a pipe (`curl … \| bash`) or another input it cannot see                                               |
 |               | asks: a shell whose `-c` string or here-string is built from an expansion (`bash -c "$(curl …)"`, `bash -c "$CMD"`)                             |
 |               | asks: `source` or `.` of a script it cannot see (`source <(curl …)`, `. /dev/stdin`, `source /dev/fd/3`, zsh `=(…)`)                            |
 |               | asks: a shell run on an unquoted heredoc whose body expands something (`bash <<EOF` with `$name` or `$(…)` inside)                              |
-|               | asks: deleting, moving, writing or re-moding a git hook or hook manager file (`rm .git/hooks/…`, `chmod -x .husky/…`, `lefthook.yml`)           |
-|               | asks: `git commit` or `git push` with pre-commit's `SKIP=` set; a variable set to a secret file name and then expanded (`F=.env; cat $F`)       |
+|               | asks: deleting, moving, writing or re-moding a git hook, hook manager file or `.git/config` (`rm .git/hooks/…`, `chmod -x .husky/…`, `lefthook.yml`) |
+|               | asks: `lefthook uninstall`, `pre-commit uninstall`, and `perl -pi` or `ruby -pi` on a hook file, as for `sed -i`                                |
+|               | asks: `git commit` or `git push` with pre-commit's `SKIP=` set; a variable set to a secret file name and then expanded, also by a nested shell (`F=.env; cat $F`, `F=.env bash -c 'cat $F'`) |
 | `guard-reads` | the Read and Grep tools opening a secret file (`.env`, `.env.*` in any folder; not `.env.example`, `.env.sample`, `.env.template`)              |
 | `after-edit`  | nothing by itself: it runs your executable `.claude/after-edit` on each edited file and sends any failure back to Claude                        |
 

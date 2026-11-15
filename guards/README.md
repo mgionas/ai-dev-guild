@@ -8,14 +8,17 @@ stop the things agents keep doing by accident.
 | `guard-paths` | an edit to a file in `.claude/protected-paths` (default: `.env` files, not `.env.example`), symlinks included; asks before a hook file          |
 | `bash-guard`  | `pkill`, `killall`, `kill $(pgrep …)`; `--no-verify` (abbreviated too), `git commit -n`, `core.hooksPath`, `HUSKY=0`; a protected-file write    |
 |               | any command naming a secret file, except the few that do not read it (`ls`, `rm`, `touch`, `chmod`, `stat`, `test`, `echo`, `source .env`, …)   |
-|               | `git config` that sets `core.hooksPath` (unsetting it is fine); `node -e`, `python3 -c`, `ruby -e`, `perl -e`, `deno eval` naming a secret file |
+|               | `core.hooksPath` set by `git config`, `--config-env`, `GIT_CONFIG_KEY_<n>` or `GIT_CONFIG_PARAMETERS` (unsetting or reading it is fine)         |
+|               | `node -e`, `python3 -c`, `ruby -e`, `perl -e`, `php -r`, `bun -e`, `deno eval`, or a heredoc fed to an interpreter, naming a secret file       |
+|               | `node --env-file=.env -p …` when the code mentions `env` (the code prints what the file loads); asks when it does not                           |
 |               | asks: any `kill` but `kill %1`, `kill $!` or `kill -0` (`kill 1234`, `kill $PID`, `kill $(lsof …)`), since it cannot tell whose process that is |
 |               | asks: a shell that reads its script from a pipe (`curl … \| bash`) or another input it cannot see                                               |
 |               | asks: a shell whose `-c` string or here-string is built from an expansion (`bash -c "$(curl …)"`, `bash -c "$CMD"`)                             |
 |               | asks: `source` or `.` of a script it cannot see (`source <(curl …)`, `. /dev/stdin`, `source /dev/fd/3`, zsh `=(…)`)                            |
 |               | asks: a shell run on an unquoted heredoc whose body expands something (`bash <<EOF` with `$name` or `$(…)` inside)                              |
-|               | asks: deleting, moving, writing or re-moding a git hook or hook manager file (`rm .git/hooks/…`, `chmod -x .husky/…`, `lefthook.yml`)           |
-|               | asks: `git commit` or `git push` with pre-commit's `SKIP=` set; a variable set to a secret file name and then expanded (`F=.env; cat $F`)       |
+|               | asks: deleting, moving, writing or re-moding a git hook, hook manager file or `.git/config` (`rm .git/hooks/…`, `chmod -x .husky/…`, `lefthook.yml`) |
+|               | asks: `lefthook uninstall`, `pre-commit uninstall`, and `perl -pi` or `ruby -pi` on a hook file, as for `sed -i`                                |
+|               | asks: `git commit` or `git push` with pre-commit's `SKIP=` set; a variable set to a secret file name and then expanded, also by a nested shell (`F=.env; cat $F`, `F=.env bash -c 'cat $F'`) |
 | `guard-reads` | the Read and Grep tools opening a secret file (`.env`, `.env.*` in any folder; not `.env.example`, `.env.sample`, `.env.template`)              |
 | `after-edit`  | nothing by itself: if your project has an executable `.claude/after-edit`, it runs it on each edited file and sends any failure back to Claude  |
 
@@ -26,7 +29,7 @@ stop the things agents keep doing by accident.
 /plugin install ai-dev-guild-guards@ai-dev-guild
 ```
 
-Needs Node.js 22.5 or later. On an older Node the file-edit and shell hooks refuse every call with a message that
+Needs Node.js 22.5 or later (or 20.19 or later). On an older Node the file-edit and shell hooks refuse every call with a message that
 names the version needed, since they cannot check anything there.
 
 ## What it runs, sends and fetches
@@ -51,9 +54,11 @@ hooks and CI stay the authority. They do not protect their own files.
 They read each command as text, so these get past them. Your pre-commit hooks, CI and the deny rules in
 your settings are the layer for them.
 
-- **An interpreter reading a file by a computed path.** `node -e`, `python3 -c`, `ruby -e`, `perl -e` and
-  `deno eval` are refused when a quoted name in the program is a secret file, but not when the name is
-  built at run time (`'.' + 'env'`), read from the environment, or run from a script file or a heredoc.
+- **An interpreter reading a file by a computed path.** `node -e`, `python3 -c`, `ruby -e`, `perl -e`, `php -r`,
+  `bun -e`, `deno eval` and a heredoc or here-string fed to an interpreter are refused when a quoted name in the
+  program is a secret file, but not when the name is built at run time (`'.' + 'env'`), read from the
+  environment, or run from a script file. `node --env-file=.env -e …` that does not say `env` is asked about,
+  since the code can reach the loaded values under a name built at run time.
 - **A search over a tree that holds a secret.** `grep -r SECRET .` and `rg KEY` open every file under
   the folder, and `cat ./*` expands to the files in it; neither names a secret file, and recursive search
   is everyday use, so both are allowed. By default `./*` skips dotfiles, so `cat ./*` does not read `.env`
@@ -63,7 +68,9 @@ your settings are the layer for them.
 - **A file changed by other means.** A hook changed with `find .git/hooks -delete`, from an interpreter
   or with `git checkout` is not asked about, and neither is a hook folder reached after a `cd` in an
   earlier command.
-- **A hook skipped through git's environment.** `GIT_CONFIG_COUNT` with a `core.hooksPath` key, or a
-  `git` alias that adds `--no-verify`, set in an earlier command or in your own config.
+- **A hook skipped through git's configuration.** `--config-env`, `GIT_CONFIG_KEY_<n>` and `GIT_CONFIG_PARAMETERS`
+  naming `core.hooksPath` are refused as written, but not when the name is built from a variable or the
+  variable is set with `declare -x`. A `git` alias that adds `--no-verify`, and an included config file
+  (`git config include.path …`) that sets `core.hooksPath`, are not seen.
 
 Run the tests with `node --test 'hooks/*.test.mjs'` from this folder. Licence: MIT.

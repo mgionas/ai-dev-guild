@@ -1,6 +1,6 @@
 /**
  * PreToolUse hook for file edits: refuses a change to a protected path, and asks before a change to
- * a git hook or a hook manager's file (`hook-files.mjs`).
+ * a git hook, a hook manager's file or `.git/config` (`hook-files.mjs`).
  *
  * A path is judged by where it really points, so a harmless-looking symlink to `.env` is still
  * refused. Files outside the project are not this hook's business, apart from a hooks folder
@@ -9,7 +9,7 @@
  */
 import { lstatSync, realpathSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
-import { isHookFile } from './hook-files.mjs';
+import { describeHookFile, isHookFile } from './hook-files.mjs';
 import { loadRules, protectingRule, requireGlobSupport } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
 
@@ -56,5 +56,5 @@ function judge(projectDir, filePath) {
     }
   }
   const hook = [...candidates].find(isHookFile);
-  if (hook) ask(`${hook} is a git hook or hook manager file, which is the project's check. Allow the change only if the user asked for it.`);
+  if (hook) ask(`${hook} is ${describeHookFile(hook)}, which is the project's check. Allow the change only if the user asked for it.`);
 }
