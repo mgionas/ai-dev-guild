@@ -245,8 +245,24 @@ The guild keeps a few pages current for you, so you can see where a project stan
 | **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
 | **System map** | Which feature owns each API operation, screen, table and job. A starter check in [`examples/system-map`](examples/system-map) refuses anything new and undescribed. |
 
+**What they look like** (example data, as the templates ship):
+
+<table>
+<tr><td colspan="2"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/roadmap-dark.png"><img alt="Roadmap page: a headline, four milestone cards with progress bars, then a board of work items in four lanes (completed, in progress, planned, pending), one item marked needs you, and an item's tasks each with a stage." src="assets/screens/roadmap-light.png" width="100%"></picture><br><sub><b>Roadmap</b>: milestones, a four-lane board, and what waits on you.</sub></td></tr>
+<tr><td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/qa-dark.png"><img alt="QA board page: totals for to test, failed, blocked and passed, filters, then one update with its features and checks, each with Pass, Fail and Blocked buttons and a note." src="assets/screens/qa-light.png" width="100%"></picture><br><sub><b>QA board</b>: each change's checks, marked by testers.</sub></td>
+<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/analysis-dark.png"><img alt="Analysis page: the question, a summary, figures tagged sourced, assumption or gap with source numbers, and options with the recommended one marked for you to decide." src="assets/screens/analysis-light.png" width="100%"></picture><br><sub><b>Analysis page</b>: every figure tagged, you decide.</sub></td></tr>
+<tr><td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/system-map-dark.png"><img alt="System map page: counts of areas, features, API operations, screens and tables, then one card per feature with its status, area, operations, screens and tables." src="assets/screens/system-map-light.png" width="100%"></picture><br><sub><b>System map</b>: which feature owns each operation, screen and table.</sub></td>
+<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/map-dark.png"><img alt="Project map page: a diagram of the web app, API, database and email provider with the links between them, and one card per part." src="assets/screens/map-light.png" width="100%"></picture><br><sub><b>Project map</b>: the parts and who talks to whom.</sub></td></tr>
+</table>
+
 **Why.** Progress, test results and decisions get lost in a chat's scrollback. A page you can open
 on a phone answers "where are we?" without you asking an agent.
+
+**Why a system map.** Agents write and change code often and fast, and a developer can lose track of
+what now exists and why. The system map is read from the code, so it shows what is really there: each
+API operation, screen and table and the feature that owns it, with the decisions behind it. The
+starter check in [`examples/system-map`](examples/system-map) refuses a new operation, screen or
+table that no feature describes, so the map cannot quietly fall behind the code.
 
 **How it works.**
 
@@ -269,6 +285,8 @@ on a phone answers "where are we?" without you asking an agent.
 - You answer a decision from numbers whose trust level is on the page, and the answer stays beside them.
 - A newcomer gets the picture of the parts and folders from a page read from the code, so it matches
   what is there.
+- After a run of agent changes, a developer finds which feature a new route or table belongs to in
+  one search, instead of reading the diff.
 
 Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/skills/progress-boards/SKILL.md),
 [`analysis-page`](plugin/skills/analysis-page/SKILL.md), [`project-map`](plugin/skills/project-map/SKILL.md),
@@ -295,6 +313,25 @@ with its source. A skipped step is said in the main text, not parked in a linked
 
 Written fresh from the ideas of [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer)
 and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copied.
+
+## Built with itself
+
+ai-dev-guild is built with its own loop: each change by a fresh builder agent, reviewed by a
+different one, merged only with the checks' output pasted. Numbers from this repository:
+
+| | |
+| --- | --- |
+| Pull requests merged before this section was written | 16, between 8 and 15 November 2026 |
+| Tests run by CI on every pull request | 179: guard hooks 51, local CI runner 73, system map starter 55 |
+| Guard-hook findings fixed before merge (guards 0.3.1): a refused command let through, or a weaker answer | 16, from an independent security reviewer over five checks |
+| Of those, holes opened by an earlier fix round | 3, each caught by the next check |
+| Layout bugs found by clicking through a published QA board | 2 at phone width, fixed before merge |
+| Phrases a copy check found lifted from a source text | 66, rewritten to 2 before merge |
+
+What this shows: a reviewer that did not write the fix keeps finding what the builder missed,
+including what the fix itself broke, and a check that runs every time catches what a person skims.
+To see where your own sessions spend their time and tokens, run the
+[`token-review`](plugin/skills/token-review/SKILL.md) skill.
 
 ## Who it's for
 
