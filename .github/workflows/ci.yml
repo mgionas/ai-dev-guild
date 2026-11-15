@@ -48,13 +48,31 @@ jobs:
           node --test '*.test.mjs'
           node check.mjs --config example/system-map.config.json --base origin/main
 
+  # Every manifest must pass the plugin validator with warnings counted as failures, the same check the
+  # plugin directory runs first. The validator is pinned: an older Claude Code does not know the directory's
+  # listing fields (documentationUrl, supportUrl, privacyPolicyUrl) and warns on them.
+  manifests:
+    name: manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Validate the marketplace and both plugins
+        run: |
+          for path in . plugin guards; do
+            npx --yes @anthropic-ai/claude-code@2.1.325 plugin validate --strict "$path"
+          done
+
   # The branch ruleset on main requires a status check named exactly "checks". Matrix cells report under
-  # their own names, so this job carries that name and passes only when every cell passed; when one fails,
-  # this job is skipped and the required check stays unmet.
+  # their own names, so this job carries that name and passes only when every cell and the manifest check
+  # passed; when one fails, this job is skipped and the required check stays unmet.
   checks:
     name: checks
-    needs: test
+    needs: [test, manifests]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - run: echo "Every matrix cell passed."
+      - run: echo "Every matrix cell and the manifest check passed."
