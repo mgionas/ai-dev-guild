@@ -2,6 +2,8 @@
 
 **Goal:** <one sentence>
 
+**Branch:** <branch name, optional: lets `flow-stats` find when the task merged>
+
 **Role:** builder | money-specialist | db-migrations | fixer   **Model:** <haiku | sonnet | opus, and why if not the default>
 
 ## Scope

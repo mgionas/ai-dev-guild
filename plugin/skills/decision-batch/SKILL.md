@@ -17,7 +17,9 @@ accept. A long chain of single questions stalls the work.
    matters, because the owner may see only the question dialog and not the chat or file around it.
 4. **Send the file and ask once**, with a single question: "Accept all (recommended)" or "I'll
    change some". If the owner changes some, ask only about those.
-5. **Record the answers the same turn** in the project's decision log, quoting the owner.
+5. **Record the answers the same turn** in the project's decision log, quoting the owner, and add
+   `**Answered:** <date>, accept all` (or `changed <n>`) under the batch file's title, which
+   `flow-stats` reads.
 
 Questions for a lawyer, an accountant or users are not asked to the owner as if they knew. List
 them as open facts with who must answer.

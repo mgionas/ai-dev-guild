@@ -87,7 +87,7 @@ exists. Where one exists, show the user what you would add and ask.
     the `pkill` probe above is refused.
 
 Setup also asks which living pages the project wants (roadmap, QA board, project map, analysis
-pages) and sets up only those, instead of all of them. If the project already has a design system
+pages, flow stats) and sets up only those, instead of all of them. If the project already has a design system
 or brand, it asks whether those pages use the house look or the project's (`page-design.md` in the
 `progress-boards` skill).
 

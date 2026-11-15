@@ -5,6 +5,7 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- `flow-stats` skill and page: a script counts the records the loop already writes (task days, findings, fix rounds, local CI runs, questions to the owner, tokens) and a living page shows them, with at most three suggestions tied to the guild's own rules when a measure passes its threshold; templates and skills now state the record conventions it reads, and `local-ci` gains `--record`. (new)
 - README: screenshots of the five living pages (light and dark, example data), a paragraph on why the
   system map matters when agents change code often, and a "What the loop catches" figure: average rates from
   reviewed tasks. (field-tested)

@@ -134,7 +134,8 @@ project (as `scripts/ci-local/`, or adjust the first line of `ESCALATE`).
   `classify()` that decides the scope from the changed files, a check of the build tool's own
   selection, a cleaned environment with the smallest runner's limits, a log per step (its tail is
   printed when the step fails) and the verdict line. Flags: `--full`, `--base <ref>`, `--dry-run`,
-  `--out <dir>`; an unknown flag is refused, never ignored.
+  `--out <dir>`, and `--record <file>`, which appends one line per run to the file (use
+  `.work/ci-runs.jsonl`; the `flow-stats` skill counts it); an unknown flag is refused, never ignored.
 - `ci-local.test.mjs` pins the step list in the test itself and compares it with the workflow file
   the project keeps (the example reads `fixtures/ci.yml`; point it at your own). The workflow
   installs, then calls the script with `--full`, so the list lives in one place. `dry-run.test.mjs`
