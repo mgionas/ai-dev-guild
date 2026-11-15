@@ -17,6 +17,7 @@
   <a href="#how-it-works">How it works</a> ·
   <a href="#what-changes">What changes</a> ·
   <a href="#whats-inside">What's inside</a> ·
+  <a href="#living-pages">Living pages</a> ·
   <a href="docs/mistakes.md">Mistakes it prevents</a>
 </p>
 
@@ -40,6 +41,8 @@ agent. A different agent reviews it, and the task is not done until the test out
 | "While I was there, I tidied up…"                           | **Only the task changes.** Anything else noticed goes on a list, with `file:line`.                                                 |
 | `pkill -f jest` kills every agent's test run.               | **A guard hook refuses pattern kills**, skipped git hooks and edits to protected files.                                            |
 | `price * 100` and the server's time zone, baked in.         | **No country assumed:** currency codes, UTC with real time zones, locale formats.                                                  |
+| Progress lives in the chat, and scrolls away. | **Pages kept current every turn:** roadmap, QA board and more, open on a phone, no asking. |
+| "Robust, comprehensive fix. All tests pass." | **The plain version, with its evidence:** what changed, which test went red then green, what was not run. |
 
 ## How it works
 
@@ -126,13 +129,10 @@ monitoring, each with an alternative, today's free tier (linked and dated), the 
 and how to leave it. It also sets up how you test: a preview per change, database branches and
 staging. You decide and sign up yourself.
 
-### 🗺️ See where you are
+### 🪙 Spend fewer tokens
 
-**Roadmap:** milestones a user can see, each step with its stage (planned, building, review,
-fixing, merged), and what waits on you; it and the QA board ship as ready-made pages that work
-with the artifact database or with rows embedded in a plain file. **Project map:** one page with a
-diagram of the parts and who talks to whom, plus every folder and its job, read from the code.
-**Token review:** where your sessions spent their tokens, and a few rules to spend less.
+**Token review:** where your sessions spent their tokens, and a few rules to spend less. The pages
+that show where a project stands are in [Living pages](#living-pages).
 
 ### 🏛️ The board
 
@@ -225,6 +225,62 @@ open on bad input: your pre-commit hooks and CI stay the authority. With the def
 so create and rename secret files yourself. The hooks do not protect their own files or
 `.claude/protected-paths`.
 </details>
+
+## Living pages
+
+The guild keeps a few pages current for you, so you can see where a project stands without asking.
+
+| Page | What you see there |
+| --- | --- |
+| **Roadmap** | Milestones a user can see, each step with its stage (planned, building, review, fixing, merged), and what waits on you. |
+| **QA board** | One entry per change, with the features it touched and the checks a tester should run. |
+| **Analysis page** | The facts behind a decision, each figure tagged sourced, assumption or gap, with your dated answer written back. |
+| **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
+| **System map** | Which feature owns each API operation, screen, table and job, with a check that refuses anything new and undescribed. |
+
+**Why.** Progress, test results and decisions get lost in a chat's scrollback. A page you can open
+on a phone answers "where are we?" without you asking an agent.
+
+**How it works.**
+
+- In Claude Code the pages publish as claude.ai artifacts, private until you share them. Agents write
+  the rows into the artifact's database in the same turn as each change, unprompted, so a status
+  change is a data write and not a new page.
+- If you do not use artifacts, the same page works as a plain file with the rows embedded in it.
+  The QA board's buttons are then read-only.
+- On the QA board, testers mark each check Pass, Fail or Blocked and add a note. The board shows who
+  marked it and when, and an agent never overwrites a tester's result.
+- On an analysis page, a figure with no tag is not put on the page. The page reports and never
+  decides: the options come with a recommendation, and you record the answer.
+- All pages share one design ([`page-design.md`](plugin/skills/progress-boards/page-design.md)), for
+  light and dark themes and for a phone. `setup` asks which pages the project wants and whether they
+  use the house look or the project's brand.
+
+**How it helps.**
+
+- A tester knows what changed and what to retest, because each update lists its checks.
+- You answer a decision from numbers whose trust level is on the page, and the answer stays beside them.
+- A newcomer gets the picture of the parts and folders from a page read from the code, so it matches
+  what is there.
+
+Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/skills/progress-boards/SKILL.md),
+[`analysis-page`](plugin/skills/analysis-page/SKILL.md), [`project-map`](plugin/skills/project-map/SKILL.md),
+[`system-map`](plugin/skills/system-map/SKILL.md).
+
+### Plain reports
+
+Agents report success with confidence and pad with filler. The [`plain-report`](plugin/skills/plain-report/SKILL.md)
+skill edits every text an agent writes for a person: builder and fixer reports, the controller's
+messages to you, pull request bodies. It makes the wording plain and keeps each claim no stronger than
+its evidence. "Fixed" is written only after a test failed and then passed. A loose size becomes a number
+with its source. A skipped step is said in the main text, not parked in a linked file.
+
+| Before | After |
+| --- | --- |
+| Robust, comprehensive fix. All tests pass. | Fixed the date parsing for February 29. The new test failed before the change and passes now. Unit tests 212/212; the integration suite was not run. |
+
+Adapted from [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer) and
+[humanizer](https://github.com/blader/humanizer), both MIT.
 
 ## Who it's for
 
