@@ -126,6 +126,7 @@ p { margin: 0; overflow-wrap: anywhere; }
 .tile-sub { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
 .stack { display: grid; gap: 12px; min-width: 0; }
 .stage-bar { display: flex; gap: 2px; height: 22px; }
+.stage-bar.is-empty { border: 1px dashed var(--line); border-radius: 4px; }
 .seg { min-width: 4px; border-radius: 2px; }
 .seg.building { background: var(--active); }
 .seg.review { background: var(--planned); }
@@ -302,7 +303,10 @@ function renderTime(d) {
   const vals = STAGES.map(s => num(stages[s]));
   const total = vals.reduce((s, v) => s + (v || 0), 0);
   const card = el("div", "card");
-  if (total > 0) {
+  // A measured 0 is a value; "not found" is only for stages the script could not measure.
+  if (vals.every(v => v === null)) {
+    card.append(none("Stage times: not found"));
+  } else if (total > 0) {
     const bar = el("div", "stage-bar");
     STAGES.forEach((s, i) => {
       if (vals[i] === null || vals[i] === 0) return;
@@ -313,7 +317,7 @@ function renderTime(d) {
     });
     card.append(bar);
   } else {
-    card.append(none("Stage times: not found"));
+    card.append(el("div", "stage-bar is-empty"), el("div", "card-note", "All measured stages are under a day."));
   }
   const legend = el("div", "legend");
   STAGES.forEach((s, i) => {
@@ -351,7 +355,7 @@ function renderReview(d) {
     const rb = el("div", "bars");
     const m = Math.max(0, ...who.map(w => num(w.findings) || 0));
     for (const w of who) rb.append(barRow(str(w.role), num(w.findings) || 0, m, ""));
-    b.append(rb);
+    b.append(rb, el("div", "card-note", "A findings file counts for every reviewer it names, so these add up to more than the findings."));
   }
   cols.append(a, b);
   box.append(cols);
