@@ -260,9 +260,10 @@ on a phone answers "where are we?" without you asking an agent.
 
 **Why a system map.** Agents write and change code often and fast, and a developer can lose track of
 what now exists and why. The system map is read from the code, so it shows what is really there: each
-API operation, screen and table and the feature that owns it, with the decisions behind it. The
-starter check in [`examples/system-map`](examples/system-map) refuses a new operation, screen or
-table that no feature describes, so the map cannot quietly fall behind the code.
+API operation, screen and table and the feature that owns it, plus the decisions people recorded for
+that feature. The starter check in [`examples/system-map`](examples/system-map), run with `--base`
+against the main branch, refuses a new operation, screen or table that no feature describes, so the
+map cannot quietly fall behind the code.
 
 **How it works.**
 
@@ -324,7 +325,7 @@ different one, merged only with the checks' output pasted. Numbers from this rep
 | Pull requests merged before this section was written | 16, between 8 and 15 November 2026 |
 | Tests run by CI on every pull request | 179: guard hooks 51, local CI runner 73, system map starter 55 |
 | Guard-hook findings fixed before merge (guards 0.3.1): a refused command let through, or a weaker answer | 16, from an independent security reviewer over five checks |
-| Of those, holes opened by an earlier fix round | 3, each caught by the next check |
+| Of those, holes opened by an earlier fix round | 3, each caught by the next check (one round also caused 2 needless refusals, fixed in the next) |
 | Layout bugs found by clicking through a published QA board | 2 at phone width, fixed before merge |
 | Phrases a copy check found lifted from a source text | 66, rewritten to 2 before merge |
 
