@@ -136,7 +136,7 @@ place of `<version>`:
 
 ```bash
 git clone --depth 1 --branch v<version> https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild-v<version>
-cp -R /tmp/ai-dev-guild-v<version>/examples/ci-local scripts/ci-local
+mkdir -p scripts/ci-local && cp -R /tmp/ai-dev-guild-v<version>/examples/ci-local/. scripts/ci-local/
 ```
 
 On Windows the same two commands work in Git Bash, or copy the folder with your usual tools. Tags
