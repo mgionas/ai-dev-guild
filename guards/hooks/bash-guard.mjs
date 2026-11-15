@@ -37,7 +37,7 @@
 import { loadRules, protectingRule } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
 import { secretAccess } from './secrets.mjs';
-import { commandParts, refuseOpenQuote, scriptsToJudge, Unclear, unseenScript, withoutHeredocs } from './shell-words.mjs';
+import { commandParts, refuseOpenQuote, scriptsToJudge, Unclear, unseenScript, withoutHeredocs, withoutRedirects } from './shell-words.mjs';
 
 // Longer commands get the question without being read: the reading time grows with the length,
 // and no one writes a command this long by hand.
@@ -161,7 +161,10 @@ const SIGNAL_ZERO = /^(0+|exit|sig0)$/i;
  * `kill "1234"` counts and `echo "kill 1234"` does not.
  */
 export function pidKill(command) {
-  for (const { words, dropped } of commandParts(command)) {
+  for (const part of commandParts(command)) {
+    // `kill %1 &>/dev/null` and `kill $! 2>/dev/null` name no target but the job: a redirect is not one.
+    const { words } = withoutRedirects(part);
+    const { dropped } = part;
     if (words[0] !== 'kill') continue;
     let i = 1;
     if (/^-[lL]/.test(words[i] ?? '') || words[i] === '--list') continue;
@@ -191,9 +194,13 @@ export function writeTargets(command) {
   const clean = (t) => t.replace(/^["']|["']$/g, '');
   for (const m of command.matchAll(/(?:^|[^0-9&])>{1,2}\s*([^\s;&|<>]+)/g)) targets.push(clean(m[1]));
   for (const m of command.matchAll(/\btee\s+((?:-\S+\s+)*)([^\s;&|]+)/g)) targets.push(clean(m[2]));
-  // `tee >(cat) .env`: the first word after tee is a process substitution, so read the words too.
-  // An operator among them names no protected path, so it needs no filtering.
-  for (const { words } of commandParts(command)) {
+  // The words, for what the text scans above cannot see: `tee >(cat) .env` (the first word after
+  // tee is a process substitution) and every output redirect, however it is spelled (`&> .env`,
+  // `>| .env`, `1>|.env`, `>& .env`). A redirect's target is a file `tee` writes only when the
+  // redirect writes it, so `tee out.txt < in.sql` counts out.txt alone.
+  for (const part of commandParts(command)) {
+    const { words, outputs } = withoutRedirects(part);
+    targets.push(...outputs);
     if (words[0] === 'tee') targets.push(...words.slice(1).filter((w) => !w.startsWith('-')));
   }
   // sed edits in place only with -i; its file is the last word (GNU `-i`, BSD `-i ''` alike).

@@ -420,11 +420,13 @@ function splitCommands(command, bodies) {
   const commands = [];
   const frames = []; // open substitutions: the command each one interrupted
   // A command's words, with `expanded` beside them: whether each holds an expansion.
-  const fresh = () => Object.assign([], { expanded: [] });
+  // `fd[k]` is true when `words[k]` is the descriptor digits written right against a redirect (`2` in `2>x`).
+  const fresh = () => Object.assign([], { expanded: [], fd: [] });
   let words = fresh();
   let word = null; // null: no word started; '' is a real (empty, quoted) word
   let quote = null; // null, "'", "$'" or '"'
   let expanded = false; // the word being read holds an expansion
+  let quoted = false; // the word being read has a quote or backslash in it, so it is not a plain descriptor number
 
   const add = (text) => (word = (word ?? '') + text);
   const endWord = () => {
@@ -434,6 +436,7 @@ function splitCommands(command, bodies) {
     }
     word = null;
     expanded = false;
+    quoted = false;
   };
   let ranPgrep = false; // a command in the current substitution is `pgrep`, or holds a substitution that runs it
   const endCommand = () => {
@@ -483,6 +486,7 @@ function splitCommands(command, bodies) {
     }
     if (c === '\\') {
       const next = s[i + 1];
+      quoted = true;
       if (next === undefined) continue;
       // Inside double quotes a backslash escapes only these; before anything else it stays as text.
       if (quote === '"' && !'"\\$`\n'.includes(next)) {
@@ -513,11 +517,13 @@ function splitCommands(command, bodies) {
     if (c === '$' && s[i + 1] === "'") {
       i++;
       quote = "$'";
+      quoted = true;
       add('');
       continue;
     }
     if (c === "'" || c === '"') {
       quote = c;
+      quoted = true;
       add('');
       continue;
     }
@@ -538,9 +544,13 @@ function splitCommands(command, bodies) {
     } else if (c === '\n' || c === ';' || c === '&' || c === '|') endCommand();
     else if (/\s/.test(c)) endWord();
     else if (c === '<' || c === '>') {
+      const descriptor = word !== null && /^\d+$/.test(word) && !quoted && !expanded;
       endWord();
+      if (descriptor) words.fd[words.length - 1] = true;
       let op = c;
       while (s[i + 1] === c) op += s[++i];
+      // `>|` writes over a file even when `noclobber` is set; its `|` is not a pipe.
+      if (op === '>' && s[i + 1] === '|') op += s[++i];
       // `>&2` and `<&3` copy a descriptor: the `&` belongs to the redirect, not to a new command.
       if (s[i + 1] === '&' && s[i + 2] !== '&') op += s[++i];
       // `<(…)` is a file whose text the command does not show; `>(…)` is one a command writes to.
@@ -601,7 +611,8 @@ export function stripWrappers(words) {
   if (ws.length) ws[0] = ws[0].split('/').pop();
   const offset = words.length - ws.length;
   const expanded = ws.map((_, k) => words.expanded?.[k + offset] ?? false);
-  return { words: ws, dropped, expanded, pgrep: Boolean(words.pgrep) };
+  const fd = ws.map((_, k) => words.fd?.[k + offset] ?? false);
+  return { words: ws, dropped, expanded, fd, pgrep: Boolean(words.pgrep) };
 }
 
 // Drops a wrapper's options and their values from the front of `ws`, and `timeout`'s duration.
@@ -646,7 +657,34 @@ const MAX_NESTING = 3;
 // A shell's long options that take the next word as their value; any other long option is a flag.
 const SHELL_LONG_VALUE = new Set(['--rcfile', '--init-file', '--emulate']);
 // Redirect operators, each followed by its target word (`2>&1` is `2`, `>&`, `1`).
-const REDIRECT = /^(<|<<|<<<|>|>>|>&|<&|&>|&>>)$/;
+const REDIRECT = /^(<|<<|<<<|>|>>|>\||>&|<&|&>|&>>)$/;
+// The ones that write the file named after them. `>&` writes one only when its target is not a descriptor.
+const OUTPUT_REDIRECT = new Set(['>', '>>', '>|', '&>', '&>>', '>&']);
+
+/**
+ * A command's words with its redirects taken out: `{ words, outputs }`. A redirect is an operator,
+ * the target word after it, and the descriptor digits written against it (`2>&1`, `&>/dev/null`,
+ * `< file`), which are not arguments of the command. `outputs` are the files it writes: the
+ * targets of `>`, `>>`, `>|`, `&>`, `&>>` and `>&`, except a `>&` that copies a descriptor
+ * (`>&2`, `>&-`). `part` is one entry of `commandParts`.
+ */
+export function withoutRedirects({ words, fd }) {
+  const kept = [];
+  const outputs = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (fd[i] && REDIRECT.test(words[i + 1] ?? '')) continue;
+    if (!REDIRECT.test(w)) {
+      kept.push(w);
+      continue;
+    }
+    const target = words[++i];
+    if (target === undefined || !OUTPUT_REDIRECT.has(w)) continue;
+    if (w === '>&' && /^(\d+|-)$/.test(target)) continue;
+    outputs.push(target);
+  }
+  return { words: kept, outputs };
+}
 
 /**
  * What a script path stands for: 'stdin' for the shell's own input (`/dev/stdin`, `/dev/fd/0`,

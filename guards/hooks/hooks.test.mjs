@@ -785,6 +785,48 @@ test('bash-guard sees a tee file after a process substitution', () => {
   expectBash(dir, 'allow', ['echo hi | tee >(cat) out.txt', 'echo hi | tee out.txt', 'echo hi | tee >(cat) db/seed.sql']);
 });
 
+test('bash-guard judges kill targets without the redirects on the command', () => {
+  const dir = project();
+  expectBash(dir, 'allow', ['kill %1 &>/dev/null', 'kill $! 2>/dev/null', 'kill %1 2>&1', 'kill %1 >&2', 'kill %1 > out.log', 'kill -9 %1 2>>err.log < /dev/null', 'kill %1 >| out.log']);
+  expectBash(dir, 'ask', ['kill 1234 2>/dev/null', 'kill 1234 &>/dev/null', 'kill 1234 2>&1', '2>/dev/null kill 1234', 'kill "2">x', 'kill 2 > x']);
+});
+
+test('bash-guard counts only the files tee writes, not the targets of its input redirects', () => {
+  const dir = project('.env\ndb/migrations/**\n');
+  expectBash(dir, 'allow', ['tee out.txt < db/migrations/0001.sql', 'tee -a log < db/migrations/0001.sql', 'tee out.txt <db/migrations/0001.sql', 'tee out.txt <<< x', 'tee out.txt < <(cat .env.example)']);
+  expectBash(dir, 'block', ['tee db/migrations/0001.sql', 'tee >(cat) .env', 'echo x > db/migrations/0001.sql', 'tee out.txt < in.sql > db/migrations/0001.sql', 'tee db/migrations/0001.sql < in.sql']);
+});
+
+test('bash-guard blocks every spelling of an output redirect onto a protected path', () => {
+  const dir = project('.env\ndb/migrations/**\n');
+  expectBash(dir, 'block', [
+    'echo x &> .env',
+    'echo x &>> .env',
+    'echo x &>.env',
+    'echo x >& .env',
+    'echo x >&.env',
+    'echo x >| .env',
+    'echo x >|.env',
+    'echo x 1>| .env',
+    'echo x 1>|.env',
+    'echo x 2> .env',
+    'echo x 2>>.env',
+    'echo x &> db/migrations/0001.sql',
+    'echo x >& db/migrations/0001.sql',
+    'echo x >| ./db/migrations/0001.sql',
+    'echo x > "db/migrations/0001.sql"',
+    "sudo sh -c 'echo x &> .env'",
+    'echo x 2>&1 >| .env',
+  ]);
+  expectBash(dir, 'allow', ['cmd 2>&1', 'exec 3>&1', 'cmd >&2', 'cmd >&-', 'cmd 2>&1 | tee build.log', 'echo x &> out.log', 'echo x >| out.log', 'echo x >& out.log', 'cat < .env.example', 'echo x >| db/seed.sql']);
+});
+
+test('bash-guard does not take a descriptor copy for a file name', () => {
+  const dir = project('2\n-\n');
+  expectBash(dir, 'allow', ['cmd >&2', 'cmd 2>&1', 'cmd >&-']);
+  expectBash(dir, 'block', ['cmd > 2', 'cmd &> 2']);
+});
+
 test('bash-guard asks about a script from a redirect-led source, a descriptor, another spelling of stdin or zsh =(…)', () => {
   const dir = project();
   expectBash(dir, 'ask', [
@@ -884,5 +926,12 @@ test('bash-guard lets everyday commands with $\'…\', redirects and substitutio
     'cmd >&2',
     'kill %1',
     'kill -0 $pid',
+    'kill %1 &>/dev/null',
+    'kill $! 2>/dev/null',
+    'kill %1 2>&1',
+    'tee -a log < input.txt',
+    'echo x >| out.txt',
+    'cmd >& out.log',
+    'exec 3>&1',
   ]);
 });
