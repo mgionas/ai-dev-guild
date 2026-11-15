@@ -321,7 +321,7 @@ and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copie
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/stats-tall-dark.svg">
   <source media="(max-width: 700px)" srcset="assets/stats-tall-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="assets/stats-wide-dark.svg">
-  <img alt="What the loop catches, on average across 113 reviewed tasks built with this workflow, September to November 2026: about 90% of tasks had a blocking issue found by an independent reviewer before merge; about 70% of security reviews found a real issue; about 95% of question batches were answered with one accept all; at least 20% of tasks needed a second fix round; about 10% of fix rounds broke something new that the next check caught; at least 5% of done reports claimed more than their evidence." src="assets/stats-wide-light.svg" width="100%">
+  <img alt="What the loop catches, on average across reviewed tasks built with this workflow: about 90% of tasks had a blocking issue found by an independent reviewer before merge; about 70% of security reviews found a real issue; about 95% of question batches were answered with one accept all; at least 20% of tasks needed a second fix round; about 10% of fix rounds broke something new that the next check caught; at least 5% of done reports claimed more than their evidence." src="assets/stats-wide-light.svg" width="100%">
 </picture>
 
 Counted from the review, fix and decision records of real work, weighted by the number of tasks.
