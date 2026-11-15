@@ -7,7 +7,7 @@ tokens, fonts, sections, labels or script.
 
 The page reads its content from the `<script type="application/json" id="page-data">` block in
 the page, and nothing else. Fill that block whether the page is a plain file or an artifact, and
-write every `<` inside it as `<` so no text in it can end the block. There is no artifact
+write every `<` inside it as `\u003c` so no text in it can end the block. There is no artifact
 database: on each refresh the controller replaces the block and republishes to the same URL.
 
 It is kept as text, inside a Markdown file, so the plugin itself contains no web pages or scripts.
@@ -213,7 +213,7 @@ p { margin: 0; overflow-wrap: anywhere; }
   </section>
 </div>
 
-<!-- The content. Fill this block with the counting script's output (every < written as <); the controller replaces it and republishes on each refresh. -->
+<!-- The content. Fill this block with the counting script's output (every < written as \u003c); the controller replaces it and republishes on each refresh. -->
 <script type="application/json" id="page-data">
 { "meta": null, "time": null, "review": null, "fixRounds": null, "claims": null, "ci": null, "questions": null, "tokens": null, "gaps": [], "suggestions": [] }
 </script>
