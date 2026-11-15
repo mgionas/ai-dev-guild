@@ -15,8 +15,8 @@ their ideas, and no text from other projects is used.
 - **Use it on** prose you compose yourself for a human reader: status reports, pull request bodies,
   summaries of a review or a fix, hand-backs, commit message bodies, roadmap notes.
 - **Leave out** strings that appear in the product's interface, the owner's own documents (specs,
-  decisions, glossary), older docs and code comments that are not part of your task, and anything quoted.
-  If an owner's document seems wrong, add a dated note instead of rewriting it.
+  decisions, glossary), older docs and code comments that are not part of your task, and anything
+  quoted. If an owner's document seems wrong, add a dated note instead of rewriting it.
 - **Keep exactly** every figure, `file:line`, commit, identifier in code, glossary term and quotation.
 
 ## Process
@@ -55,9 +55,9 @@ After: "Reads from the new cache take 4 ms, down from 40 ms (`bench/read.txt`)."
 
 ## Claim and evidence
 
-Take each claim and ask what supports it in this very text: a test result, a
-`file:line`, a commit, command output, or a file written by a reviewer. Then check that the verb is not stronger than that
-support.
+Take each claim and ask what supports it in this very text: a test result, a `file:line`, a
+commit, command output, or a file written by a reviewer. Then check that the verb is not stronger
+than that support.
 
 - **Nothing supports it: point to something, or soften.** "Tests pass" becomes "unit tests 212/212;
   integration suite not run".
