@@ -30,3 +30,5 @@ Steps: <each heavy step as ran, skipped (why) or escalated (which file); or "non
 ## Questions
 
 - <question only a person can decide, with a recommendation if you have one>
+
+Run this report through the `plain-report` skill before returning it.

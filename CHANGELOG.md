@@ -5,6 +5,11 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- New `plain-report` skill: an agent cleans up the prose it is about to hand to a human reader (a report,
+  a pull request body, a summary of a review, a hand-back) so the wording is plain and no claim says more
+  than its evidence. The builder, the fixer, the report template and `run-task` point to it.
+  (field-tested)
+
 - New `analysis-page` skill: when the owner must decide something that rests on facts, the controller
   asks what the decision is and what the page must show, then publishes a page where every figure is
   tagged sourced, assumption or gap, sources are numbered at the end, and each recommendation is

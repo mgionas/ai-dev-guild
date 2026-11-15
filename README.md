@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
   <img alt="22 roles" src="https://img.shields.io/badge/roles-22-9a6700">
-  <img alt="18 skills" src="https://img.shields.io/badge/skills-18-9a6700">
+  <img alt="19 skills" src="https://img.shields.io/badge/skills-19-9a6700">
 </p>
 
 <p align="center">
@@ -142,7 +142,7 @@ operations, growth and your industry. They never see each other's answers.
 ### ⚙️ Skills
 
 `stack-advice` · `roadmap` · `analysis-page` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
-`design-review` · `research-review` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
+`design-review` · `research-review` · `plain-report` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
 
 ### 🛡️ Guard hooks (optional)
 
@@ -194,6 +194,7 @@ money, the stack advisor, the board's chair, finance and legal seats, design), s
 | [`research-review`](plugin/skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
 | [`local-ci`](plugin/skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
 | [`local-environment`](plugin/skills/local-environment/SKILL.md) | advise a local setup: own containers, local HTTPS, a ports registry |
+| [`plain-report`](plugin/skills/plain-report/SKILL.md) | clean up prose for a human reader; no claim beyond its evidence |
 | [`system-map`](plugin/skills/system-map/SKILL.md)           | keep a map of features, screens and tables current        |
 | [`progress-boards`](plugin/skills/progress-boards/SKILL.md) | keep the roadmap and QA board current with every change   |
 
