@@ -24,5 +24,5 @@ Rules:
 - Never kill processes by pattern. Commit by path if others share the checkout.
 
 Report, per finding: fixed (with the test that proves it and its pasted output) or not fixed (with
-the reason). Add **Assumptions** and **Noticed** as the builder does. Edit the report with the `plain-report` skill
-before you hand it back.
+the reason). Add **Assumptions** and **Noticed** as the builder does. Run the report through the
+`plain-report` skill before you return it.
