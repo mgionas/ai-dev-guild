@@ -15,7 +15,14 @@ rule only when the owner accepts it.
 The ai-dev-guild repository has the script at
 <https://github.com/mgionas/ai-dev-guild/tree/main/examples/flow-stats>. Copy the folder into the
 project (as `scripts/flow-stats/`), once, like the `local-ci` runner. Run it from the project's
-root and keep its output, a JSON file, in `.work/flow-stats/<date>.json`. It reads the records
+root and keep its output, a JSON file, in `.work/flow-stats/<date>.json`:
+
+```bash
+node scripts/flow-stats/flow-stats.mjs --root . --out .work/flow-stats/<date>.json
+```
+
+Add `--from` and `--to` (`YYYY-MM-DD`) to count one milestone, `--no-gh` where `gh` is not set up,
+and `--strong-model <name>` when the strongest model is not named `opus`. It reads the records
 listed below, writes `null` for a measure it cannot compute, and adds a line to `gaps` saying why.
 It holds the threshold table (step 4) as data, and never edits a record.
 
