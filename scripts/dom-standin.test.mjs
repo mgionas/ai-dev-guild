@@ -63,3 +63,27 @@ test("runPage puts the data override into the named block before any script runs
   assert.match((await runPage({ html: page, scripts: [code] })).errors[0], /TypeError/);
   assert.deepEqual((await runPage({ html: page, scripts: [code], data: { d: '{"v":{"w":1}}' } })).errors, []);
 });
+
+test("timers: a callback set with setTimeout or setInterval runs once, and a throw in it is reported", async () => {
+  const page = '<div id="o"></div>';
+  assert.deepEqual((await runPage({ html: page, scripts: ["setTimeout(() => { document.getElementById('o').textContent = 'x'; }, 10);"] })).errors, []);
+  assert.match((await runPage({ html: page, scripts: ["setTimeout(() => { document.getElementById('zzz').textContent = 'x'; }, 10);"] })).errors[0], /TypeError/);
+  assert.match((await runPage({ html: page, scripts: ["setInterval(() => { throw new Error('tick broke'); }, 10);"] })).errors[0], /tick broke/);
+});
+
+test("timers: a callback set from a listener fires after the synthetic events, and clearTimeout cancels", async () => {
+  const page = '<button id="b"></button>';
+  const late = "document.getElementById('b').addEventListener('click', () => setTimeout(() => { throw new Error('debounced'); }, 5));";
+  assert.match((await runPage({ html: page, scripts: [late] })).errors[0], /debounced/);
+  const cancelled = "const t = setTimeout(() => { throw new Error('should not run'); }, 5); clearTimeout(t);";
+  assert.deepEqual((await runPage({ html: page, scripts: [cancelled] })).errors, []);
+});
+
+test("a script that never returns stops after the time limit with a clear message", async () => {
+  const started = Date.now();
+  const { errors } = await runPage({ html: "<p></p>", scripts: ["while (true) {}"] });
+  assert.match(errors[0], /timed out|did not finish/);
+  assert.ok(Date.now() - started < 10000);
+  const loop = await runPage({ html: "<p></p>", scripts: ["setTimeout(() => { while (true) {} }, 1);"] });
+  assert.match(loop.errors[0], /timed out|did not finish/);
+});

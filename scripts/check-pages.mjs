@@ -87,8 +87,10 @@ try {
   for (const t of templates) {
     const text = readFileSync(t.path, "utf8");
     const skillText = existsSync(join(skillsDir, t.skill, "SKILL.md")) ? readFileSync(join(skillsDir, t.skill, "SKILL.md"), "utf8") : "";
-    // The instruction sits in the template, or for the project map in its skill file.
-    if (!text.includes(ESCAPED_LT) && !skillText.includes(ESCAPED_LT))
+    // Every page template carries the instruction itself. Only the project map's template has none,
+    // and its skill file says it; a skill file never stands in for a page template.
+    const carriesIt = text.includes(ESCAPED_LT) || (t.name === "map-template.md" && skillText.includes(ESCAPED_LT));
+    if (!carriesIt)
       problems.push(`${t.rel}: no longer says to write every < as ${ESCAPED_LT} in the data block`);
 
     const blocks = codeBlocks(text);

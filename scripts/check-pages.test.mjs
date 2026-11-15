@@ -90,3 +90,10 @@ test("escape text: a template that lost its instruction to write < as the escape
 test("a template file with no HTML code block is reported", () => {
   fails(({ write }) => write(TEMPLATE, "# Demo\n\nWrite `<` as `" + ESCAPED_LT + "`.\n"), /demo-page\.md: no html code block/);
 });
+
+test("escape text: a page template must carry it itself, its skill's SKILL.md does not stand in", () => {
+  fails(({ edit, write }) => {
+    write("plugin/skills/demo/SKILL.md", "Write every `<` as `" + ESCAPED_LT + "`.\n");
+    edit(TEMPLATE, "as `" + ESCAPED_LT + "`", "as `<`");
+  }, /demo-page\.md: .*no longer says to write every < as/);
+});

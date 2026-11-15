@@ -5,9 +5,13 @@
  * script, or an id the script reads that the markup lacks, only showed when somebody opened the
  * page. This parses the page's HTML into a real tree, so `getElementById` returns null for an id
  * that is not there (as a browser does), and runs the scripts in a `node:vm` context with no
- * network and no timers. It is not a browser: layout, styles, events and promises that wait on the
- * outside world are not modelled. It stays strict where it matters: a selector or a global it does
- * not know throws, so nothing passes by quietly matching nothing.
+ * network. Timers are collected and each callback fires once, after load and after the synthetic
+ * events. It is not a browser: layout, styles, events and promises that wait on the outside world
+ * are not modelled. It stays strict where it matters: a selector or a global it does not know
+ * throws, so nothing passes by quietly matching nothing.
+ *
+ * `node:vm` is not a sandbox. CI runs this with `contents: read` and the inputs are the
+ * repository's own templates, but a pull request that edits a template runs that code here.
  */
 import vm from "node:vm";
 
@@ -199,7 +203,7 @@ export class Element {
   dispatchEvent(event) {
     const e = { target: this, currentTarget: this, key: "", preventDefault() {}, stopPropagation() {}, ...event };
     for (const fn of this.listeners.get(e.type) ?? []) {
-      try { fn.call(this, e); } catch (error) { this.ownerDocument.report(error); }
+      this.ownerDocument.invoke(() => fn.call(this, e));
     }
     return true;
   }
@@ -266,6 +270,8 @@ export class Document {
     parseInto(this.body, html, this);
   }
   report(error) { this.errors.push(error); }
+  /** Runs `fn` and records a throw. `runPage` swaps in a version that also enforces the time limit. */
+  invoke(fn) { try { fn(); } catch (error) { this.report(error); } }
   createElement(tag) { return new Element(tag, this); }
   createTextNode(text) { return new Text(String(text)); }
   getElementById(id) { return this.body.findById(id); }
@@ -280,6 +286,9 @@ function describe(error) {
   const at = String(error?.stack ?? "").match(/inline-script-(\d+):(\d+):\d+/);
   return at ? `${text} (script ${at[1]}, line ${at[2]})` : text;
 }
+
+/** Every run in the context is stopped after this long, so a looping template fails fast. */
+const RUN_LIMIT = { timeout: 2000 };
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -296,22 +305,46 @@ export async function runPage({ html, scripts, data = {} }) {
     if (!block) return { errors: [`the data block "${id}" is not in the page`] };
     block.textContent = text;
   }
-  const noTimers = () => 0;
+  // Timer callbacks wait here; `fireTimers` runs each once. A cleared timer never runs.
+  const timers = new Map();
+  let nextTimer = 1;
+  const addTimer = (fn) => {
+    if (typeof fn !== "function") return 0;
+    timers.set(nextTimer, fn);
+    return nextTimer++;
+  };
+  const clearTimer = (id) => { timers.delete(id); };
   const sandbox = {
     document: doc,
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
     Option: class { constructor(text = "", value = text) { const o = doc.createElement("option"); o.textContent = text; o.value = value; return o; } },
     // The diagram library the project map loads from a CDN; the page must work when it is absent, so a stand-in is enough.
     mermaid: { initialize() {}, run: () => Promise.resolve() },
-    setTimeout: noTimers,
-    setInterval: noTimers,
-    clearTimeout() {},
-    clearInterval() {},
+    setTimeout: addTimer,
+    setInterval: addTimer,
+    clearTimeout: clearTimer,
+    clearInterval: clearTimer,
     console: { log() {}, info() {}, warn() {}, error() {}, debug() {} },
     addEventListener() {},
   };
   const context = vm.createContext(sandbox);
   context.window = context;
+
+  // A function made inside the context is run through a context script, which is what carries
+  // the time limit; a throw or a run past the limit is recorded like a listener's throw.
+  context.__run = (fn) => fn();
+  doc.invoke = (fn) => {
+    context.__call = fn;
+    try { vm.runInContext("__run(__call)", context, { filename: "callback", ...RUN_LIMIT }); } catch (error) {
+      doc.report(error?.code === "ERR_SCRIPT_EXECUTION_TIMEOUT" ? new Error("the page code did not finish within 2 seconds (an endless loop?)") : error);
+    }
+  };
+  const fireTimers = () => {
+    // A callback may set another timer; those wait for the next round, so nothing runs forever.
+    const due = [...timers.values()];
+    timers.clear();
+    for (const fn of due) doc.invoke(fn);
+  };
 
   const rejections = [];
   const onRejection = (reason) => rejections.push(reason);
@@ -322,11 +355,17 @@ export async function runPage({ html, scripts, data = {} }) {
   process.on("unhandledRejection", onRejection);
   try {
     scripts.forEach((code, i) => {
-      try { vm.runInContext(code, context, { filename: `inline-script-${i + 1}` }); } catch (error) { doc.report(error); }
+      try { vm.runInContext(code, context, { filename: `inline-script-${i + 1}`, ...RUN_LIMIT }); } catch (error) {
+        doc.report(error?.code === "ERR_SCRIPT_EXECUTION_TIMEOUT" ? new Error("the page code did not finish within 2 seconds (an endless loop?)") : error);
+      }
     });
     await tick();
     await tick();
+    fireTimers();
     for (const el of [...doc.listening]) for (const type of ["click", "input", "change"]) if (el.listeners.has(type)) el.dispatchEvent({ type });
+    await tick();
+    await tick();
+    fireTimers();
     await tick();
     await tick();
   } finally {
