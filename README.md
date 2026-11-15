@@ -250,15 +250,15 @@ on a phone answers "where are we?" without you asking an agent.
 
 **How it works.**
 
-- In Claude Code the pages publish as claude.ai artifacts. Agents write
-  the rows into the artifact's database in the same turn as each change, unprompted, so a status
-  change is a data write and not a new page.
+- In Claude Code the pages publish as claude.ai artifacts. For the roadmap and the QA board, agents
+  write the rows into the artifact's database in the same turn as each change, unprompted, so a
+  status change is a data write and not a new page.
 - If you do not use artifacts, the same page works as a plain file with the rows embedded in it.
   The QA board's buttons are then read-only.
 - On the QA board, testers mark each check Pass, Fail or Blocked and add a note. The board shows who
   marked it and when, and an agent never overwrites a tester's result.
 - On an analysis page, a figure with no tag is not put on the page. The page reports and never
-  decides: the options come with a recommendation, and you record the answer.
+  decides: the options come with a recommendation, and your answer is written back with its date.
 - All pages share one design ([`page-design.md`](plugin/skills/progress-boards/page-design.md)), for
   light and dark themes and for a phone. `setup` asks which pages the project wants and whether they
   use the house look or the project's brand.
