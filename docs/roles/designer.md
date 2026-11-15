@@ -10,7 +10,7 @@ Writes screen specs with every state, layout, interaction, copy and accessibilit
 - Not to write production code, and not to invent product behaviour.
 
 ## What it gets
-- For a spec: the project's `AGENTS.md`, glossary, the personas and journeys for the screen, and the design system.
+- For a spec: the project's `AGENTS.md`, glossary, the personas and journeys for the screen, and the design system. For the pages the guild publishes, the design system is the house design in `plugin/skills/progress-boards/page-design.md`; if the project has its own brand, the designer asks the owner which to use.
 - For a review: screenshots of the built screen (each width, light and dark, each reachable state) and the spec.
 
 ## What it returns
