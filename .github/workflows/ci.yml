@@ -9,9 +9,9 @@ permissions:
   contents: read
 
 jobs:
-  checks:
+  test:
     # One cell per system and Node version the guild's scripts say they support (Node 22.5 and later).
-    name: checks (${{ matrix.os }}, node ${{ matrix.node }})
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -47,3 +47,14 @@ jobs:
           npm ci --ignore-scripts
           node --test '*.test.mjs'
           node check.mjs --config example/system-map.config.json --base origin/main
+
+  # The branch ruleset on main requires a status check named exactly "checks". Matrix cells report under
+  # their own names, so this job carries that name and passes only when every cell passed; when one fails,
+  # this job is skipped and the required check stays unmet.
+  checks:
+    name: checks
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "Every matrix cell passed."
