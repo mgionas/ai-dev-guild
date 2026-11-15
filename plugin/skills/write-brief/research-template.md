@@ -4,7 +4,7 @@ Add this to the brief when the task is to find facts rather than change code.
 
 ## Sources
 
-- Put a source URL beside every number you report. A number with no URL is not reported as a
+- Give every number you report the URL it came from. A number with no URL is not reported as a
   finding.
 - When you cannot find a figure, write "not found". Never estimate it to fill the gap.
 

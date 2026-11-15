@@ -23,8 +23,8 @@ real project's workflow before it was written here; **(new)** means it has not y
   `security-reviewer` before any fix, and the report records each one's class: real gap, equivalent
   mutant, or blocked by a database constraint. (field-tested)
 
-- A research section for briefs, `write-brief/research-template.md`: a source URL beside every
-  number, "not found" instead of a guess, and a result that labels each figure as sourced, an
+- A research section for briefs, `write-brief/research-template.md`: the URL each number came from
+  beside it, "not found" instead of a guess, and a result that labels each figure as sourced, an
   assumption or a gap. (field-tested)
 
 - The `local-environment` skill says to name what a database reset wipes, including hand-made data,
