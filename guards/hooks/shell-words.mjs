@@ -415,6 +415,24 @@ export function commandParts(command, bodies = []) {
     .filter((part) => part.words.length);
 }
 
+const ASSIGNING = new Set(['export', 'declare', 'typeset', 'local', 'readonly']);
+
+/**
+ * What each command of a script does with variables, in order: `{ assigned, expands }`.
+ * `assigned` holds the values of the `NAME=value` words it sets (before the command, or after
+ * `export`, `declare` and the like), unquoted; `expands` is true when one of the words it runs
+ * holds an expansion (`$name`, `${…}`, `$(…)`, backticks). A line that only assigns still counts,
+ * which `commandParts` leaves out.
+ */
+export function variableUse(command) {
+  return splitCommands(command, [])
+    .map(stripWrappers)
+    .map((part) => {
+      const assignments = [...part.dropped, ...(ASSIGNING.has(part.words[0]) ? part.words.slice(1) : [])].filter((w) => /^\w+=/.test(w));
+      return { assigned: assignments.map((w) => w.slice(w.indexOf('=') + 1)), expands: part.expanded.some(Boolean) };
+    });
+}
+
 function splitCommands(command, bodies) {
   const s = withoutHeredocs(command, bodies);
   const commands = [];

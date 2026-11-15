@@ -23,10 +23,15 @@
  * `user@host/.env`), a remote path (`scp host:.env .`), and any other option value that is not
  * read as a file.
  *
+ * An interpreter's inline program (`node -e`, `python3 -c`, `ruby -e`, `perl -e`, `deno eval`) is
+ * refused when a quoted name in it is a secret file. A variable set to a secret file's name and
+ * expanded later in the same command line (`F=<name>; cat $F`) is asked about, not refused.
+ *
  * Like the rest of these hooks this reads the command as text and catches the common spellings,
- * not every one: a file reached through a variable, a symlink or a directory search is not seen.
+ * not every one: a file reached through a symlink, a directory search, a name an interpreter builds
+ * at run time or a variable set in an earlier command is not seen.
  */
-import { commandParts, Unclear } from './shell-words.mjs';
+import { commandParts, Unclear, variableUse } from './shell-words.mjs';
 
 const TEMPLATE = /\.(example|sample|template)$/;
 const MAY_NAME = new Set(['ls', 'rm', 'touch', 'chmod', 'chown', 'stat', 'test', '[', 'echo', 'printf', 'source', '.', 'code', 'open']);
@@ -64,6 +69,46 @@ export function isSecretFile(path, { dot = false } = {}) {
   return false;
 }
 
+// Interpreters that run a program given on the command line, and the option that says so.
+const INLINE_CODE = [
+  { name: /^(node|nodejs)$/, option: /^(-[a-zA-Z]*[ep]|--eval|--print)(=|$)/ },
+  { name: /^python[\d.]*$/, option: /^-[a-zA-Z]*c/ },
+  { name: /^ruby$/, option: /^-[a-zA-Z]*e/ },
+  { name: /^perl$/, option: /^-[a-zA-Z]*[eE]/ },
+  { name: /^deno$/, option: /^eval$/ },
+];
+
+/**
+ * The secret file an interpreter's inline program names (`python3 -c "open('<name>')"`), or null.
+ * The program is a string the other rules take for one word, so its parts are read one by one: the
+ * pieces between quotes and spaces, and again with brackets, commas and operators taken out. A
+ * name built at run time (`'.' + 'env'`) is not seen.
+ */
+function inlineCodeSecret(name, args) {
+  if (!INLINE_CODE.some((spec) => spec.name.test(name) && args.some((a) => spec.option.test(a)))) return null;
+  for (const word of filePositions(name, args)) {
+    const pieces = [...word.split(/[\s'"`]+/), ...word.split(/[\s'"`(),;=<>|&+]+/)];
+    const file = pieces.find((piece) => piece && isSecretFile(piece));
+    if (file) return file;
+  }
+  return null;
+}
+
+/**
+ * Why the command should be asked about for reaching a secret file through a variable, or null.
+ * `F=<secret name>; cat $F` names the file only inside the variable, where the other rules cannot
+ * see it, so when a variable is set to a secret file's name and a later command expands any
+ * variable, the person is asked.
+ */
+export function secretViaVariable(command) {
+  let set = null;
+  for (const { assigned, expands } of variableUse(command)) {
+    set ??= assigned.find((value) => value.split(/\s+/).some((piece) => piece && isSecretFile(piece))) ?? null;
+    if (set !== null && expands) return `a variable is set to the secret file name ${set} and a command expands a variable`;
+  }
+  return null;
+}
+
 /** Why the command reads or sends a secret file, or null. */
 export function secretAccess(command) {
   for (const { words: named, dropped, lead } of commandParts(command)) {
@@ -79,6 +124,8 @@ export function secretAccess(command) {
       const file = curlUpload(args);
       if (file) return `\`curl\` sends the secret file ${file}`;
     }
+    const inline = inlineCodeSecret(name, args);
+    if (inline) return `\`${name}\` runs a program that names the secret file ${inline}`;
     if (mayName(name, args)) continue;
     const file = [name, ...filePositions(name, args)].find(namesSecret);
     if (file) return `\`${name}\` names the secret file ${file}, and may print or send it`;

@@ -1,9 +1,11 @@
 /**
  * Reads the hook's JSON from stdin and finds the project root.
  *
- * Every ai-dev-guild hook fails open: on malformed input it allows the call. These hooks are a fast
- * advisory layer for the editing loop; the project's own pre-commit and CI checks stay the
- * authority, and a hook that crashed would otherwise block all work.
+ * Input that is not the JSON a hook expects passes: the hook has nothing to judge, and the
+ * project's own pre-commit and CI checks stay the authority. An error while judging a call is
+ * different and refuses it, because a hook that crashes is read as "allow": the three PreToolUse
+ * hooks catch what they throw, and `guard-paths` and `bash-guard` also refuse when this Node cannot
+ * run them (`protected.mjs`).
  */
 import { readFileSync, writeSync } from 'node:fs';
 

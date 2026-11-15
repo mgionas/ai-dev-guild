@@ -1,10 +1,11 @@
 /**
- * PreToolUse hook for shell commands: refuses four things agents keep doing, and asks about two.
+ * PreToolUse hook for shell commands: refuses four things agents keep doing, and asks about several more.
  *
  * 1. Killing processes by pattern (`pkill -f vitest`, `killall node`, `kill $(pgrep …)`). On a
  *    machine where several agents run, a pattern kill stops every agent's tests and the CI run
  *    too. Stop only what you started: your own background task, or a job (`kill %1`).
- * 2. Skipping git hooks (`--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`, `LEFTHOOK=0`). The hooks are the check.
+ * 2. Skipping git hooks (`--no-verify` and its abbreviations, `git commit -n`, `core.hooksPath` set by `-c` or
+ *    `git config`, `HUSKY=0`, `LEFTHOOK=0`). The hooks are the check.
  * 3. Writing a protected path from the shell (`> .env`, `tee`, `sed -i`, `cp`/`mv` onto it), the
  *    side door around the file-edit guard.
  * 4. Reading or sending a secret file from the shell (`cat .env`, `curl -d @.env`), the side door
@@ -21,6 +22,11 @@
  *    and `.` of a script from the input, a file descriptor (`/dev/fd/3`) or a `<(…)` / `=(…)`, and a
  *    shell whose script is a descriptor or whose unquoted heredoc body expands something.
  *
+ * 7. Asked, not refused: a command that deletes, moves, writes or changes the mode of a git hook
+ *    or hook manager file (`rm .git/hooks/pre-commit`, `chmod -x .husky/pre-commit`; see
+ *    `hook-files.mjs`), a `git commit` or `push` run with pre-commit's `SKIP=`, and a variable set
+ *    to a secret file's name that a later command expands (`F=<name>; cat $F`).
+ *
  * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`,
  * a heredoc a shell runs as its script), up to three levels deep, and the command behind a wrapper
  * (`sudo -u root …`, `doas …`, `env -i …`, `timeout 5 …`). When the guard cannot tell what a
@@ -34,9 +40,10 @@
  * common spellings, not every possible one, and the project's pre-commit and CI checks remain the
  * authority.
  */
-import { loadRules, protectingRule } from './protected.mjs';
+import { hookFileChange } from './hook-files.mjs';
+import { loadRules, protectingRule, requireGlobSupport } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
-import { secretAccess } from './secrets.mjs';
+import { secretAccess, secretViaVariable } from './secrets.mjs';
 import { commandParts, refuseOpenQuote, scriptsToJudge, Unclear, unseenScript, withoutHeredocs, withoutRedirects } from './shell-words.mjs';
 
 // Longer commands get the question without being read: the reading time grows with the length,
@@ -131,6 +138,16 @@ export function patternKill(command) {
 // The hook-skipping environment variables, as one word of a command.
 const SKIP_ENV = /^(HUSKY|LEFTHOOK)=0$/;
 
+// Git accepts any unambiguous abbreviation of a long option. Which ones clash (`--no-v` with
+// `--no-verbose`) depends on git's version, so every prefix from `--no-v` up counts, for the
+// commands that have the option.
+const NO_VERIFY = '--no-verify';
+const NO_VERIFY_COMMANDS = new Set(['commit', 'push', 'merge', 'am', 'rebase']);
+const abbreviatesNoVerify = (w) => w.length >= '--no-v'.length && NO_VERIFY.startsWith(w);
+
+// `git config` actions that read or remove a value and so cannot set core.hooksPath.
+const CONFIG_READS = new Set(['--unset', '--unset-all', 'unset', '--get', '--get-all', '--get-regexp', '--get-urlmatch', 'get', '--list', '-l', 'list']);
+
 /**
  * Why the command skips git hooks, or null. Words are judged as bash reads them, quotes and
  * backslashes removed, so `git commit "--no-verify"`, `git 'commit' -n` and `HUSKY='0' git commit`
@@ -142,10 +159,34 @@ export function skipsHooks(command) {
   for (const { words, dropped } of commandParts(command)) {
     if (dropped.some((w) => SKIP_ENV.test(w)) || (words[0] === 'export' && words.some((w) => SKIP_ENV.test(w)))) return 'HUSKY=0 / LEFTHOOK=0';
     if (words[0] !== 'git') continue;
-    if (words.includes('--no-verify')) return '--no-verify';
+    if (words.includes(NO_VERIFY)) return NO_VERIFY;
+    if (words.some(abbreviatesNoVerify) && words.some((w) => NO_VERIFY_COMMANDS.has(w))) return `${NO_VERIFY} (abbreviated)`;
     if (words.some((w) => /^core\.hookspath=/i.test(w))) return 'core.hooksPath';
+    // `git config core.hooksPath x` sets it; with the key last, or an action that only reads or removes it, it does not.
+    const key = words.findIndex((w) => w.toLowerCase() === 'core.hookspath');
+    if (words.includes('config') && key !== -1 && key < words.length - 1 && !words.some((w) => CONFIG_READS.has(w))) return 'git config core.hooksPath';
     const sub = words.find((w, i) => i > 0 && !w.startsWith('-') && words[i - 1] !== '-c' && words[i - 1] !== '-C');
     if (sub === 'commit' && words.some((w) => /^-[a-zA-Z]*n[a-zA-Z]*$/.test(w))) return 'git commit -n';
+  }
+  return null;
+}
+
+// The pre-commit framework's variables that skip hooks by name, as one word of a command.
+const SKIP_NAMED = /^(SKIP|PRE_COMMIT_ALLOW_NO_CONFIG)=/;
+
+/**
+ * Why a `git commit` or `git push` runs with pre-commit's `SKIP=` or `PRE_COMMIT_ALLOW_NO_CONFIG=`
+ * set, or null. Both skip hooks, but `SKIP` names which, and skipping one slow hook is sometimes
+ * fair, so this is asked about, not refused. Set before the command, after `env` or `export`, or
+ * on a line of its own before it.
+ */
+export function skipsNamedHooks(command) {
+  const parts = commandParts(command);
+  const runs = ({ words }) => words[0] === 'git' && words.some((w) => w === 'commit' || w === 'push');
+  if (!parts.some(runs)) return null;
+  const set = parts.some((part) => runs(part) && part.dropped.some((w) => SKIP_NAMED.test(w)));
+  if (set || /(^|[;&|(\n])\s*(export\s+)?(SKIP|PRE_COMMIT_ALLOW_NO_CONFIG)=/.test(withoutQuotedText(command))) {
+    return 'git commit or push runs with SKIP= or PRE_COMMIT_ALLOW_NO_CONFIG= set, which skips hooks';
   }
   return null;
 }
@@ -236,6 +277,12 @@ function judge(command, projectDir) {
     if (secret) block(`${secret}, which would put its values into the conversation or send them out. Ask the user for the one value you need.`);
   }
   for (const script of scripts) {
+    const hook = hookFileChange(script, writeTargets(script));
+    if (hook) ask(`${hook}. Hooks are the project's check: allow it only if the user asked for this change.`);
+    const skipped = skipsNamedHooks(script);
+    if (skipped) ask(`${skipped}. Allow it only if skipping those hooks is what the user asked for.`);
+    const variable = secretViaVariable(script);
+    if (variable) ask(`${variable}, which the hook cannot follow. Allow it only if the file is not a secret one.`);
     const kill = pidKill(script);
     if (kill) ask(`${kill} stops a process the hook cannot trace: it cannot tell whether this agent started it. Allow it only if that process is the agent's own.`);
     const unseen = unseenScript(script);
@@ -243,6 +290,7 @@ function judge(command, projectDir) {
   }
 }
 
+requireGlobSupport();
 const read = readInput();
 const command = read?.input?.tool_input?.command;
 if (read && typeof command === 'string') {

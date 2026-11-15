@@ -1009,3 +1009,298 @@ test('bash-guard lets everyday commands with $\'…\', redirects and substitutio
     'exec 3>&1',
   ]);
 });
+test('bash-guard refuses every abbreviation of --no-verify that git accepts, and the ones it might', () => {
+  const dir = project();
+  // Checked against git 2.50: commit, push and rebase take --no-veri and --no-verif (shorter
+  // ones clash with --no-verbose), am takes --no-v and up, merge only the full name.
+  expectBash(dir, 'block', [
+    'git commit --no-veri -m x',
+    'git commit --no-verif -m x',
+    'git push --no-veri',
+    'git push origin main --no-verif',
+    'git rebase --no-verif main',
+    'git am --no-v x.patch',
+    'git am --no-ver x.patch',
+    'git am --no-verif x.patch',
+    'git merge --no-verify x',
+    // Which prefixes clash depends on git's version, so every prefix from --no-v up is refused.
+    'git commit --no-v -m x',
+    'git commit --no-ve -m x',
+    'git commit --no-ver -m x',
+    // The words are read as bash reads them.
+    'git commit "--no-verif" -m x',
+    "git commit '--no-veri' -m x",
+    'git commit --no-v\\erif -m x',
+    'git commit --no-ver""if -m x',
+    'git -C app commit --no-verif -m x',
+    'sudo git commit --no-verif -m x',
+    "bash -c 'git commit --no-verif -m x'",
+    'cd app && git push --no-veri origin main',
+  ]);
+  expectBash(dir, 'allow', [
+    'git commit --no-edit',
+    'git commit --no-gpg-sign -m x',
+    'git commit --no-status -m x',
+    'git commit --no-verbose -m x',
+    'git commit --verbose',
+    'git push --no-thin',
+    'git merge --no-ff x',
+    'git rebase --no-autosquash main',
+    'git log --no-merges',
+  ]);
+});
+
+test('bash-guard refuses git config that sets core.hooksPath, and allows unsetting and reading it', () => {
+  const dir = project();
+  expectBash(dir, 'block', [
+    'git config core.hooksPath /dev/null',
+    'git config --global core.hooksPath /dev/null',
+    'git config --local core.hookspath x',
+    'git config --worktree core.hooksPath x',
+    'git config --system core.hooksPath x',
+    'git config --file .git/config core.hooksPath x',
+    'git config -f cfg core.hooksPath y',
+    'git config --add core.hooksPath x',
+    'git config --replace-all core.hooksPath x',
+    'git config set core.hooksPath x',
+    'git config set --global CORE.HOOKSPATH x',
+    'git config "core.hooksPath" ""',
+    'git config -- core.hooksPath x',
+    'git -C . config core.hooksPath x',
+    'sudo git config --global core.hooksPath /dev/null',
+    "bash -c 'git config core.hooksPath /dev/null'",
+  ]);
+  expectBash(dir, 'allow', [
+    'git config --unset core.hooksPath',
+    'git config --global --unset core.hooksPath',
+    'git config --unset-all core.hooksPath',
+    'git config unset core.hooksPath',
+    'git config core.hooksPath',
+    'git config --get core.hooksPath',
+    'git config get core.hooksPath',
+    'git config --unset core.hooksPath /tmp/hooks',
+    'git config --get-all core.hooksPath hooks',
+    'git config unset --global core.hooksPath hooks',
+    'git config --show-origin core.hooksPath',
+    'git config --list',
+    'git config user.name x',
+    'git config --global pull.rebase true',
+    'git grep core.hooksPath',
+  ]);
+});
+
+test('bash-guard asks before a command changes a git hook or a hook manager file, and lets reads pass', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    'rm .git/hooks/pre-commit',
+    'rm -f .husky/pre-commit',
+    'rm -rf .husky',
+    'rm -rf .git/hooks',
+    'rm .git/hooks/*',
+    'rm apps/web/.husky/pre-commit',
+    'rm "$PWD/.git/hooks/pre-commit"',
+    'chmod -x .husky/pre-commit',
+    'chmod -R a-x .git/hooks',
+    'chmod +x .husky/pre-commit',
+    'mv .git/hooks/pre-commit /tmp/x',
+    'mv x .husky/pre-commit',
+    'cp evil.sh .git/hooks/pre-commit',
+    'echo exit 0 > .husky/pre-commit',
+    'echo x >> .lefthook/pre-commit/a',
+    '> .git/hooks/pre-commit',
+    'cat x | tee .git/hooks/pre-push',
+    "sed -i 's/a/b/' lefthook.yml",
+    "sed -i '' 's/a/b/' .pre-commit-config.yaml",
+    'sed -i s/a/b/ lefthook-local.yaml',
+    'truncate -s0 .git/hooks/pre-commit',
+    'ln -sf /dev/null .git/hooks/pre-commit',
+    'install -m 755 x .husky/pre-commit',
+    'git rm .husky/pre-commit',
+    'git mv .husky/pre-commit .husky/off',
+    'touch .git/hooks/x',
+    'sudo rm ./.git/hooks/pre-commit',
+    "bash -c 'rm .git/hooks/pre-commit'",
+    'cd .husky && rm pre-commit',
+    'cd .git/hooks; chmod -x pre-commit',
+  ]);
+  expectBash(dir, 'allow', [
+    'cat .husky/pre-commit',
+    'ls -la .git/hooks',
+    'grep -rn eslint .husky lefthook.yml .pre-commit-config.yaml',
+    'head -5 .git/hooks/pre-commit.sample',
+    'git add .husky/pre-commit',
+    'git commit -m "update .husky/pre-commit"',
+    'cp .husky/pre-commit /tmp/backup',
+    'cp .git/hooks/pre-commit.sample /tmp/x',
+    'diff .husky/pre-commit other',
+    'chmod +x scripts/run.sh',
+    'rm tmp.txt',
+    'echo "rm .git/hooks/x" >> notes.md',
+    'cd .husky && cat pre-commit',
+    'cd app && rm -rf build',
+  ]);
+});
+
+test('guard-paths asks before a write to a git hook or a hook manager file', () => {
+  const dir = project('lefthook.yml\n');
+  for (const file of [
+    '.git/hooks/pre-commit',
+    '.husky/pre-commit',
+    'apps/web/.husky/_/husky.sh',
+    '.lefthook/pre-commit/a.sh',
+    '.pre-commit-config.yaml',
+    'sub/lefthook-local.yaml',
+  ]) {
+    assert.equal(answer(run('guard-paths.mjs', { file_path: join(dir, file) }, dir)), 'ask', file);
+    assert.equal(answer(run('guard-paths.mjs', { file_path: file }, dir)), 'ask', file);
+  }
+  assert.equal(answer(run('guard-paths.mjs', { notebook_path: join(dir, '.husky/pre-commit') }, dir)), 'ask');
+  for (const file of ['src/app.ts', 'docs/husky.md', '.huskyrc', 'lefthook.yml.example', 'git/hooks/readme.md']) {
+    assert.equal(answer(run('guard-paths.mjs', { file_path: join(dir, file) }, dir)), 'allow', file);
+  }
+  // A refusal wins over the question.
+  assert.equal(answer(run('guard-paths.mjs', { file_path: join(dir, 'lefthook.yml') }, dir)), 'block');
+});
+
+test('bash-guard asks when git commit or push runs with pre-commit SKIP set', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    'SKIP=eslint git commit -m x',
+    'SKIP=a,b git push',
+    'SKIP="eslint" git commit -m x',
+    'PRE_COMMIT_ALLOW_NO_CONFIG=1 git commit -m x',
+    'env SKIP=eslint git commit -m x',
+    'sudo SKIP=x git commit -m y',
+    'SKIP=x git -C app commit -m y',
+    'export SKIP=eslint; git commit -m x',
+    'SKIP=eslint; git commit -m x',
+    "bash -c 'SKIP=x git commit -m y'",
+  ]);
+  expectBash(dir, 'allow', [
+    'SKIP=x npm test',
+    'git commit -m "SKIP=eslint"',
+    'git commit -m x',
+    'echo SKIP=x',
+    'SKIPPED=1 git commit -m x',
+    'SKIP=x git status',
+  ]);
+  // A refusal wins over the question.
+  expectBash(dir, 'block', ['SKIP=eslint git commit --no-verify -m x']);
+});
+
+test('bash-guard refuses an interpreter one-liner that names a secret file', () => {
+  const dir = project();
+  expectBash(dir, 'block', [
+    `node -e "require('fs').readFileSync('.env','utf8')"`,
+    `node -p "fs.readFileSync('.env')"`,
+    `node --eval "fs.readFileSync('.env.local')"`,
+    `node -pe 'x(".env")'`,
+    `node -e 'fs.readFileSync(\`.env\`)'`,
+    `python3 -c "print(open('.env').read())"`,
+    `python -c 'open(".env.production")'`,
+    `python3.12 -c "open('config/.env')"`,
+    `python3 -Ic "open('.ENV')"`,
+    `ruby -e "puts File.read('.env')"`,
+    `perl -e 'open(F,".env"); print <F>'`,
+    `perl -E 'say <.env>'`,
+    `deno eval "Deno.readTextFileSync('.env')"`,
+    `node -e "glob('{a,.env}')"`,
+    `/usr/bin/node -e "fs.readFileSync('.env')"`,
+    `sudo node -e "fs.readFileSync('.env')"`,
+    `env node -e "fs.readFileSync('.env')"`,
+    `bash -c "python3 -c \\"open('.env')\\""`,
+  ]);
+  expectBash(dir, 'allow', [
+    'node -e "console.log(1)"',
+    'node -e "console.log(process.env.HOME)"',
+    `node -e "console.log(JSON.stringify(process.env))"`,
+    `node -e "require('fs').readFileSync('.env.example')"`,
+    'node script.js',
+    'python3 -c "print(1)"',
+    `python3 -c "import os; print(os.environ['HOME'])"`,
+    'python3 -m pytest -q',
+    'ruby -e "puts 1"',
+    `perl -e 'print 1'`,
+    'deno eval "console.log(1)"',
+  ]);
+});
+
+test('bash-guard asks when a variable is set to a secret file name and a variable is expanded after it', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    'F=.env; cat $F',
+    'F=.env && cat "$F"',
+    'F=".env.local"; cat $F',
+    "F='.env'; grep x $F",
+    'F=config/.env; grep x $F',
+    'F=.env G=a; echo $G',
+    'F=.env; cat $(echo $F)',
+    'cd app && F=.env && cat $F',
+    "bash -c 'F=.env; cat $F'",
+  ]);
+  expectBash(dir, 'allow', [
+    'F=a; echo $F',
+    'F=.env.example; cat $F',
+    'F=.env',
+    'cat $F',
+    'F=.env; echo hi',
+    'echo .env; echo $HOME',
+    'F=a.txt; cat "$F" > out.txt',
+  ]);
+});
+
+test('the guards refuse every call when path.matchesGlob is missing (Node older than 22.5)', () => {
+  const dir = project();
+  const preload = join(mkdtempSync(join(tmpdir(), 'ai-dev-guild-preload-')), 'no-glob.mjs');
+  writeFileSync(preload, "import path from 'node:path';\ndelete path.matchesGlob;\n");
+  const runOld = (hook, toolInput) =>
+    spawnSync('node', ['--import', preload, join(here, hook)], {
+      input: JSON.stringify({ cwd: dir, tool_input: toolInput }),
+      env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+      encoding: 'utf8',
+      timeout: 10_000,
+    });
+  for (const [hook, toolInput] of [
+    ['guard-paths.mjs', { file_path: join(dir, 'src/app.ts') }],
+    ['bash-guard.mjs', { command: 'echo hi' }],
+  ]) {
+    const result = runOld(hook, toolInput);
+    assert.equal(result.status, 2, hook);
+    assert.match(result.stderr, /Node 22\.5/, hook);
+    assert.match(result.stderr, new RegExp(process.version.replace(/\./g, '\\.')), hook);
+    assert.equal(result.stderr.trim().split('\n').length, 1, `${hook}: one message`);
+  }
+  // With the function present the same calls pass.
+  assert.equal(run('guard-paths.mjs', { file_path: join(dir, 'src/app.ts') }, dir).status, 0);
+  assert.equal(run('bash-guard.mjs', { command: 'echo hi' }, dir).status, 0);
+});
+
+test('guard-paths refuses when it fails while judging, and still passes malformed input', () => {
+  const dir = project();
+  mkdirSync(join(dir, '.claude', 'protected-paths')); // a rules file that cannot be read
+  const result = run('guard-paths.mjs', { file_path: join(dir, 'src/app.ts') }, dir);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /could not check/);
+  assert.equal(
+    spawnSync('node', [join(here, 'guard-paths.mjs')], {
+      input: 'not json',
+      encoding: 'utf8',
+    }).status,
+    0,
+  );
+});
+
+test('bash-guard lets the everyday commands near these rules through', () => {
+  const dir = project();
+  expectBash(dir, 'allow', [
+    'git commit -m x',
+    'git commit -am "fix: stop skipping --no-verify"',
+    'git push origin feature',
+    'git config user.name x',
+    'cat .husky/pre-commit',
+    'node -e "console.log(1)"',
+    'F=a; echo $F',
+    'NAME=world; echo "hello $NAME"',
+    'export PATH="$HOME/bin:$PATH"',
+  ]);
+});
