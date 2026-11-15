@@ -11,19 +11,25 @@ They read the report's **Assumptions** after their own first pass.
 
 | The change touches | Reviewers |
 | --- | --- |
-| Any code | `domain-guardian` + `qa-tester` |
-| A small change with no money, access, personal data or migration | one combined Sonnet reviewer (domain + QA) |
+| Any code, however small | `domain-guardian` + `qa-tester` |
+| A docs-only change | one combined Sonnet reviewer (domain + QA) |
 | A public interface, contract, event or folder structure | add `architect` |
 | A migration | `db-migrations` (if not the builder) + `architect` |
 | Login, permissions, personal data, uploads, webhooks | add `security-reviewer` |
-| Money | `money-specialist` (if not the builder) + a human |
+| Money | `money-specialist` (if not the builder) + a human (the product owner or a named expert) |
 | A new or changed screen or flow | `ux-researcher` (`research-review`), `designer` (`design-review`), `domain-guardian` |
-| A high-risk change | a second, independent model as well, to reduce shared blind spots |
+| A high-risk change | a second, independent model as well (a different model family, if one is available), to reduce shared blind spots |
+
+One combined reviewer is for docs-only changes. Code always gets the panel. If no second model or
+no human is available, go ahead with the panel you have and say so in the merge report.
 
 ## Rules for the panel
 
+- Findings use one scale: **critical, high, medium, low**. Older words map to it: blocker is
+  critical, should-fix is medium, note is low. A question is not a finding: it goes to the owner
+  in the decision batch.
 - Block only on correctness and on stated requirements. Low findings go to the carried list, not
-  into a fix round; security and money findings of Medium and above are always fixed.
+  into a fix round; security and money findings of medium and above are always fixed.
 - `qa-tester` runs in panel mode here: it edits nothing and reports each missing test as a finding.
 - Run reviewers in parallel, each with its own scope. Two reviewers never answer the same question.
 - A reviewer does not rerun tests the builder already ran and pasted, unless they doubt the output.

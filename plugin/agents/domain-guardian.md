@@ -22,5 +22,5 @@ Report:
 Before a build (a "question sweep"), read the task's plan text instead of a diff and return only
 the Gaps: the questions the builder would otherwise hit halfway through.
 
-Give every finding a level (**blocker**, **should-fix** or **question**), its `file:line`, the
-glossary rule involved and the reason. When everything is fine, just say that.
+Give every finding a severity (**critical / high / medium / low**), its `file:line`, the glossary
+rule involved and the reason. A product question is not a finding: list it apart, under Questions. When everything is fine, just say that.

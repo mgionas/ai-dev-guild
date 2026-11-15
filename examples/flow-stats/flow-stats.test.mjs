@@ -82,6 +82,18 @@ test("parseFindings reads both severity spellings and the reviewers", () => {
   assert.equal(parsed.unrecognized, 0);
 });
 
+test("parseFindings: should-fix counts as medium and note as low", () => {
+  const parsed = parseFindings(`${TABLE}| 1 | should-fix | a | x | y | z |
+| 2 | **Note** | a | x | y | z |
+| 3 | Should-Fix | a | x | y | z |
+`);
+  assert.deepEqual(
+    parsed.findings.map((f) => f.severity),
+    ["medium", "low", "medium"],
+  );
+  assert.equal(parsed.unrecognized, 0);
+});
+
 test("parseFindings: a Claim: cell marks a claim that did not hold, bold or not", () => {
   const parsed = parseFindings(`${TABLE}| 1 | high | a | Claim: tests pass | y | z |
 | 2 | high | a | **Claim:** the input is checked | y | z |

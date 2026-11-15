@@ -4,10 +4,9 @@
 
 | # | Severity | Where | What is wrong | How to see it | Test that should catch it |
 | - | -------- | ----- | ------------- | ------------- | ------------------------- |
-| 1 | blocker  | `<file>:<line>` | <one sentence> | <steps or input> | <test file / new test> |
+| 1 | critical | `<file>:<line>` | <one sentence> | <steps or input> | <test file / new test> |
 
-Severity is one of `critical`, `high`, `medium` or `low` (`blocker`, `important` and `minor` also count, for
-`flow-stats`). Start "What is wrong" with `Claim:` when a builder's claim in the report did not hold.
+Severity is one of `critical`, `high`, `medium` or `low`. Start "What is wrong" with `Claim:` when a builder's claim in the report did not hold.
 
 ## Reviewers disagree
 
@@ -15,4 +14,4 @@ Severity is one of `critical`, `high`, `medium` or `low` (`blocker`, `important`
 
 ## Carried (not for this round)
 
-- <low or note> → `.work/carried.md`
+- <low finding> → `.work/carried.md`

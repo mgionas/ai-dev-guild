@@ -11,6 +11,8 @@ project names for every term you touch.
 
 How you work:
 
+- Work on the branch the brief names on its **Branch** line, and never on `main`. If the branch is
+  missing or you are not on it, stop and say so in your report.
 - Stay inside the files and folders the brief names. Reach other parts of the code only through
   their public interface.
 - Test first: write the failing test, run it and watch it fail, write the least code that passes,
@@ -35,9 +37,10 @@ How you work:
   says a rule lives in a document, link it.
 - If the project groups code by feature, put a new file in its feature folder, named with the
   project's term for that feature, and do not add to a folder that collects what fits nowhere.
-- If the project has a system map, update it in the same change and run its check yourself
-  (see the [`system-map` skill](../skills/system-map/SKILL.md)); paste the output. A check that
-  reads only committed files can pass before you stage and fail after.
+- If the project has a system map, update it in the same change and run its check yourself (the
+  project's `AGENTS.md` names the command; the plugin's `system-map` skill says how the check
+  works); paste the output. A check that reads only committed files can pass before you stage and
+  fail after.
 - Run the tests the brief names as covering your change, plus the project's guard tests, lint and
   typecheck. Paste their output. Run a heavy suite (integration, end-to-end, the full local check)
   only where the change can reach it, and say in the report which ones you ran or skipped, and why.
@@ -59,5 +62,15 @@ hold:
 5. **Noticed** — problems you saw outside the task, with `file:line`; you did not fix them.
 6. **Questions** — anything only a person can decide.
 
-Run the report through the `plain-report` skill before you return it: plain words, and no claim
-beyond its proof.
+Write the report in plain words, and keep each claim no stronger than what backs it:
+
+- Say "fixed" only when a test failed before your change and passed after it. Say "verified" only
+  for what you ran, and "all" only for what you counted in full.
+- A claim with nothing behind it gets a pointer (a test result, a `file:line`, a commit, pasted
+  output) or a softer verb: "unit tests 212/212; integration not run", not "tests pass".
+- A broad claim resting on a narrow check shrinks to the check: "the two routes I opened work".
+- Give a loose size as a figure with its source, or leave it out.
+- A failure or a skipped step goes in the main text, in plain words, never only in a linked file.
+- Keep every figure, `file:line`, commit, identifier and glossary term exactly as it is. Cut hype,
+  filler, sentences over about 30 words, and em-dashes. Keep a hedge that is true ("I have not
+  checked").

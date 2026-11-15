@@ -58,7 +58,7 @@ flowchart TD
 - **CI's machine** is written down once ([where CI runs](where-ci-runs.md)); briefs that touch CI,
   build config or test timeouts link it, and the local check imitates its limits.
 - **Guard hooks** refuse edits to protected files, pattern kills and skipped git hooks while the loop
-  runs ([hooks](../README.md#the-guard-hooks)).
+  runs ([guard hooks](../guards/README.md)).
 
 ## Why it is shaped like this
 

@@ -16,7 +16,7 @@ Checks specs, plans, screens and code against the project's glossary and busines
 
 ## What it returns
 - A review returns **Terms**, **Rules** and **Gaps**. Gaps are questions for the product owner, with a recommended answer where one is reasonable.
-- Every finding has a level (**blocker**, **should-fix** or **question**), its `file:line`, the glossary rule involved and the reason.
+- Every finding has a severity (**critical / high / medium / low**), its `file:line`, the glossary rule involved and the reason. Product questions are listed apart, not as findings.
 - A question sweep returns only the Gaps.
 - If nothing is wrong, it says so plainly.
 

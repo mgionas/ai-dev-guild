@@ -12,45 +12,57 @@ The task: $ARGUMENTS
 
 ## The loop
 
-1. **Question sweep.** Give the task's plan text to `domain-guardian` and ask for the Gaps only.
+1. **Task branch.** Before anything is built, create a branch for the task (`task/<id>`) from the
+   project's main branch, or a worktree on a new branch if other work shares the checkout. Write
+   its name on the brief's `**Branch:**` line. Nothing is built on `main`.
+2. **Question sweep.** Give the task's plan text to `domain-guardian` and ask for the Gaps only.
    Put every product question into one decision batch (`decision-batch` skill) and ask the owner
    once. The builder starts with the answers, not with the questions.
-2. **Brief.** Write `.work/tasks/<id>/brief.md` with the `write-brief` skill. The brief is the
+3. **Brief.** Write `.work/tasks/<id>/brief.md` with the `write-brief` skill. The brief is the
    builder's whole world: complete, with line ranges for any long document it must read.
-3. **Build.** Dispatch one fresh `builder` (or `money-specialist`, `db-migrations`) with the brief
+4. **Build.** Dispatch one fresh `builder` (or `money-specialist`, `db-migrations`) with the brief
    path. One task per agent. Pick the model on purpose (see below).
-4. **Read the report.** No pasted evidence means not done: send it back. Move each **Noticed** item
+5. **Read the report.** No pasted evidence means not done: send it back. Move each **Noticed** item
    to the carried list (`.work/carried.md`). Read **Assumptions** first: a product choice in there
    is a question for the owner, not an assumption.
-5. **Review.** Choose the panel with the `review-panel` skill. Reviewers get the diff, the brief
+6. **Review.** Choose the panel with the `review-panel` skill. Reviewers get the diff, the brief
    and the project rules, never the builder's reasoning, and run in parallel with separate scopes.
-6. **Fix.** Merge the findings into one file and run the `fix-round` skill: a fresh `fixer`, never
+   One combined reviewer is for docs-only changes; code always gets the panel. With no second
+   model or no human available, go ahead with the panel and say so in the merge report.
+7. **Fix.** Merge the findings into one file and run the `fix-round` skill: a fresh `fixer`, never
    the builder's session resumed.
-7. **Re-check.** One combined re-check confirms the fixes. It does not reopen the review. New
+8. **Re-check.** One combined re-check confirms the fixes. It does not reopen the review. New
    non-blocking points go to the carried list. If the second re-check confirms every fix, stopping is the default: say so in the merge report, and
    the owner can still say "continue".
-8. **Strict local check.** Run the `local-ci` skill on the final head, once. First write down
+9. **Strict local check.** Run the `local-ci` skill on the final head, once. First write down
    what the change can reach and which steps cover it; use `--full` for a merge no remote CI
-   checks. Paste which steps ran and which were skipped, and why.
-9. **Merge**, then update the roadmap and the QA board (`progress-boards` skill) in the same turn,
-   and the system map if the project has one (`system-map` skill). Pass each report or message
-   for the owner through the `plain-report` skill before sending.
+   checks. Paste which steps ran and which were skipped, and why. With no local check set up yet,
+   run the commands in the project's `AGENTS.md` in the order CI runs them, and say in the report
+   that this is what you did.
+10. **Merge** the task branch into main: open a pull request when the project has a remote, or
+    merge locally (`git merge --no-ff task/<id>`) when it has none. Then update the pages the
+    project lists under `## Pages` in its `AGENTS.md` (the roadmap and QA board by the
+    `progress-boards` skill, the system map by the `system-map` skill) in the same turn, and no
+    others. Pass each report or message for the owner through the `plain-report` skill before
+    sending; the builder and fixer have only its claim-and-evidence rules in their role files.
 
 ## Controller checklist
 
 Paste this into your plan and tick each line as you do it, not from memory:
 
+- [ ] Task branch created and written on the brief's `**Branch:**` line
 - [ ] Question sweep (`domain-guardian`, Gaps only; one `decision-batch`)
 - [ ] Brief (`write-brief`), with the choices already made
 - [ ] Build (one fresh builder)
 - [ ] Read **Assumptions** first, then the rest of the report
-- [ ] Choose the panel (`review-panel`); one combined reviewer is not the panel
+- [ ] Choose the panel (`review-panel`); one combined reviewer only for docs-only changes, code
+      always gets the panel (no second model or no human available: go ahead, say so in the merge report)
 - [ ] Reviewers get the diff, brief and rules, never the builder's reasoning or report first
 - [ ] Fix round (`fix-round`) with a fresh fixer
 - [ ] Confirm-only re-check
 - [ ] Local check (`local-ci`) on the final head
-- [ ] Merge
-- [ ] Roadmap and QA board (`progress-boards`) in the same turn
+- [ ] Merge (pull request, or local merge with no remote)
+- [ ] The pages listed under `## Pages` updated in the same turn
 
 ## Dispatching agents
 

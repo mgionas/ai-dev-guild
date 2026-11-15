@@ -77,20 +77,21 @@ exists. Where one exists, show the user what you would add and ask.
     The bash guard refuses a pattern kill, so it must come back refused. If it runs anyway, it
     matches no process and harms nothing. Never probe with a write to a protected file. In a
     session that started before the plugin was installed the hooks are not loaded yet, so a run
-    that is not refused means "not running yet": say so, and repeat the check in step 12's new
+    that is not refused means "not running yet": say so, and repeat the check in step 13's new
     session. Record `guards: running` or `guards: not running`.
 
-12. **Start a new session.** Claude Code reads plugins, project agents, project skills, permission
+12. **Living pages.** Ask which living pages the project wants kept current (roadmap, QA board,
+    project map, analysis pages, flow stats, system map) and set up only those, not all of them.
+    Write the answer into `AGENTS.md` under `## Pages`, one page per line; `run-task` updates only
+    those after a merge. If the project already has a design system or brand, ask whether the pages
+    use the house look or the project's (`page-design.md` in the `progress-boards` skill).
+
+13. **Start a new session.** Claude Code reads plugins, project agents, project skills, permission
     rules and hooks only when a session starts. Whatever was installed, copied or written during
     this setup does nothing until then. Tell the user plainly, and give the check to run in the new
     session: `/ai-dev-guild:run-task` resolves (or `/run-task`, where the folders were copied), and
     the `pkill` probe above is refused.
 
-Setup also asks which living pages the project wants (roadmap, QA board, project map, analysis
-pages, flow stats) and sets up only those, instead of all of them. If the project already has a design system
-or brand, it asks whether those pages use the house look or the project's (`page-design.md` in the
-`progress-boards` skill).
-
 Finish with a short list of what you created, what still says `TODO(owner)`, the guard result
 (`guards: running`, `guards: not running`, or not installed), and the last line: start a new
-session, then run the check from step 12.
+session, then run the check from step 13.

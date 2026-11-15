@@ -34,12 +34,21 @@
     the project's rules.
 14. **Decisions are the owner's.** If code and a recorded decision disagree, the code is not done
     yet. Report it; do not edit the decision.
+15. **Work on the task's branch, never on `main`.** Each task has its own branch (or worktree),
+    named in its brief. Changes reach `main` only by a pull request, or by a local merge when the
+    project has no remote.
 
 ## History
 
 <Fix forward: follow-ups are new commits and history is never rewritten. Or: squash follow-ups:
 commit them with `git commit --fixup=<sha>` and squash with `git rebase -i --autosquash <base>`
 before reporting. Setup asks, and writes fix forward when there is no answer.>
+
+## Pages
+
+<The living pages this project keeps current when a task merges, one per line, for example:
+roadmap, QA board, system map. Setup asks which ones and writes them here; the controller updates
+only these.>
 
 ## Mistakes that keep happening
 
