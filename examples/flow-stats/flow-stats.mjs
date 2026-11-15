@@ -35,7 +35,7 @@ const DAY_MS = 86_400_000;
 /** A file larger than this is skipped with a gap: it is no report, and reading it all would only cost memory. */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
-/** Severities as written in findings files. The second spelling is accepted so older files still count. */
+/** Severities as written in findings files. The older spellings are accepted so older files still count. */
 const SEVERITIES = new Map([
   ["critical", "critical"],
   ["high", "high"],
@@ -44,6 +44,8 @@ const SEVERITIES = new Map([
   ["blocker", "critical"],
   ["important", "high"],
   ["minor", "low"],
+  ["should-fix", "medium"],
+  ["note", "low"],
 ]);
 
 // ---------------------------------------------------------------------------------------------

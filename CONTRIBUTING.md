@@ -17,9 +17,15 @@ with a mistake it prevents.
 
 ## Before you open a pull request
 
+These are the five steps CI runs; run all of them:
+
 ```bash
 node scripts/check-repo.mjs
-node --test 'guards/hooks/*.test.mjs'
+(cd guards && node --test 'hooks/*.test.mjs')
+node --test 'examples/ci-local/*.test.mjs'
+node --test 'examples/flow-stats/*.test.mjs'
+(cd examples/system-map && npm ci --ignore-scripts && node --test '*.test.mjs' \
+  && node check.mjs --config example/system-map.config.json --base origin/main)
 ```
 
 ```bash
@@ -28,7 +34,7 @@ claude plugin validate ./plugin
 claude plugin validate ./guards
 ```
 
-Paste the output of both in the pull request. If you change a hook, add a test that fails without
+Paste the output of all of them in the pull request. If you change a hook, add a test that fails without
 your change, and say that you saw it fail.
 
 Add one line to the `Unreleased` section of [CHANGELOG.md](CHANGELOG.md): what changed and why, in
@@ -37,8 +43,7 @@ has not been used in anger yet.
 
 ## How changes get in
 
-`main` is protected. Every change arrives as a pull request, CI must pass (the repository checks
-and the hook tests), and the maintainer reviews and approves it before it is merged. CI on a pull
+`main` is protected. Every change arrives as a pull request, CI must pass (the five steps above), and the maintainer reviews and approves it before it is merged. CI on a pull
 request from a first-time or outside contributor runs once the maintainer allows it.
 
 ## The rule we keep ourselves

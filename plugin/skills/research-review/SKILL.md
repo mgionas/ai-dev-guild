@@ -64,6 +64,7 @@ Run these as a checklist after the four checks. Reviews have missed each of them
 
 ## What to return
 
-A list of findings. Each has a severity (**blocker**, **should-fix** or **question**), where it is
+A list of findings. Each has a severity (**critical / high / medium / low**), where it is
 (a spec section or a screenshot region), what is wrong and why, and the kind of statement it rests
-on: Defined, Decided or Assumed.
+on: Defined, Decided or Assumed. Questions for the owner are not findings: they go to the decision
+batch.

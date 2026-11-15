@@ -15,7 +15,7 @@ Reviews module boundaries, interfaces, data contracts, migrations and folder str
 - It must not be given the builder's reasoning before it has formed its own view.
 
 ## What it returns
-- Findings as **blocker / should-fix / note**, each with `file:line` and why.
+- Findings as **critical / high / medium / low**, each with `file:line` and why.
 - For a decision worth keeping, a short decision record draft in its reply: context, decision, consequences.
 
 ## Example

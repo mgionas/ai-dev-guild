@@ -185,6 +185,7 @@ function laneOf(s) { return STATUS_LABEL.has(s) ? s : "pending"; }
 // A subtask's stage says how far along the four steps (built, reviewed, fixed, merged) it is.
 const STAGES = new Map([
   ["done", { steps: 4, lane: "done", label: "merged" }],
+  ["merged", { steps: 4, lane: "done", label: "merged" }],
   ["fixing", { steps: 3, lane: "active", label: "fixing review findings" }],
   ["review", { steps: 2, lane: "active", label: "in review" }],
   ["building", { steps: 1, lane: "active", label: "being built" }],

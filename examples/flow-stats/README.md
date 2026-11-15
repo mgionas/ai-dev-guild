@@ -30,7 +30,7 @@ To record CI runs for it, run your local CI with `node ci-local.mjs --record .wo
 | --- | --- |
 | `.work/tasks/<id>/brief.md`, with an optional `**Branch:** <name>` line near the top | when a task started, and which branch to look for in git |
 | `.work/tasks/<id>/report.md` | a task that has been built and can be reviewed |
-| `.work/tasks/<id>/findings-<n>.md`: a table with `Severity` and `What is wrong` columns, and a `**Reviewers:** a, b` line | review counts and fix rounds. Severities are `critical`, `high`, `medium`, `low`; `blocker`, `important` and `minor` count as the first, second and last. A "What is wrong" cell that starts with `Claim:` is a builder claim that did not hold. |
+| `.work/tasks/<id>/findings-<n>.md`: a table with `Severity` and `What is wrong` columns, and a `**Reviewers:** a, b` line | review counts and fix rounds. Severities are `critical`, `high`, `medium`, `low`; `blocker`, `important` and `minor` count as the first, second and last, `should-fix` as medium and `note` as low. A "What is wrong" cell that starts with `Claim:` is a builder claim that did not hold. |
 | `.work/tasks/<id>/recheck-<n>.md` with `**New problems:** <count>` | fix rounds that broke something else |
 | `.work/tasks/<id>/fix-report.md`, `fix-report-<n>.md` | the end of fixing |
 | `.work/decisions/*.md`: title `# Decisions needed: <topic> (<YYYY-MM-DD>)`, and once answered `**Answered:** <YYYY-MM-DD>, accept all` or `, changed <n>` | questions asked, answered and the wait |

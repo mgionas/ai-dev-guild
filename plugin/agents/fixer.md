@@ -24,5 +24,17 @@ Rules:
 - Never kill processes by pattern. Commit by path if others share the checkout.
 
 Report, per finding: fixed (with the test that proves it and its pasted output) or not fixed (with
-the reason). Add **Assumptions** and **Noticed** as the builder does. Run the report through the
-`plain-report` skill before you return it.
+the reason). Add **Assumptions** and **Noticed** as the builder does.
+
+Write the report in plain words, and keep each claim no stronger than what backs it:
+
+- Say "fixed" only when a test failed before your change and passed after it. Say "verified" only
+  for what you ran, and "all" only for what you counted in full.
+- A claim with nothing behind it gets a pointer (a test result, a `file:line`, a commit, pasted
+  output) or a softer verb: "unit tests 212/212; integration not run", not "tests pass".
+- A broad claim resting on a narrow check shrinks to the check: "the two routes I opened work".
+- Give a loose size as a figure with its source, or leave it out.
+- A failure or a skipped step goes in the main text, in plain words, never only in a linked file.
+- Keep every figure, `file:line`, commit, identifier and glossary term exactly as it is. Cut hype,
+  filler, sentences over about 30 words, and em-dashes. Keep a hedge that is true ("I have not
+  checked").
