@@ -421,7 +421,13 @@ function splitCommands(command, bodies) {
   const frames = []; // open substitutions: the command each one interrupted
   // A command's words, with `expanded` beside them: whether each holds an expansion.
   // `fd[k]` is true when `words[k]` is the descriptor digits written right against a redirect (`2` in `2>x`).
-  const fresh = () => Object.assign([], { expanded: [], fd: [] });
+  // `op[k]` is true when `words[k]` is an operator the shell read unquoted: a quoted `'>'` is an argument.
+  const fresh = () => Object.assign([], { expanded: [], fd: [], op: [] });
+  const pushOp = (text) => {
+    words.push(text);
+    words.expanded.push(false);
+    words.op[words.length - 1] = true;
+  };
   let words = fresh();
   let word = null; // null: no word started; '' is a real (empty, quoted) word
   let quote = null; // null, "'", "$'" or '"'
@@ -539,8 +545,7 @@ function splitCommands(command, bodies) {
       i++;
       let op = '&>';
       if (s[i + 1] === '>') op += s[++i];
-      words.push(op);
-      words.expanded.push(false);
+      pushOp(op);
     } else if (c === '\n' || c === ';' || c === '&' || c === '|') endCommand();
     else if (/\s/.test(c)) endWord();
     else if (c === '<' || c === '>') {
@@ -557,8 +562,7 @@ function splitCommands(command, bodies) {
       // Either way the `(` opens the substitution next.
       if (op === '<' && s[i + 1] === '(') words.push(PROCESS_SUBSTITUTION);
       else if (op === '>' && s[i + 1] === '(') words.push(PROCESS_OUTPUT);
-      else words.push(op);
-      words.expanded.push(false);
+      else pushOp(op);
     } else add(c);
   }
   refuseOpenQuote(quote !== null || frames.some((f) => f.quote !== null));
@@ -612,7 +616,8 @@ export function stripWrappers(words) {
   const offset = words.length - ws.length;
   const expanded = ws.map((_, k) => words.expanded?.[k + offset] ?? false);
   const fd = ws.map((_, k) => words.fd?.[k + offset] ?? false);
-  return { words: ws, dropped, expanded, fd, pgrep: Boolean(words.pgrep) };
+  const op = ws.map((_, k) => words.op?.[k + offset] ?? false);
+  return { words: ws, dropped, expanded, fd, op, pgrep: Boolean(words.pgrep) };
 }
 
 // Drops a wrapper's options and their values from the front of `ws`, and `timeout`'s duration.
@@ -662,19 +667,19 @@ const REDIRECT = /^(<|<<|<<<|>|>>|>\||>&|<&|&>|&>>)$/;
 const OUTPUT_REDIRECT = new Set(['>', '>>', '>|', '&>', '&>>', '>&']);
 
 /**
- * A command's words with its redirects taken out: `{ words, outputs }`. A redirect is an operator,
- * the target word after it, and the descriptor digits written against it (`2>&1`, `&>/dev/null`,
+ * A command's words with its redirects taken out: `{ words, outputs }`. A redirect is an unquoted
+ * operator (`part.op` marks them; a quoted `">"` is an argument), the target word after it, and the descriptor digits written against it (`2>&1`, `&>/dev/null`,
  * `< file`), which are not arguments of the command. `outputs` are the files it writes: the
  * targets of `>`, `>>`, `>|`, `&>`, `&>>` and `>&`, except a `>&` that copies a descriptor
  * (`>&2`, `>&-`). `part` is one entry of `commandParts`.
  */
-export function withoutRedirects({ words, fd }) {
+export function withoutRedirects({ words, fd, op }) {
   const kept = [];
   const outputs = [];
   for (let i = 0; i < words.length; i++) {
     const w = words[i];
-    if (fd[i] && REDIRECT.test(words[i + 1] ?? '')) continue;
-    if (!REDIRECT.test(w)) {
+    if (fd[i] && op[i + 1]) continue;
+    if (!op[i] || !REDIRECT.test(w)) {
       kept.push(w);
       continue;
     }

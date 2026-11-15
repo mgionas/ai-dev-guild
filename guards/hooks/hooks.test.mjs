@@ -791,6 +791,14 @@ test('bash-guard judges kill targets without the redirects on the command', () =
   expectBash(dir, 'ask', ['kill 1234 2>/dev/null', 'kill 1234 &>/dev/null', 'kill 1234 2>&1', '2>/dev/null kill 1234', 'kill "2">x', 'kill 2 > x']);
 });
 
+test('bash-guard takes only an unquoted operator for a redirect', () => {
+  const dir = project('.env\ndb/migrations/**\n');
+  // A quoted `>` is an argument: kill still signals 1234 and tee still writes the file after it.
+  expectBash(dir, 'ask', ['kill ">" 1234', "kill '>' 1234", "kill '<' 1234", "kill '&>' 1234", "kill $'>' 1234", 'kill "2>" 1234', 'kill \\> 1234']);
+  expectBash(dir, 'block', ["echo x | tee '<' db/migrations/x.sql", 'echo x | tee ">" db/migrations/x.sql', 'echo x | tee \\< .env']);
+  expectBash(dir, 'allow', ['echo x ">" db/migrations/x.sql', "echo x '&>' .env"]);
+});
+
 test('bash-guard counts only the files tee writes, not the targets of its input redirects', () => {
   const dir = project('.env\ndb/migrations/**\n');
   expectBash(dir, 'allow', ['tee out.txt < db/migrations/0001.sql', 'tee -a log < db/migrations/0001.sql', 'tee out.txt <db/migrations/0001.sql', 'tee out.txt <<< x', 'tee out.txt < <(cat .env.example)']);
