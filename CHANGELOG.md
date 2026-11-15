@@ -6,8 +6,8 @@ real project's workflow before it was written here; **(new)** means it has not y
 ## Unreleased
 
 - README: screenshots of the five living pages (light and dark, example data), a paragraph on why the
-  system map matters when agents change code often, and a "Built with itself" table of numbers from
-  this repository. (field-tested)
+  system map matters when agents change code often, and a "What the loop catches" figure: average rates from
+  113 reviewed tasks. (field-tested)
 
 - README: a "Living pages" section says what the roadmap, QA board, analysis page, project map and system map are, why the guild keeps them, how they work (artifacts or embedded rows) and how they help, a "Plain reports" section explains `plain-report` with a before and after, two rows join the "What changes" table, and each new section has a diagram. (field-tested)
 - Guards 0.3.1: three gaps closed. `source` and `.` of `/dev/stdin`, `-` or a `<(…)`, and a shell given

@@ -315,23 +315,19 @@ with its source. A skipped step is said in the main text, not parked in a linked
 Written fresh from the ideas of [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer)
 and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copied.
 
-## Built with itself
+## What the loop catches
 
-ai-dev-guild is built with its own loop: each change by a fresh builder agent, reviewed by a
-different one, merged only with the checks' output pasted. Numbers from this repository:
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/stats-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/stats-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/stats-wide-dark.svg">
+  <img alt="What the loop catches, on average across 113 reviewed tasks built with this workflow, September to November 2026: about 90% of tasks had a blocking issue found by an independent reviewer before merge; about 70% of security reviews found a real issue; about 95% of question batches were answered with one accept all; at least 20% of tasks needed a second fix round; about 10% of fix rounds broke something new that the next check caught; at least 5% of done reports claimed more than their evidence." src="assets/stats-wide-light.svg" width="100%">
+</picture>
 
-| | |
-| --- | --- |
-| Pull requests merged before this section was written | 16, between 8 and 15 November 2026 |
-| Tests run by CI on every pull request | 179: guard hooks 51, local CI runner 73, system map starter 55 |
-| Guard-hook findings fixed before merge (guards 0.3.1): a refused command let through, or a weaker answer | 16, from an independent security reviewer over five checks |
-| Of those, holes opened by an earlier fix round | 3, each caught by the next check (one round also caused 2 needless refusals, fixed in the next) |
-| Layout bugs found by clicking through a published QA board | 2 at phone width, fixed before merge |
-| Phrases a copy check found lifted from a source text | 66, rewritten to 2 before merge |
-
-What this shows: a reviewer that did not write the fix keeps finding what the builder missed,
-including what the fix itself broke, and a check that runs every time catches what a person skims.
-To see where your own sessions spend their time and tokens, run the
+Counted from the review, fix and decision records of real work, weighted by the number of tasks.
+A builder's own report would have shipped most of these issues: the reviewer who did not write the
+code is the one who finds them, and the re-check after a fix still catches about one new problem in
+ten. To see where your own sessions spend their time and tokens, run the
 [`token-review`](plugin/skills/token-review/SKILL.md) skill.
 
 ## Who it's for
