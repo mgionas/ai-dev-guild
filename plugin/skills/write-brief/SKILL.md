@@ -32,5 +32,9 @@ A good brief:
   plugin's files. The agent then checks the file exists (`ls`); if the write was refused, it puts
   the full report in its hand-back and says so.
 
+For a research task (market sizes, prices, rules in force elsewhere), add the section in
+`research-template.md` in this skill's folder to the brief. Web searches often return little for
+local figures, and an agent told to produce a result will fill the gaps with guesses.
+
 Before you send it, read it as the agent will: is there a choice it must make that you could make
 now? Make it, or make it a question for the owner.

@@ -5,6 +5,31 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- The `local-ci` skill says to tell the other agent sessions before a heavy run and to wait for the
+  "done" of any that is running its own, checked right before each run. (field-tested)
+
+- `where-ci-runs` says that when merges to the main branch land close together, a cancelling group
+  can cancel the older run and let the newer one cover both: report it as cancelled, not failed, and
+  read the newer run. (field-tested)
+
+- The `local-environment` skill advises that a long-running dev supervisor print its own commit when
+  it starts, or restart when its own files change, since it reloads its children and not itself.
+  (field-tested)
+
+- The `local-environment` skill says the page on running end-to-end tests lists every switch those
+  tests need that is off by default. (field-tested)
+
+- The `fix-round` skill sends mutation survivors in access or permission code to the
+  `security-reviewer` before any fix, and the report records each one's class: real gap, equivalent
+  mutant, or blocked by a database constraint. (field-tested)
+
+- A research section for briefs, `write-brief/research-template.md`: a source URL beside every
+  number, "not found" instead of a guess, and a result that labels each figure as sourced, an
+  assumption or a gap. (field-tested)
+
+- The `local-environment` skill says to name what a database reset wipes, including hand-made data,
+  before asking the owner for one, and to remind them afterwards what to recreate. (field-tested)
+
 - The `local-ci` skill counts the runs one change gets: it lists the places the suite runs (git hooks,
   the local check, remote CI on the pull request, remote CI on main), keeps git hooks to fast checks,
   and says to check for other runs on the machine (CI too, when it runs there) before starting a

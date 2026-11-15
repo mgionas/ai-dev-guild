@@ -47,8 +47,12 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   `gh run list --repo <owner/repo> --status in_progress --limit 1`) and start only if it printed
   nothing. Read the output, not the exit code. Hosted runners don't load this machine, so their
   runs don't count. Also look for other sessions' test containers
-  (`docker ps`) and other projects' test runners (`ps`). The check does not cover git hooks, which
-  is one more reason they stay light.
+  (`docker ps`) and other projects' test runners (`ps`). When other agent sessions share the
+  machine and can message each other, tell them before you start, and if one is running its own
+  heavy run, wait for its "done". Do all of this immediately before each heavy run, not once per
+  session: runners take jobs at any moment, so a check made at the start of the day is out of date
+  by the time you run. The check does not cover git hooks, which is one more reason they stay
+  light.
 
 ## What makes it strict
 
