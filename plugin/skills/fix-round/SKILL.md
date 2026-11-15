@@ -14,8 +14,12 @@ argument-hint: "<task id> <round number>"
 4. **One combined re-check.** One reviewer (or the one or two whose findings were fixed) confirms
    each fix against the findings file. Security and money reviewers re-check their own Critical
    and High findings themselves.
-5. **A re-check confirms; it does not reopen.** New blocking problems are a new finding. New
+5. **Mutation survivors in access or permission code go to the `security-reviewer` before anyone
+   fixes them.** Some are real gaps, some are equivalent mutants, and some cannot happen because a
+   database constraint refuses the value. The report records each survivor's class: real gap,
+   equivalent mutant, or blocked by a database constraint.
+6. **A re-check confirms; it does not reopen.** New blocking problems are a new finding. New
    non-blocking points go to the carried list.
-6. **After round 2:** if the re-check confirms every fix, stop by default and say so in the merge
+7. **After round 2:** if the re-check confirms every fix, stop by default and say so in the merge
    report. Otherwise **ask the owner** whether to stop, with what is still open and what it would
    cost to continue.

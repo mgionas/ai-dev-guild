@@ -2,9 +2,12 @@
 
 Reply "accept all" to take every recommendation, or name the numbers you want to change.
 
-| # | Question | Recommendation | Why |
-| - | -------- | -------------- | --- |
-| 1 | <question> | <answer> | <one or two sentences> |
+Write each question so it stands alone: name the thing it asks about and why the answer matters.
+Give two to four options, the recommended one first and marked "(recommended)".
+
+| # | Question | Options | Why the first is recommended |
+| - | -------- | ------- | ---------------------------- |
+| 1 | <the thing asked about, and why it matters> | A (recommended): <answer><br>B: <answer><br>C: <answer> | <one or two sentences> |
 
 ## Open facts (not for the owner)
 

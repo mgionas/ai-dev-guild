@@ -38,6 +38,11 @@ in this skill's folder.
    page set: the wiki for what people need to do and understand, the reference generated from the
    code or the contract (an OpenAPI document, for instance) and never typed by hand, so it cannot
    drift. Serving the reference on its own `.test` hostname makes it part of the local setup.
+5. **A supervisor that says which version it runs.** A long-running dev supervisor, one that
+   follows a branch and restarts the programs it runs, picks up their new code but keeps running
+   its own old code. A change to the supervisor itself can then sit unused for days with nothing
+   to show it. Have it print its own commit when it starts, or restart itself when its own files
+   change.
 
 ## What to write down
 
@@ -45,6 +50,11 @@ A local-development page, linked from `AGENTS.md`, holding:
 
 - the start and stop commands, and what `down -v` deletes (the database, and the certificate
   authority with it);
+- how to run the end-to-end tests, with every switch they need that is off by default (a feature
+  flag that holds back outgoing messages, say). A first run that fails on configuration alone costs
+  more than the line that would have prevented it;
+- what a database reset wipes, including data the owner made by hand, so that an agent asking for
+  a reset can say so first and remind the owner afterwards what to recreate;
 - the ports table, and the three rules under it: add the row with the commit that opens the port, bind to
   loopback (`127.0.0.1`) only, and remap the outside of a container port rather than the inside;
 - the hosts block, with a comment line at each end so it can be removed cleanly;

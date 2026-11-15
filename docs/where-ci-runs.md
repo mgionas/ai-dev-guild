@@ -41,7 +41,9 @@ machine first.
 
 - A `timeout-minutes` on every job, so a hung job cannot hold a runner for hours.
 - A `concurrency` group with `cancel-in-progress` for branch runs, so a newer push replaces the
-  older run instead of queueing behind it.
+  older run instead of queueing behind it. If your runs on the main branch share a cancelling group
+  too, two merges that land close together cancel the first merge's run, and the second run covers
+  both. Report the first as cancelled, not failed, and read the second.
 - Third-party actions pinned to a full commit SHA, with the version in a comment. A tag can be
   moved to different code.
 - Know what each setup action caches, and turn off caches you did not choose: some cache
@@ -78,7 +80,8 @@ A self-hosted runner is a program on a machine you own that runs whatever a work
 - **One instance runs one job at a time.** Count instances against the jobs a push starts, or runs
   queue.
 - **Cancelling is not instant.** Post steps that have started (cache uploads, cleanup) keep running
-  after a cancel.
+  after a cancel. A cancelled run is not a failed one: when it was replaced by a newer run, the
+  newer run is the result to read.
 - **The machine is shared.** If agent sessions or other projects use it too, load-sensitive tests
   get flaky and parallel pre-push hooks time out. The rule "never two heavy suites at once" applies
   to the runner as well.
