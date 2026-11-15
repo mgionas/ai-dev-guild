@@ -30,7 +30,7 @@ export function isHookFile(path) {
 export function describeHookFile(path) {
   const parts = path.split(/[\\/]/).filter(Boolean);
   const config = parts.some((part, i) => part === '.git' && (parts[i + 1] === 'config' || parts[i + 1] === 'config.worktree'));
-  return config ? 'git config, which can set core.hooksPath' : 'a git hook or hook manager file';
+  return config ? 'a git config file (it can set core.hooksPath)' : 'a git hook or hook manager file';
 }
 
 // Commands that change what they are given: every plain word is a path they may write, move,
