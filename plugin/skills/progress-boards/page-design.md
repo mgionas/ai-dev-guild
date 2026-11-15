@@ -111,7 +111,8 @@ unknown status as pending, and the analysis page shows an unknown tag as a gap.
 ## Rules
 
 1. Copy the page template unchanged. Change its tokens only where the project has a brand (below).
-2. No colour, font size or radius that is not in this file.
+2. A new page adds no colour, font size or radius outside this file. For anything this file does
+   not list, the shipped templates are the reference.
 3. Light and dark always, with the three theme blocks.
 4. Every value from the data goes in with `textContent`, or is escaped before it goes in as HTML.
 5. If the project already has a design system or a brand, ask the owner once whether its pages use
