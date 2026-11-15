@@ -17,7 +17,9 @@
  * 6. Asked, not refused: a shell that runs a script from its input when that input is not a
  *    heredoc, a here-string or a file (`curl … | bash`, `echo … | sh -s`): the hook cannot see what
  *    the pipe sends. The same for a `-c` string or here-string built from an expansion
- *    (`bash -c "$CMD"`, `bash -c "$(curl …)"`); `eval` is not asked about.
+ *    (`bash -c "$CMD"`, `bash -c "$(curl …)"`); `eval` is not asked about. Also asked about: `source`
+ *    and `.` of a script from the input, a file descriptor (`/dev/fd/3`) or a `<(…)` / `=(…)`, and a
+ *    shell whose script is a descriptor or whose unquoted heredoc body expands something.
  *
  * Every rule also judges the strings the command hands to another shell (`bash -c '…'`, `eval …`,
  * a heredoc a shell runs as its script), up to three levels deep, and the command behind a wrapper
@@ -35,7 +37,7 @@
 import { loadRules, protectingRule } from './protected.mjs';
 import { ask, block, readInput } from './read-input.mjs';
 import { secretAccess } from './secrets.mjs';
-import { commandParts, refuseOpenQuote, scriptsToJudge, stripWrappers, Unclear, unseenScript, withoutHeredocs } from './shell-words.mjs';
+import { commandParts, refuseOpenQuote, scriptsToJudge, Unclear, unseenScript, withoutHeredocs, withoutRedirects } from './shell-words.mjs';
 
 // Longer commands get the question without being read: the reading time grows with the length,
 // and no one writes a command this long by hand.
@@ -109,27 +111,36 @@ export function withoutQuotedText(command) {
   return out;
 }
 
-/** Each simple command's words, with leading `VAR=value` and wrappers with their options dropped. */
-export function simpleCommands(command) {
-  return withoutQuotedText(command)
-    .split(/\$\(|`|\(|\)|&&|\|\||[;&|\n]/)
-    .map((part) => stripWrappers(part.trim().split(/\s+/).filter(Boolean)).words)
-    .filter((words) => words.length);
-}
-
-/** Why the command kills by pattern, or null. */
+/**
+ * Why the command kills by pattern, or null. The command names are judged as bash reads them, with
+ * quotes and backslashes removed, so `'pkill' -f x` and `p\kill -f x` count; a quoted argument that
+ * only mentions the word (`echo 'pkill -f x'`, `grep pkill file`) does not.
+ */
 export function patternKill(command) {
   const plain = withoutQuotedText(command);
-  if (simpleCommands(command).some(([first]) => first === 'pkill' || first === 'killall')) return 'pkill/killall';
+  const parts = commandParts(command);
+  if (parts.some(({ words }) => words[0] === 'pkill' || words[0] === 'killall')) return 'pkill/killall';
   if (/(^|[\s;&|(])kill\b[^;&|\n]*(\$\(|`)\s*pgrep\b/.test(plain)) return 'kill $(pgrep …)';
+  if (parts.some(({ words, pgrep }) => words[0] === 'kill' && pgrep)) return 'kill $(pgrep …)';
   if (/(^|[\s;&|(])pgrep\b[^;&\n]*\|\s*xargs\s+(-\S+\s+)*kill\b/.test(plain)) return 'pgrep | xargs kill';
+  const xargsKill = parts.some(({ words, dropped }) => words[0] === 'kill' && dropped.some((w) => w.split('/').pop() === 'xargs'));
+  if (xargsKill && parts.some(({ words }) => words[0] === 'pgrep')) return 'pgrep | xargs kill';
   return null;
 }
 
-/** Why the command skips git hooks, or null. */
+// The hook-skipping environment variables, as one word of a command.
+const SKIP_ENV = /^(HUSKY|LEFTHOOK)=0$/;
+
+/**
+ * Why the command skips git hooks, or null. Words are judged as bash reads them, quotes and
+ * backslashes removed, so `git commit "--no-verify"`, `git 'commit' -n` and `HUSKY='0' git commit`
+ * count, while a message that only mentions the flag (`-m "avoid --no-verify"`) is one longer word.
+ * `'HUSKY=0' git …` is refused too: the guard reads it as the assignment it looks like.
+ */
 export function skipsHooks(command) {
   if (/(^|[\s;&|(`])(HUSKY|LEFTHOOK)=0\b/.test(withoutQuotedText(command))) return 'HUSKY=0 / LEFTHOOK=0';
-  for (const words of simpleCommands(command)) {
+  for (const { words, dropped } of commandParts(command)) {
+    if (dropped.some((w) => SKIP_ENV.test(w)) || (words[0] === 'export' && words.some((w) => SKIP_ENV.test(w)))) return 'HUSKY=0 / LEFTHOOK=0';
     if (words[0] !== 'git') continue;
     if (words.includes('--no-verify')) return '--no-verify';
     if (words.some((w) => /^core\.hookspath=/i.test(w))) return 'core.hooksPath';
@@ -150,7 +161,10 @@ const SIGNAL_ZERO = /^(0+|exit|sig0)$/i;
  * `kill "1234"` counts and `echo "kill 1234"` does not.
  */
 export function pidKill(command) {
-  for (const { words, dropped } of commandParts(command)) {
+  for (const part of commandParts(command)) {
+    // `kill %1 &>/dev/null` and `kill $! 2>/dev/null` name no target but the job: a redirect is not one.
+    const { words } = withoutRedirects(part);
+    const { dropped } = part;
     if (words[0] !== 'kill') continue;
     let i = 1;
     if (/^-[lL]/.test(words[i] ?? '') || words[i] === '--list') continue;
@@ -180,6 +194,15 @@ export function writeTargets(command) {
   const clean = (t) => t.replace(/^["']|["']$/g, '');
   for (const m of command.matchAll(/(?:^|[^0-9&])>{1,2}\s*([^\s;&|<>]+)/g)) targets.push(clean(m[1]));
   for (const m of command.matchAll(/\btee\s+((?:-\S+\s+)*)([^\s;&|]+)/g)) targets.push(clean(m[2]));
+  // The words, for what the text scans above cannot see: `tee >(cat) .env` (the first word after
+  // tee is a process substitution) and every output redirect, however it is spelled (`&> .env`,
+  // `>| .env`, `1>|.env`, `>& .env`). A redirect's target is a file `tee` writes only when the
+  // redirect writes it, so `tee out.txt < in.sql` counts out.txt alone.
+  for (const part of commandParts(command)) {
+    const { words, outputs } = withoutRedirects(part);
+    targets.push(...outputs);
+    if (words[0] === 'tee') targets.push(...words.slice(1).filter((w) => !w.startsWith('-')));
+  }
   // sed edits in place only with -i; its file is the last word (GNU `-i`, BSD `-i ''` alike).
   for (const m of command.matchAll(/\bsed\s+([^;&|]+)/g)) {
     const args = m[1].trim().split(/\s+/);

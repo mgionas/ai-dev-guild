@@ -66,13 +66,15 @@ export function isSecretFile(path, { dot = false } = {}) {
 
 /** Why the command reads or sends a secret file, or null. */
 export function secretAccess(command) {
-  for (const { words, dropped } of commandParts(command)) {
+  for (const { words: named, dropped, lead } of commandParts(command)) {
+    // Redirects written before the command name (`< .env cat`) read the file too.
+    const words = [...lead.words, ...named];
     const redirected = words.findIndex((w, i) => w === '<' && namesSecret(words[i + 1] ?? ''));
     if (redirected !== -1) return `\`< ${words[redirected + 1]}\` reads a secret file`;
     // A wrapper's own option can name the file too: `xargs -a .env echo` passes it on.
     const wrapperFile = dropped.find((w) => !/^\w+=/.test(w) && namesSecret(w));
     if (wrapperFile) return `a wrapper option names the secret file ${wrapperFile}`;
-    const [name, ...args] = words;
+    const [name, ...args] = named;
     if (name === 'curl') {
       const file = curlUpload(args);
       if (file) return `\`curl\` sends the secret file ${file}`;
