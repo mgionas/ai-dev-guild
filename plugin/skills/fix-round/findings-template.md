@@ -6,7 +6,8 @@
 | - | -------- | ----- | ------------- | ------------- | ------------------------- |
 | 1 | critical | `<file>:<line>` | <one sentence> | <steps or input> | <test file / new test> |
 
-Severity is one of `critical`, `high`, `medium` or `low`. Start "What is wrong" with `Claim:` when a builder's claim in the report did not hold.
+Severity is one of `critical`, `high`, `medium` or `low`. Start "What is wrong" with `Claim:` when
+a builder's claim in the report did not hold.
 
 ## Reviewers disagree
 
