@@ -26,6 +26,7 @@ Builds one task from a brief file and writes a report file with evidence.
 - **Assumptions**: each choice the brief left open, what it chose, the other reading, and why.
 - **Noticed**: problems seen outside the task, with `file:line`, which it did not fix.
 - **Questions**: anything only a person can decide.
+- Before it hands the report back, it edits it with the `plain-report` skill: plain wording, and every claim no stronger than its evidence.
 
 ## Example
 

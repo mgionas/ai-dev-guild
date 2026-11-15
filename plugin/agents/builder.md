@@ -58,3 +58,6 @@ hold:
 4. **Assumptions** — every choice the brief left open: what you chose, the other reading, why.
 5. **Noticed** — problems you saw outside the task, with `file:line`; you did not fix them.
 6. **Questions** — anything only a person can decide.
+
+Before you hand the report back, edit it with the `plain-report` skill: plain wording, and every claim no
+stronger than its evidence.

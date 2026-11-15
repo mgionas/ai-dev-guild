@@ -33,7 +33,8 @@ The task: $ARGUMENTS
    what the change can reach and which steps cover it; use `--full` for a merge no remote CI
    checks. Paste which steps ran and which were skipped, and why.
 9. **Merge**, then update the roadmap and the QA board (`progress-boards` skill) in the same turn,
-   and the system map if the project has one (`system-map` skill).
+   and the system map if the project has one (`system-map` skill). Edit every report or message you
+   send the owner with the `plain-report` skill first.
 
 ## Controller checklist
 
