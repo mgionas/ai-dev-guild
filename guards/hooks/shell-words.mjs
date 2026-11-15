@@ -561,9 +561,14 @@ function splitCommands(command, bodies) {
       if (s[i + 1] === '&' && s[i + 2] !== '&') op += s[++i];
       // `<(…)` is a file whose text the command does not show; `>(…)` is one a command writes to.
       // Either way the `(` opens the substitution next.
-      if (op === '<' && s[i + 1] === '(') words.push(PROCESS_SUBSTITUTION);
-      else if (op === '>' && s[i + 1] === '(') words.push(PROCESS_OUTPUT);
-      else pushOp(op);
+      // Each word pushed here needs its `expanded` mark too, or every later word's mark moves one place.
+      if (op === '<' && s[i + 1] === '(') {
+        words.push(PROCESS_SUBSTITUTION);
+        words.expanded.push(false);
+      } else if (op === '>' && s[i + 1] === '(') {
+        words.push(PROCESS_OUTPUT);
+        words.expanded.push(false);
+      } else pushOp(op);
     } else add(c);
   }
   refuseOpenQuote(quote !== null || frames.some((f) => f.quote !== null));

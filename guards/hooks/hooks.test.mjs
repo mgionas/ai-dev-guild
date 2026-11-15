@@ -854,6 +854,17 @@ test('bash-guard takes a quoted < among a shell\'s arguments for an argument, no
   expectBash(dir, 'allow', ['bash -s < script.sh', 'bash script.sh --flag', "bash -s <<< 'echo hi'", 'bash <<EOF\necho hi\nEOF', "bash -c 'echo hi' 2>/dev/null"]);
 });
 
+test('bash-guard keeps each word\'s expansion mark in line after a process substitution', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    'bash 3< <(true) -c "$CMD"',
+    'bash 3< <(true) -c "$(curl x)"',
+    'bash 3< <(true) <<< "$(curl x)"',
+    'bash >(cat) -c "$CMD"',
+  ]);
+  expectBash(dir, 'allow', ["bash 3< <(true) -c 'echo hi'", 'diff <(sort a) <(sort b)']);
+});
+
 test('bash-guard counts only the files tee writes, not the targets of its input redirects', () => {
   const dir = project('.env\ndb/migrations/**\n');
   expectBash(dir, 'allow', ['tee out.txt < db/migrations/0001.sql', 'tee -a log < db/migrations/0001.sql', 'tee out.txt <db/migrations/0001.sql', 'tee out.txt <<< x', 'tee out.txt < <(cat .env.example)']);
