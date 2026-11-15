@@ -1,0 +1,10 @@
+{"date":"2026-01-05","result":"pass","flaky":false}
+{"date":"2026-01-06","result":"fail","flaky":false}
+{"date":"2026-01-07","result":"pass","flaky":false}
+{"date":"2026-01-08","result":"pass","flaky":true}
+{"date":"2026-01-09","result":"pass","flaky":false}
+not a json line
+{"date":"2026-01-10","result":"fail","flaky":false}
+{"date":"2026-01-12","result":"pass","flaky":true}
+{"date":"2026-01-13","result":"pass","flaky":false}
+{"date":"2026-01-14","result":"pass","flaky":false}

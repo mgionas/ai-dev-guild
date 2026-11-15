@@ -45,6 +45,8 @@ and the controller itself. If the field names differ in the version you find, sa
 
 ## What you return
 
-Write the full report to the path you are given. Return at most 15 lines: the top changes ranked
+Write the full report to the path you are given. It must hold a line `**Tokens per task (median):** <n>`
+(the median of `totalTokens` over the task runs) and a table `| Model | Share |` with each model's share
+of all tokens in percent, because the `flow-stats` skill reads both. Return at most 15 lines: the top changes ranked
 by tokens saved, each with the numbers that show it and one rule the controller can follow from
 now on. Say where the data is thin instead of guessing. No personal data, no prompt contents.

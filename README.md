@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
   <img alt="22 roles" src="https://img.shields.io/badge/roles-22-9a6700">
-  <img alt="19 skills" src="https://img.shields.io/badge/skills-19-9a6700">
+  <img alt="20 skills" src="https://img.shields.io/badge/skills-20-9a6700">
 </p>
 
 <p align="center">
@@ -98,6 +98,7 @@ The guild keeps a few pages current for you, so you can see where a project stan
 | **Roadmap** | Milestones a user can see, each step with its stage (planned, building, review, fixing, merged), and what waits on you. |
 | **QA board** | One entry per change, with the features it touched and the checks a tester should run. |
 | **Analysis page** | The facts behind a decision, each figure tagged sourced, assumption or gap, with your dated answer written back. |
+| **Flow stats** | How the agent workflow is going: days per task, findings, fix rounds, CI, questions and tokens, counted from the records, with at most three suggestions. |
 | **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
 | **System map** | Which feature owns each API operation, screen, table and job. A starter check in [`examples/system-map`](examples/system-map) refuses anything new and undescribed. |
 
@@ -245,7 +246,7 @@ operations, growth and your industry. They never see each other's answers.
 
 ### ⚙️ Skills
 
-`stack-advice` · `roadmap` · `analysis-page` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
+`stack-advice` · `roadmap` · `analysis-page` · `flow-stats` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
 `design-review` · `research-review` · `plain-report` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
 
 ### 🛡️ Guard hooks (optional)
@@ -286,6 +287,7 @@ money, the stack advisor, the board's chair, finance and legal seats, design), s
 | [`stack-advice`](plugin/skills/stack-advice/SKILL.md) | get a sourced stack and testing proposal for a new project |
 | [`roadmap`](plugin/skills/roadmap/SKILL.md) | build a roadmap of milestones and steps from a plan or an idea |
 | [`analysis-page`](plugin/skills/analysis-page/SKILL.md) | publish the facts behind a decision, each figure tagged, and record the answer |
+| [`flow-stats`](plugin/skills/flow-stats/SKILL.md) | count how the workflow is going, and suggest what to change |
 | [`project-map`](plugin/skills/project-map/SKILL.md) | draw a page of the system and its folders, read from the code |
 | [`token-review`](plugin/skills/token-review/SKILL.md) | find where sessions spent tokens and how to spend fewer |
 | [`run-task`](plugin/skills/run-task/SKILL.md)               | run one task through the whole loop                       |

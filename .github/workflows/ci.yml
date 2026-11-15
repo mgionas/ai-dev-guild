@@ -28,6 +28,8 @@ jobs:
         run: node --test 'hooks/*.test.mjs'
       - name: Local CI example tests
         run: node --test 'examples/ci-local/*.test.mjs'
+      - name: Flow stats example tests
+        run: node --test 'examples/flow-stats/*.test.mjs'
       - name: System map starter tests
         working-directory: examples/system-map
         run: |

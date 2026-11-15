@@ -13,6 +13,8 @@ This skill measures it and turns it into a few rules.
    recently changed `.jsonl` file there. Never read it whole.
 2. **Dispatch the `token-optimizer` agent** with the session file's path and a report path,
    `.work/token-review/<date>.md`.
+   The report also holds a line `**Tokens per task (median):** <n>` and a table `| Model | Share |`
+   with each model's share of the tokens in percent, which `flow-stats` reads.
 3. **Show the user the top changes**, each with its numbers, and ask once whether to adopt them
    ([`decision-batch`](../decision-batch/SKILL.md)). A rule the user accepts goes into `AGENTS.md` or the brief template, with the
    date and the measured reason, so the next session follows it.

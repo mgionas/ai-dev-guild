@@ -1,6 +1,6 @@
 # The house design for published pages
 
-Every page the guild publishes (roadmap, QA board, analysis page, system map, project map) shares
+Every page the guild publishes (roadmap, QA board, analysis page, flow stats, system map, project map) shares
 one design, so a person who has seen one page can read the next. The source of truth is the code
 block in `roadmap/roadmap-page.md`; this file says what a builder needs from it. If the two ever
 differ, the roadmap page wins, and this file is the one to fix.
@@ -69,13 +69,13 @@ Fira Sans is for text. Fira Code is for labels, numbers, dates and pills.
 
 Four states and one flag. Pages with other words map onto them; they do not add colours.
 
-| Colour | Roadmap | QA board | Analysis page |
-| --- | --- | --- | --- |
-| `--done` (green) | done, merged | pass | sourced; decided; chosen |
-| `--active` (blue) | in progress | not used | recommended |
-| `--planned` (violet) | planned | open (no result yet) | not used |
-| `--pending` (amber) | pending, waiting | blocked | assumption; open; for you to decide |
-| `--you` (red) | needs you | fail | gap; source missing |
+| Colour | Roadmap | QA board | Analysis page | Flow stats |
+| --- | --- | --- | --- | --- |
+| `--done` (green) | done, merged | pass | sourced; decided; chosen | accepted; a passing CI run |
+| `--active` (blue) | in progress | not used | recommended | building time; medium findings; the skill a suggestion names |
+| `--planned` (violet) | planned | open (no result yet) | not used | declined; review time; low findings |
+| `--pending` (amber) | pending, waiting | blocked | assumption; open; for you to decide | proposed; fixing time; high findings; a flaky CI run |
+| `--you` (red) | needs you | fail | gap; source missing | critical findings; a real CI failure |
 
 An unknown value from the data gets the cautious colour, never the good one: the roadmap treats an
 unknown status as pending, and the analysis page shows an unknown tag as a gap.
