@@ -130,19 +130,10 @@ The ai-dev-guild repository has a starting point in `examples/ci-local`
 (<https://github.com/mgionas/ai-dev-guild/tree/main/examples/ci-local>). Copy the folder into your
 project as `scripts/ci-local/` (or adjust the first line of `ESCALATE`).
 
-Copy it from the release that matches the installed plugin, so the script and the skill agree. Read the
-installed version with `claude plugin list` (the `Version:` under `ai-dev-guild@ai-dev-guild`), then run, with that version in
-place of `<version>`:
-
-```bash
-git clone --depth 1 --branch v<version> https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild-v<version>
-mkdir -p scripts/ci-local && cp -R /tmp/ai-dev-guild-v<version>/examples/ci-local/. scripts/ci-local/
-```
-
-On Windows the same two commands work in Git Bash, or copy the folder with your usual tools. Tags
-start at `v0.15.0`; with an older plugin, update it first (see `docs/upgrade-and-remove.md` in the
-repository). If that tag is not there yet, use the newest tag listed at
-<https://github.com/mgionas/ai-dev-guild/tags>.
+The script is not part of the plugin, and this skill never downloads it. Ask the user to
+copy the folder into the project from the release that matches the installed plugin; the steps are
+in [Copy a script into your project](https://github.com/mgionas/ai-dev-guild/blob/main/docs/copy-a-script.md#local-ci). Once it is in
+the project it is the project's code: read it and review it like any other change before it runs.
 
 - `ci-local.mjs` is the runner: a step list with whole-repository and affected commands, a pure
   `classify()` that decides the scope from the changed files, a check of the build tool's own

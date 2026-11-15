@@ -44,19 +44,12 @@ need and the version you have, because they cannot check anything on an older on
 ## A skill asks for a script the project does not have
 
 The local CI runner, `flow-stats` and the system map check are example folders in the repository,
-not part of the plugin. Each skill that needs one gives a copy command: read the installed version with
-`claude plugin list` (the `Version:` under `ai-dev-guild@ai-dev-guild`), then clone the matching tag and copy the folder, for example
-
-```bash
-git clone --depth 1 --branch v<version> https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild-v<version>
-mkdir -p scripts/ci-local && cp -R /tmp/ai-dev-guild-v<version>/examples/ci-local/. scripts/ci-local/
-```
-
-On Windows use Git Bash, or copy the folder with your usual tools. Tags start at `v0.15.0`. If that tag is not there yet, use the newest tag listed at
-<https://github.com/mgionas/ai-dev-guild/tags>.
+not part of the plugin, and the skills never download them. Copy the one you need from the release that
+matches your plugin: [Copy a script into your project](copy-a-script.md) has the commands.
 
 ## `claude plugin validate` shows warnings
 
-On the plugin manifests this repository ships, three warnings are expected: `documentationUrl`,
-`supportUrl` and `privacyPolicyUrl` are unknown fields that Claude Code ignores at load time. They are
-there for the plugin directory's listing. Any other warning or error is worth reading.
+Claude Code 2.1.325 passes this repository's manifests with no warnings. An older version warns that
+`documentationUrl`, `supportUrl` and `privacyPolicyUrl` are unknown fields: they are listing fields the
+plugin directory reads, so update Claude Code or ignore those three. Any other warning or error is
+worth reading.

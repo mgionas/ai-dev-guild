@@ -35,8 +35,8 @@ exists. Where one exists, show the user what you would add and ask.
    `TODO(owner)`. Link the page from `AGENTS.md`.
 
 8. **A local check** (optional): if the project has CI and no local check script, offer to copy the
-   local CI runner: run the copy command in the `local-ci` skill's "Setting it up" (it pins the
-   release to the installed plugin version), then fill the runner's `STEPS` from the project's CI
+   local CI runner: ask the user to copy it as the `local-ci` skill's "Setting it up" says (from the
+   release that matches the installed plugin), then fill the runner's `STEPS` from the project's CI
    workflow file, and tell the user which steps you could not translate. Advise, never require; a
    project that already has a local check keeps it.
 
