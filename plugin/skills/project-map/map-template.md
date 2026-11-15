@@ -16,46 +16,52 @@ scripts: the page exists only once you create it in your project.
 
 ````html
 <title>Project map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap">
 <style>
   :root {
-    --bg: #ffffff; --card: #f6f8fa; --border: #d0d7de; --text: #1f2328; --muted: #59636e;
-    --accent: #9a6700; --link: #0969da; --warn-bg: #fff8c5; --warn: #7d4e00;
+    --bg: #f4f5f7; --surface: #ffffff; --ink: #18202b; --muted: #5d6675; --line: #dde1e7;
+    --accent: #6e2a4a; --pending: #9a6212; --pending-soft: #f8eedc;
+    --f-body: "Fira Sans", "Helvetica Neue", Arial, sans-serif;
+    --f-mono: "Fira Code", ui-monospace, "SF Mono", Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --muted: #9198a1;
-      --accent: #e3b341; --link: #4493f8; --warn-bg: #2e2a1a; --warn: #e3b341;
+      --bg: #12161c; --surface: #1a2029; --ink: #e8ebf0; --muted: #9aa3b2; --line: #2c3440;
+      --accent: #d77fa6; --pending: #e0ad5c; --pending-soft: #33291a;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --muted: #9198a1;
-    --accent: #e3b341; --link: #4493f8; --warn-bg: #2e2a1a; --warn: #e3b341;
+    --bg: #12161c; --surface: #1a2029; --ink: #e8ebf0; --muted: #9aa3b2; --line: #2c3440;
+    --accent: #d77fa6; --pending: #e0ad5c; --pending-soft: #33291a;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 24px; margin: 0; }
-  .meta { color: var(--muted); font-size: 13px; margin: 4px 0 20px; }
-  nav { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+  main { max-width: 1100px; margin: 0 auto; padding-block: 28px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -.01em; text-wrap: balance; overflow-wrap: anywhere; }
+  .meta { color: var(--muted); font-family: var(--f-mono); font-size: 12px; margin: 6px 0 24px; }
+  nav { display: flex; gap: 12px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
   nav button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted);
-    font: inherit; padding: 8px 4px; cursor: pointer; }
-  nav button[aria-selected="true"] { color: var(--text); border-color: var(--accent); font-weight: 600; }
-  .diagram { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    font: inherit; font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; padding: 8px 4px; cursor: pointer; }
+  nav button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
+  nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  .diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
     padding: 16px; overflow-x: auto; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
-  .card b { display: block; }
-  .kind { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; overflow-wrap: anywhere; }
+  .card b { display: block; font-weight: 600; }
+  .kind { color: var(--accent); font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
   .muted { color: var(--muted); }
-  .tree ul { list-style: none; margin: 0; padding-left: 18px; border-left: 1px dashed var(--border); }
+  .tree ul { list-style: none; margin: 0; padding-left: 18px; border-left: 1px dashed var(--line); }
   .tree > ul { padding-left: 0; border: 0; }
   .tree li { margin: 6px 0; }
   .tree summary { cursor: pointer; }
-  .tree code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  .nojob { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 0 6px; font-size: 12px; }
+  .tree summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  .tree code { font-family: var(--f-mono); font-size: 13px; }
+  .nojob { background: var(--pending-soft); color: var(--pending); border-radius: 999px; padding: 1px 7px; font-family: var(--f-mono); font-size: 11px; white-space: nowrap; }
   [hidden] { display: none !important; }
 </style>
 <main>

@@ -67,6 +67,9 @@ Kinds: `app` is something you build and deploy, `package` is shared code, `servi
 you run or rent for the project (a database, a queue), `outside` is a third party you call (email,
 payments).
 
+The page uses the house design for every published page (`page-design.md` in the `progress-boards`
+skill's folder).
+
 The page draws the System view with Mermaid (loaded from a CDN at a pinned version), follows the
 reader's light or dark setting, and works on a phone. A link naming an unknown part is skipped,
 not drawn.

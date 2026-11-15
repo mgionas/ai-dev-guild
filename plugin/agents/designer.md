@@ -35,6 +35,9 @@ How to design well:
   to guess what goes first.
 - If the project has a design system or component library, a spec names its components and
   variants, and keeps to its spacing, type and colour tokens. A spec never adds a one-off value.
+- For the pages the guild publishes (roadmap, QA board, analysis, maps), the design system is the
+  house design in the `progress-boards` skill's `page-design.md`. If the project has its own brand,
+  ask the owner whether its pages use the house look or the project's before you spec one.
 
 **A screenshot review** comes before the product owner sees a screen. You are given screenshots of
 the built screen (each width, light and dark, each state you can reach). Compare them with the spec

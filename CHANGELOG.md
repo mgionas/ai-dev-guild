@@ -5,6 +5,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- One house design for every published page: new `progress-boards/page-design.md` (tokens for both
+  themes, fonts, status colours, components, layout and the rules), pointed to from the roadmap,
+  progress-boards, analysis-page, project-map and system-map skills, the designer and `setup`, which
+  asks whether a project's pages use the house look or its own brand. The QA board and the project
+  map templates are restyled to it (CSS and fonts only; the markup and scripts do not change).
+  (field-tested)
+
 - New `analysis-page` skill: when the owner must decide something that rests on facts, the controller
   asks what the decision is and what the page must show, then publishes a page where every figure is
   tagged sourced, assumption or gap, sources are numbered at the end, and each recommendation is

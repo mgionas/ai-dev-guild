@@ -53,6 +53,13 @@ It reads its rows one of two ways, so it works for every user:
 | `features` | `name`, `area` (a group heading), `where` (where to find it), `order` |
 | `checks` | `featureId`, `updateId`, `title`, `steps` (how to test), `account` (the role to test with), `status` (`open` · `pass` · `fail` · `blocked`), `note`, `by` (the tester's user id), `at` (ISO time of the result), `order` |
 
+### How every page looks
+
+All published pages share one design, written out in `page-design.md` in this skill's folder: tokens
+for both themes, fonts, status colours, components and layout. Read it before you build or change
+a page, start from its tokens, and add no colour or size of your own. If the project already has a
+design system or brand, ask the owner whether its pages use the house look or the project's.
+
 ## Where they live
 
 Markdown files in the repository (`docs/roadmap.md`, `docs/qa-board.md`) are enough to start and
