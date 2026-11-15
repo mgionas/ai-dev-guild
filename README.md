@@ -210,7 +210,7 @@ Optional guard hooks (needs Node.js 22.5 or later):
 /plugin install ai-dev-guild-guards@ai-dev-guild
 ```
 
-<sub>Prefer plain files to a plugin? [Copy the folders instead](docs/install.md).</sub>
+<sub>Prefer plain files to a plugin? [Copy the folders instead](docs/install.md). Later: [upgrade and remove](docs/upgrade-and-remove.md), and [troubleshooting](docs/troubleshooting.md) if something does not load.</sub>
 
 ## What's inside
 
