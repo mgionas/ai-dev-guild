@@ -8,7 +8,9 @@
  * network. Timers are collected and each callback fires once, after load and after the synthetic
  * events. It is not a browser: layout, styles, events and promises that wait on the outside world
  * are not modelled. It stays strict where it matters: a selector or a global it does not know
- * throws, so nothing passes by quietly matching nothing.
+ * throws, so nothing passes by quietly matching nothing. There is no `window.claude`, so each page
+ * runs in its embedded-data mode; the artifact-database paths (subscriptions, their fallback timers)
+ * are not exercised.
  *
  * `node:vm` is not a sandbox. CI runs this with `contents: read` and the inputs are the
  * repository's own templates, but a pull request that edits a template runs that code here.
