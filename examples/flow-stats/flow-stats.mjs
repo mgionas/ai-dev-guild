@@ -95,10 +95,10 @@ export function p90(values) {
 }
 
 /** Days between two times, or null when either is missing or the order is wrong (file times can lie). */
+const span = (from, to) => (from == null || to == null || to < from ? null : (to - from) / DAY_MS);
+
 /** A batch's wait in days: null with no real title date or answer date, and when the answer came first. */
 const waitOf = (d) => (d.badTitleDate || !d.answered?.date ? null : span(parseDay(d.date), parseDay(d.answered.date)));
-
-const span = (from, to) => (from == null || to == null || to < from ? null : (to - from) / DAY_MS);
 
 /** Cells of one Markdown table row; an escaped `\|` stays inside its cell. */
 function cells(line) {

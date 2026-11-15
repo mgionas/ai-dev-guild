@@ -317,7 +317,7 @@ function renderTime(d) {
     });
     card.append(bar);
   } else {
-    card.append(el("div", "stage-bar is-empty"), el("div", "card-note", "All measured stages are under a day."));
+    card.append(el("div", "stage-bar is-empty"), el("div", "card-note", "Every measured stage rounds to 0 days."));
   }
   const legend = el("div", "legend");
   STAGES.forEach((s, i) => {
