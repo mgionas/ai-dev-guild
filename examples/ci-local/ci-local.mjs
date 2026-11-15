@@ -4,7 +4,7 @@
  * log per step and one verdict line at the end. It is the gate a task passes before it merges; CI
  * runs the same script with `--full`, and the test beside it fails when the two stop matching.
  *
- * Usage: node ci-local.mjs [--full] [--base <ref>] [--dry-run] [--out <dir>] [--retry] [--probe]
+ * Usage: node ci-local.mjs [--full] [--base <ref>] [--dry-run] [--out <dir>] [--retry] [--probe] [--record <file>]
  *
  * Copy this folder into your project (the test and the optional modules come with it), replace
  * STEPS with your CI workflow's steps in the same order, and point ESCALATE at your own files.
@@ -26,13 +26,14 @@
  *
  * Optional, off unless a flag turns them on: `--retry` (retry.mjs) re-runs the failing test files
  * once when the branch touched none of them; `--probe` (probe.mjs) fails a step that leaves the
- * working tree different from before. Logs go to `--out`, by default a folder in the system's
+ * working tree different from before; `--record <file>` appends one JSON line per finished run
+ * (date, pass or fail, flaky or not) for the flow-stats example to count. Logs go to `--out`, by default a folder in the system's
  * temporary directory, never inside the checkout.
  */
 import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { probeProblem, snapshot } from "./probe.mjs";
 import { retryStep } from "./retry.mjs";
@@ -141,7 +142,7 @@ const SELECTION = {
 };
 
 const USAGE =
-  "Usage: node ci-local.mjs [--full] [--base <ref>] [--dry-run] [--out <dir>] [--retry] [--probe]";
+  "Usage: node ci-local.mjs [--full] [--base <ref>] [--dry-run] [--out <dir>] [--retry] [--probe] [--record <file>]";
 
 const git = (...gitArgs) => {
   const result = spawnSync("git", gitArgs, { encoding: "utf8" });
@@ -159,7 +160,7 @@ const gitRaw = (...gitArgs) => {
  * not quietly turn into the default run.
  *
  * @param {string[]} argv - the arguments after the script name.
- * @returns {{full: boolean, dryRun: boolean, retry: boolean, probe: boolean, base?: string, out?: string, problem: string | null}} the options, and a usage message when the line is unusable.
+ * @returns {{full: boolean, dryRun: boolean, retry: boolean, probe: boolean, base?: string, out?: string, record?: string, problem: string | null}} the options, and a usage message when the line is unusable.
  */
 export function parseArgs(argv) {
   const opts = { full: false, dryRun: false, retry: false, probe: false, problem: null };
@@ -167,13 +168,30 @@ export function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (Object.hasOwn(flags, arg)) opts[flags[arg]] = true;
-    else if (arg === "--base" || arg === "--out") {
+    else if (arg === "--base" || arg === "--out" || arg === "--record") {
       const value = argv[(i += 1)];
       if (!value || value.startsWith("-")) return { ...opts, problem: `${arg} needs a value\n${USAGE}` };
       opts[arg.slice(2)] = value;
     } else return { ...opts, problem: `unknown argument ${arg}\n${USAGE}` };
   }
   return opts;
+}
+
+/**
+ * The line `--record` appends for one finished run. `flaky` is true only when the run passed
+ * because every failure passed on its retry: a run that still failed is a real failure, even if
+ * another file was cleared on the way. The date is UTC so two machines agree on the day.
+ *
+ * @param {{failed: boolean, flakes: string[]}} run - whether a step still failed, and the files cleared on retry.
+ * @param {Date} [now] - the time of the run.
+ * @returns {string} one JSON object, without a newline.
+ */
+export function recordLine({ failed, flakes }, now = new Date()) {
+  return JSON.stringify({
+    date: now.toISOString().slice(0, 10),
+    result: failed ? "fail" : "pass",
+    flaky: !failed && flakes.length > 0,
+  });
 }
 
 /**
@@ -321,6 +339,8 @@ function main() {
     console.error(opts.problem);
     return 2;
   }
+  // Resolved before the chdir below, so a relative path means where the person stood.
+  const record = opts.record && resolve(opts.record);
   // Every git call below lists paths relative to the working directory, and the probe and the retry
   // read files from it: from a subdirectory they would miss the rest of the repository.
   const top = git("rev-parse", "--show-toplevel");
@@ -443,6 +463,10 @@ function main() {
   if (flakes.length > 0) say(`flakes: ${flakes.join(", ")}`);
   const verdict = failed ? "FAIL" : flakes.length > 0 ? "PASS-on-retry" : "PASS";
   say(`HEAD ${head} — overall: ${verdict} (${mode})`);
+  if (record) {
+    mkdirSync(dirname(record), { recursive: true });
+    appendFileSync(record, `${recordLine({ failed, flakes })}\n`);
+  }
   return failed ? 1 : 0;
 }
 
