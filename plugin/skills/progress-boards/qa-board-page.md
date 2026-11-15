@@ -25,40 +25,40 @@ initial-scale=1">`, then `<body>`); an artifact adds its own.
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap">
 <style>
 /* Layout: one working column; a sticky bar with the totals and filters, then updates → features → checks. */
 :root {
-  --bg: #f5f7f6;
+  --bg: #f4f5f7;
   --surface: #ffffff;
-  --ink: #17201d;
-  --muted: #5b6965;
-  --line: #dde4e1;
-  --accent: #0f6b5c;
+  --ink: #18202b;
+  --muted: #5d6675;
+  --line: #dde1e7;
+  --accent: #6e2a4a;
   --accent-ink: #ffffff;
-  --pass: #1d7a3e; --pass-bg: #e3f3e8;
-  --fail: #b42318; --fail-bg: #fde8e6;
-  --blocked: #9a5b00; --blocked-bg: #fdf0d9;
-  --open: #5b6965; --open-bg: #edf1ef;
-  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --pass: #2f7d4f; --pass-bg: #e4f2e9;
+  --fail: #b3261e; --fail-bg: #fbe6e4;
+  --blocked: #9a6212; --blocked-bg: #f8eedc;
+  --open: #5b5f86; --open-bg: #ebebf5;
+  --font-body: "Fira Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, "SF Mono", Menlo, monospace;
   --r: 8px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0f1513; --surface: #161e1b; --ink: #e4ebe8; --muted: #9aa9a4; --line: #27322e;
-    --accent: #4fc2ab; --accent-ink: #062520;
-    --pass: #6fd38f; --pass-bg: #12301d; --fail: #ff8a80; --fail-bg: #3a1714;
-    --blocked: #f2b65b; --blocked-bg: #33250d; --open: #9aa9a4; --open-bg: #1d2623;
+    --bg: #12161c; --surface: #1a2029; --ink: #e8ebf0; --muted: #9aa3b2; --line: #2c3440;
+    --accent: #d77fa6; --accent-ink: #12161c;
+    --pass: #6cc990; --pass-bg: #1b2e23; --fail: #f28b82; --fail-bg: #3a1f1d;
+    --blocked: #e0ad5c; --blocked-bg: #33291a; --open: #a9acd6; --open-bg: #232437;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f1513; --surface: #161e1b; --ink: #e4ebe8; --muted: #9aa9a4; --line: #27322e;
-  --accent: #4fc2ab; --accent-ink: #062520;
-  --pass: #6fd38f; --pass-bg: #12301d; --fail: #ff8a80; --fail-bg: #3a1714;
-  --blocked: #f2b65b; --blocked-bg: #33250d; --open: #9aa9a4; --open-bg: #1d2623;
+  --bg: #12161c; --surface: #1a2029; --ink: #e8ebf0; --muted: #9aa3b2; --line: #2c3440;
+  --accent: #d77fa6; --accent-ink: #12161c;
+  --pass: #6cc990; --pass-bg: #1b2e23; --fail: #f28b82; --fail-bg: #3a1f1d;
+  --blocked: #e0ad5c; --blocked-bg: #33291a; --open: #a9acd6; --open-bg: #232437;
 }
 * { box-sizing: border-box; }
 body {
@@ -69,7 +69,7 @@ body {
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 header.top { padding-top: 28px; display: flex; flex-direction: column; gap: 6px; }
-h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
 .lede { margin: 0; color: var(--muted); max-width: 65ch; }
 .bar {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
@@ -79,7 +79,7 @@ h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; text
 .meter { flex: 1 1 220px; height: 8px; border-radius: 4px; background: var(--open-bg); overflow: hidden; display: flex; min-width: 160px; }
 .meter span { display: block; height: 100%; }
 .meter .p { background: var(--pass); } .meter .f { background: var(--fail); } .meter .b { background: var(--blocked); }
-.count { font-variant-numeric: tabular-nums; font-size: 13px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.count { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; padding: 1px 8px; border-radius: 999px; font-weight: 500; }
 .count.pass { color: var(--pass); background: var(--pass-bg); }
 .count.fail { color: var(--fail); background: var(--fail-bg); }
 .count.blocked { color: var(--blocked); background: var(--blocked-bg); }
@@ -102,8 +102,8 @@ section.update { display: flex; flex-direction: column; gap: 14px; }
 .update-head .meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .update-head h2 { margin: 0; font-size: 19px; text-wrap: balance; }
 .update-head p { margin: 0; color: var(--muted); max-width: 70ch; }
-h3.area { margin: 10px 0 -4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.feature { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+h3.area { margin: 10px 0 -4px; font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.feature { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .feature-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .feature-head h3 { margin: 0; font-size: 15px; }
 .feature-head .where { color: var(--muted); font-size: 13px; }
@@ -119,7 +119,7 @@ li.check[data-status="blocked"] .stripe { background: var(--blocked); }
 .check-title { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
 .check-title b { font-weight: 600; }
 .id { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
-.acct { font-size: 12px; color: var(--accent); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.acct { font-family: var(--font-mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
 details summary { cursor: pointer; color: var(--muted); font-size: 13px; width: fit-content; }
 details p { margin: 6px 0 0; white-space: pre-line; font-size: 14px; max-width: 70ch; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
