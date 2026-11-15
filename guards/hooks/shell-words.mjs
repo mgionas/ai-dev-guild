@@ -9,7 +9,7 @@
  * quotes, so its body is read as commands of its own. Comments are dropped first (`withoutHeredocs`).
  *
  * An ANSI-C quote (`$'…'`) is a quote in which a backslash escapes the next character, so
- * `$'it\'s'` closes where bash closes it. A command that ends inside an open quote throws `Unclear`:
+ * `$'it\'s'` closes where bash closes it, and its escapes are decoded (`decodeAnsiC`). A command that ends inside an open quote throws `Unclear`:
  * the rest of it would be hidden from the rules, and bash would not run it anyway.
  *
  * This is not a shell parser. It catches the common spellings, not every possible one. Where it
@@ -32,7 +32,9 @@ export function refuseOpenQuote(quoteOpen) {
  * body's `$(…)` and backticks, so those stay, each on a line of its own.
  *
  * Each `<<` becomes `<<HEREDOC<n>`, and the n-th body's text goes into `bodies[n]`, so a shell
- * that runs a heredoc as its script (`bash <<'EOF'`) can be judged on it (`innerScripts`).
+ * that runs a heredoc as its script (`bash <<'EOF'`) can be judged on it (`innerScripts`). The
+ * numbers of the unquoted bodies that hold an expansion go into the set `bodies.expanding`: what
+ * such a script runs is known only when it runs.
  *
  * A comment is a `#` that starts a word outside quotes, up to the end of its line. It is dropped
  * before anything reads quotes: an apostrophe in `# it's` would otherwise open a quote that hides
@@ -67,6 +69,12 @@ export function withoutHeredocs(command, bodies = []) {
       continue;
     }
     if (c === '$' && s[i + 1] === "'" && f.quote === null) {
+      const end = ansiCEnd(s, i + 2);
+      if (end !== -1) {
+        out += ansiCWord(s.slice(i + 2, end));
+        i = end;
+        continue;
+      }
       f.quote = "$'";
       out += "$'";
       i++;
@@ -79,7 +87,10 @@ export function withoutHeredocs(command, bodies = []) {
       wordStart = true;
       out += '\n';
       if (read) {
-        for (const [n, body] of read.bodies) bodies[n] = body;
+        for (const [n, body, expanding] of read.bodies) {
+          bodies[n] = body;
+          if (expanding) (bodies.expanding ??= new Set()).add(n);
+        }
         out += read.text;
         i = read.end - 1;
       }
@@ -178,6 +189,67 @@ export function withoutHeredocs(command, bodies = []) {
   return out;
 }
 
+// The index of the `'` that closes an ANSI-C quote whose text starts at `from`, or -1 when it never closes.
+function ansiCEnd(s, from) {
+  for (let j = from; j < s.length; j++) {
+    if (s[j] === '\\') j++;
+    else if (s[j] === "'") return j;
+  }
+  return -1;
+}
+
+const ANSI_C_SIMPLE = new Map([
+  ['a', '\x07'], ['b', '\b'], ['e', '\x1b'], ['E', '\x1b'], ['f', '\f'], ['n', '\n'], ['r', '\r'],
+  ['t', '\t'], ['v', '\v'], ['\\', '\\'], ["'", "'"], ['"', '"'], ['?', '?'],
+]);
+
+/**
+ * The text of an ANSI-C quote (`$'…'`, without its quotes) as bash reads it: `\xHH`, `\NNN` (octal),
+ * `\uHHHH`, `\UHHHHHHHH`, `\cX`, `\a \b \e \E \f \n \r \t \v`, and a backslash before `\`, `'`, `"` or
+ * `?`. Any other escape keeps its backslash, as in bash. A NUL ends the string, as in bash. The
+ * rules judge this text, so `cat $'.\x65nv'` is a read of `.env`.
+ */
+export function decodeAnsiC(text) {
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c !== '\\' || i + 1 >= text.length) {
+      out += c;
+      continue;
+    }
+    const e = text[++i];
+    let code = null;
+    if (ANSI_C_SIMPLE.has(e)) out += ANSI_C_SIMPLE.get(e);
+    else if (e >= '0' && e <= '7') {
+      const digits = /^[0-7]{1,3}/.exec(text.slice(i))[0];
+      i += digits.length - 1;
+      code = parseInt(digits, 8) & 0xff;
+    } else if (e === 'x' || e === 'u' || e === 'U') {
+      const digits = new RegExp(`^[0-9a-fA-F]{1,${e === 'x' ? 2 : e === 'u' ? 4 : 8}}`).exec(text.slice(i + 1))?.[0];
+      if (digits === undefined) out += `\\${e}`;
+      else {
+        i += digits.length;
+        code = parseInt(digits, 16);
+      }
+    } else if (e === 'c' && i + 1 < text.length) {
+      let x = text[++i];
+      if (x === '\\' && text[i + 1] === '\\') i++;
+      code = x === '?' ? 0x7f : x.charCodeAt(0) & 0x1f;
+    } else out += `\\${e}`;
+    if (code === 0) break;
+    if (code !== null) out += code > 0x10ffff ? '' : String.fromCodePoint(code);
+  }
+  return out;
+}
+
+// What replaces `$'…'` in the text the rules read: the decoded word, bare when it is made only of
+// characters a shell leaves alone (`.env`, `pkill`), so a rule that blanks quoted text still sees
+// it, and otherwise in single quotes.
+function ansiCWord(text) {
+  const word = decodeAnsiC(text);
+  return /^[\w./:=@%+,-]+$/.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+}
+
 /** The heredoc whose `<<` is at `i`: its delimiter, whether that was quoted, and where it ends. */
 function heredocStart(s, i) {
   let j = i + 2;
@@ -231,7 +303,7 @@ function readBodies(s, from, pending, lines) {
     const terminator = firstFrom(lines.get(delimiter) ?? [], start);
     if (!terminator) return null;
     const body = s.slice(start, terminator.start);
-    bodies.push([index, body]);
+    bodies.push([index, body, !quoted && expands(body)]);
     if (!quoted) kept.push(...substitutions(body));
     end = terminator.end;
     start = terminator.end + 1;
@@ -249,6 +321,17 @@ function firstFrom(list, start) {
     else high = mid;
   }
   return list[low];
+}
+
+// Whether bash expands something in an unquoted heredoc body: `$name`, `${…}`, `$1`, `$$`, `$(…)`,
+// `$((…))` or a backtick. A backslash makes the next character plain text.
+function expands(body) {
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
+    if (c === '\\') i++;
+    else if (c === '`' || (c === '$' && /[\w{(\[@*#?$!-]/.test(body[i + 1] ?? ''))) return true;
+  }
+  return false;
 }
 
 // The `$(…)` and backtick substitutions in an unquoted heredoc body, the only part bash runs.
@@ -370,7 +453,7 @@ function splitCommands(command, bodies) {
       continue;
     }
     if (quote === "$'") {
-      // A backslash escapes the next character; the escape is kept as that character, not decoded.
+      // `withoutHeredocs` has decoded every closed `$'…'`, so this is the rest of one that never closes.
       if (c === '\\') {
         if (s[i + 1] !== undefined) add(s[++i]);
       } else if (c === "'") quote = null;
@@ -425,7 +508,8 @@ function splitCommands(command, bodies) {
       endWord();
       let op = c;
       while (s[i + 1] === c) op += s[++i];
-      words.push(op);
+      // `<(…)` is a file whose text the command does not show; its `(` opens the substitution next.
+      words.push(op === '<' && s[i + 1] === '(' ? PROCESS_SUBSTITUTION : op);
       words.expanded.push(false);
     } else add(c);
   }
@@ -526,6 +610,8 @@ const SHELL_LONG_VALUE = new Set(['--rcfile', '--init-file', '--emulate']);
 // Files that are the shell's own input: `bash /dev/stdin` reads its script from the pipe too.
 const STDIN_FILE = /^\/(dev\/stdin|dev\/fd\/0|proc\/self\/fd\/0)$/;
 const REDIRECT = /^(<|<<|<<<|>|>>)$/;
+// The word `commandParts` gives for a `<(…)`: the file it stands for holds the output of a command.
+const PROCESS_SUBSTITUTION = '<(';
 
 /**
  * The command, and every string it hands to another shell to run (`bash -c '…'`, `sh -c "…"`,
@@ -534,15 +620,21 @@ const REDIRECT = /^(<|<<|<<<|>|>>)$/;
  * unwrap.
  */
 export function scriptsToJudge(command) {
-  const all = [command];
+  const all = [command, ...decodedView(command)];
   let level = [command];
   for (let depth = 1; level.length; depth++) {
     const next = level.flatMap(innerScripts);
     if (next.length && depth > MAX_NESTING) throw new Unclear(`it nests shells more than ${MAX_NESTING} levels deep`);
-    all.push(...next);
+    all.push(...next, ...next.flatMap(decodedView));
     level = next;
   }
   return all;
+}
+
+// A script with its `$'…'` words decoded, for the rules that read the raw text (`cat $'.\x65nv'` is
+// `cat .env`). It comes in addition to the script itself, so no rule sees less than before.
+function decodedView(script) {
+  return script.includes("$'") ? [withoutHeredocs(script)] : [];
 }
 
 // The strings this command's simple commands hand to a shell (`-c`, a heredoc) or to `eval`.
@@ -568,13 +660,26 @@ function innerScripts(command) {
  * asked about, so that setup lines such as `eval "$(ssh-agent -s)"` pass.
  */
 export function unseenScript(command) {
-  for (const { words, expanded } of commandParts(command)) {
+  const bodies = [];
+  for (const { words, expanded } of commandParts(command, bodies)) {
+    if (words[0] === 'source' || words[0] === '.') {
+      if (sourcesUnseenText(words.slice(1))) return `\`${words[0]}\` runs a script from its input or from a process substitution (\`<(…)\`)`;
+      continue;
+    }
     if (!SHELLS.has(words[0])) continue;
-    const { unseen } = shellSource(words.slice(1), [], expanded.slice(1));
+    const { unseen } = shellSource(words.slice(1), bodies, expanded.slice(1));
     if (unseen === 'input') return `\`${words[0]}\` runs a script from its input (a pipe, or whatever feeds it)`;
+    if (unseen === 'substitution') return `\`${words[0]}\` runs a script from a process substitution (\`<(…)\`)`;
     if (unseen === 'expansion') return `\`${words[0]}\` runs a script built from an expansion (\`$name\`, \`$(…)\` or backticks)`;
   }
   return null;
+}
+
+// Whether `source` / `.` is given its own input or a `<(…)` as the file to read: the text it runs
+// is then whatever a pipe or a command sends, which the hook cannot see. `--` ends its options.
+function sourcesUnseenText(args) {
+  const file = args.find((w) => w !== '--');
+  return file !== undefined && (file === '-' || file === PROCESS_SUBSTITUTION || STDIN_FILE.test(file));
 }
 
 /**
@@ -613,22 +718,27 @@ function shellSource(args, bodies, expanded = []) {
     if (!operands.length) return { scripts: [], unseen: 'input' };
     return { scripts: [args[operands[0]]], unseen: expanded[operands[0]] ? 'expansion' : false };
   }
+  if (operands.length && args[operands[0]] === PROCESS_SUBSTITUTION) return { scripts: [], unseen: 'substitution' };
   if (operands.length && !withS && !STDIN_FILE.test(args[operands[0]])) return { scripts: [], unseen: false };
   const scripts = [];
   let seen = false;
   let built = false;
+  let substituted = false;
   for (const [op, target, targetExpanded] of inputs) {
     if (op === '<<') {
       // A heredoc with no terminator line has no body: its lines stayed in the command and were judged there.
       seen = true;
       const n = /^HEREDOC(\d+)$/.exec(target ?? '')?.[1];
       if (n !== undefined && bodies[n] !== undefined) scripts.push(bodies[n]);
+      if (n !== undefined && bodies.expanding?.has(Number(n))) built = true;
     } else if (op === '<<<' && target !== undefined) {
       seen = true;
       if (targetExpanded) built = true;
       scripts.push(target);
-    } else if (op === '<' && target !== undefined) seen = true;
+    } else if (op === '<' && target === PROCESS_SUBSTITUTION) substituted = true;
+    else if (op === '<' && target !== undefined) seen = true;
   }
+  if (substituted) return { scripts, unseen: 'substitution' };
   if (built) return { scripts, unseen: 'expansion' };
   return { scripts, unseen: seen ? false : 'input' };
 }
