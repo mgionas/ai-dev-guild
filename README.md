@@ -141,7 +141,7 @@ operations, growth and your industry. They never see each other's answers.
 
 ### ⚙️ Skills
 
-`stack-advice` · `roadmap` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
+`stack-advice` · `roadmap` · `analysis-page` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
 `design-review` · `research-review` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
 
 ### 🛡️ Guard hooks (optional)

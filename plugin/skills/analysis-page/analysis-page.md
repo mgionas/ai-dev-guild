@@ -5,10 +5,9 @@ owner learns one layout: copy the code block below unchanged, replace `{{TITLE}}
 `{{PROJECT}}` (once), and touch nothing else, not the tokens, fonts, sections, labels or script.
 
 The page reads its content from the `<script type="application/json" id="page-data">` block in
-the page, and nothing else. When you write the page as a plain file, fill that block, writing
-every `<` inside it as `<` so no text in it can end the block. When you publish it as an
-artifact, fill the same block. There is no artifact database: when the owner answers, the
-controller edits the block and republishes to the same URL.
+the page, and nothing else. Fill that block whether the page is a plain file or an artifact, and
+write every `<` inside it as `\u003c` so no text in it can end the block. There is no artifact
+database: when the owner answers, the controller edits the block and republishes to the same URL.
 
 It is kept as text, inside a Markdown file, so the plugin itself contains no web pages or scripts.
 A plain file needs a minimal skeleton around the block (`<!doctype html>`, `<html lang="en">`,
@@ -39,31 +38,31 @@ Example, with neutral figures:
 
 ```json
 {
-  "question": "Should the shared cost be split by area or by equal share?",
+  "question": "Should the team run its own database server or pay for a managed one?",
   "status": "open",
   "updated": "2026-01-15",
-  "summary": "Splitting by area shifts cost toward the three largest units. Equal share is simpler to explain. We have no figure for how many owners would object.",
+  "summary": "A managed server costs more each month but saves most of the upkeep. Running our own is cheaper only if upkeep stays under a few hours a month. We have no figure for how often the managed service has failed.",
   "findings": [
     {
       "id": "f1",
-      "title": "What each split costs a typical unit",
-      "note": "Based on one year of shared cost.",
+      "title": "What each choice costs in a month",
+      "note": "Based on the size of the current database.",
       "figures": [
-        { "label": "Total shared cost per year", "value": "12,000", "tag": "sourced", "source": 1 },
-        { "label": "Smallest unit pays, by area", "value": "180", "tag": "assumption", "source": 2 },
-        { "label": "Owners who prefer equal share", "value": "not found", "tag": "gap" }
+        { "label": "Managed plan for this size, per month", "value": "120", "tag": "sourced", "source": 1 },
+        { "label": "Hours of upkeep when we run it, per month", "value": "6", "tag": "assumption", "source": 2 },
+        { "label": "Outages of the managed service last year", "value": "not found", "tag": "gap" }
       ]
     }
   ],
   "options": [
-    { "id": "o1", "title": "Split by area", "detail": "Follows what each unit uses; needs the area of every unit on record.", "recommended": true },
-    { "id": "o2", "title": "Split by equal share", "detail": "Simple; the smallest units pay more than their use." }
+    { "id": "o1", "title": "Pay for a managed server", "detail": "Backups and updates are done for us; the monthly cost grows with the data.", "recommended": true },
+    { "id": "o2", "title": "Run our own server", "detail": "Cheaper each month; someone on the team owns backups, updates and recovery." }
   ],
   "answer": null,
-  "gaps": ["Share of owners who would object to either split: ask the residents' committee."],
+  "gaps": ["How often the managed service failed last year: ask its sales team for the status history."],
   "sources": [
-    { "n": 1, "title": "Annual accounts, shared cost page", "url": "https://example.org/accounts" },
-    { "n": 2, "title": "Our own calculation from the unit list", "url": "" }
+    { "n": 1, "title": "Provider pricing page", "url": "https://example.org/pricing" },
+    { "n": 2, "title": "Our estimate from last quarter's upkeep log", "url": "" }
   ]
 }
 ```
@@ -125,6 +124,7 @@ h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spac
 .stamp { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
 h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 section { display: grid; gap: 12px; }
+section[hidden] { display: none; }
 p { margin: 0; overflow-wrap: anywhere; }
 .pill { font-family: var(--f-mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
 .s-done { color: var(--done); background: var(--done-soft); }
@@ -202,7 +202,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
   </section>
 </div>
 
-<!-- The content. Fill this block (every < written as <); the controller edits it and republishes when the owner answers. -->
+<!-- The content. Fill this block (every < written as \u003c); the controller edits it and republishes when the owner answers. -->
 <script type="application/json" id="page-data">
 { "question": "", "status": "open", "updated": "", "summary": "", "findings": [], "options": [], "answer": null, "gaps": [], "sources": [] }
 </script>
