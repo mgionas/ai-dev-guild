@@ -7,7 +7,8 @@
  * - `plugin/` holds only Markdown, its manifest, the icon and the licence. The directory will take
  *   hooks, scripts and other file types only from Verified organizations.
  * - No file is over 256 KiB (the directory holds larger ones for a reviewer).
- * - Every manifest is valid JSON, and the listed plugin has a version.
+ * - Every manifest is valid JSON, the listed plugin has a version, and a manifest's `icon` is a
+ *   file in its plugin.
  * - Every frontmatter `description` in agents and skills is a quoted string, so YAML cannot misread
  *   a `#` or a `: ` inside it.
  * - Every relative link in a Markdown file points at a file that exists, and a `#anchor` on it
@@ -67,6 +68,9 @@ for (const manifest of [
     const data = JSON.parse(readFileSync(join(root, manifest), "utf8"));
     if (manifest.startsWith("plugin/") && !data.version)
       problems.push(`${manifest}: no version`);
+    // The validator reports a missing icon file but still passes, even with --strict, so check it here.
+    if (typeof data.icon === "string" && !existsSync(join(root, dirname(dirname(manifest)), data.icon)))
+      problems.push(`${manifest}: icon ${data.icon} is not a file in the plugin`);
   } catch (error) {
     problems.push(`${manifest}: not valid JSON (${error.message})`);
   }
