@@ -12,12 +12,12 @@ their ideas, and no text from other projects is used.
 
 ## Scope
 
-- **Use it on** prose you compose yourself for a human reader: reports to the owner, pull request
-  bodies, review and fix summaries, hand-backs, commit message bodies, roadmap notes.
+- **Use it on** prose you compose yourself for a human reader: status reports, pull request bodies,
+  summaries of a review or a fix, hand-backs, commit message bodies, roadmap notes.
 - **Leave out** strings that appear in the product's interface, the owner's own documents (specs,
-  decisions, glossary), existing docs or comments you were not asked to touch, and anything quoted.
+  decisions, glossary), older docs and code comments that are not part of your task, and anything quoted.
   If an owner's document seems wrong, add a dated note instead of rewriting it.
-- **Keep exactly** every number, count, commit, `file:line`, code name, glossary term and quotation.
+- **Keep exactly** every figure, `file:line`, commit, identifier in code, glossary term and quotation.
 
 ## Process
 
@@ -49,14 +49,14 @@ After: "Reads from the new cache take 4 ms, down from 40 ms (`bench/read.txt`)."
 
 - A hedge that is true because you are unsure: "likely", "I have not checked". Do not harden
   "looks like a timing problem" into "was a timing problem".
-- Technical vocabulary, code in backticks, commands, paths, test names.
+- Technical vocabulary and anything in backticks, including test names, paths and commands.
 - Lists and tables that help the reader act.
 - Quoted words.
 
 ## Claim and evidence
 
-Take each claim and ask what supports it in this very text: a test result, command output, a
-commit, a `file:line`, a reviewer's file. Then check that the verb is not stronger than that
+Take each claim and ask what supports it in this very text: a test result, a
+`file:line`, a commit, command output, or a file written by a reviewer. Then check that the verb is not stronger than that
 support.
 
 - **Nothing supports it: point to something, or soften.** "Tests pass" becomes "unit tests 212/212;

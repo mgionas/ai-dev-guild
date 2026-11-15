@@ -6,7 +6,7 @@ real project's workflow before it was written here; **(new)** means it has not y
 ## Unreleased
 
 - New `plain-report` skill: an agent cleans up the prose it is about to hand to a human reader (a report,
-  a pull request body, a review summary, a hand-back) so the wording is plain and no claim says more
+  a pull request body, a summary of a review, a hand-back) so the wording is plain and no claim says more
   than its evidence. The builder, the fixer, the report template and `run-task` point to it.
   (field-tested)
 
