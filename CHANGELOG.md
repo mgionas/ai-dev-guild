@@ -9,7 +9,11 @@ real project's workflow before it was written here; **(new)** means it has not y
   themes, fonts, status colours, components, layout and the rules), pointed to from the roadmap,
   progress-boards, analysis-page, project-map and system-map skills, the designer and `setup`, which
   asks whether a project's pages use the house look or its own brand. The QA board and the project
-  map templates are restyled to it (CSS and fonts only; the markup and scripts do not change).
+  map templates are restyled to it (CSS and fonts only; the markup and scripts do not change). (field-tested)
+
+- New `plain-report` skill: an agent cleans up the prose it is about to hand to a human reader (a report,
+  a pull request body, a summary of a review, a hand-back) so the wording is plain and no claim says more
+  than its evidence. The builder, the fixer, the report template and `run-task` point to it.
   (field-tested)
 
 - New `analysis-page` skill: when the owner must decide something that rests on facts, the controller
