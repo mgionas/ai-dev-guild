@@ -10,7 +10,23 @@ A working starting point for the check lives in the repository, not in the plugi
 plugin ships Markdown only): <https://github.com/mgionas/ai-dev-guild/tree/main/examples/system-map>.
 It reads operations from an OpenAPI document, screens from a folder of route files and tables from
 SQL migrations, and a project whose code declares them another way writes one small reader. Copy it
-into the project, adapt it, and keep the rules below. The starter refuses undescribed operations,
+into the project, adapt it, and keep the rules below.
+
+Copy it from the release that matches the installed plugin, so the script and the skill agree. Read the
+installed version with `claude plugin list` (the `Version:` under `ai-dev-guild@ai-dev-guild`), then run, with that version in
+place of `<version>`:
+
+```bash
+git clone --depth 1 --branch v<version> https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild-v<version>
+mkdir -p tools/system-map && cp -R /tmp/ai-dev-guild-v<version>/examples/system-map/. tools/system-map/
+```
+
+On Windows the same two commands work in Git Bash, or copy the folder with your usual tools. Tags
+start at `v0.15.0`; with an older plugin, update it first (see `docs/upgrade-and-remove.md` in the
+repository). If that tag is not there yet, use the newest tag listed at
+<https://github.com/mgionas/ai-dev-guild/tags>.
+
+The starter refuses undescribed operations,
 screens and tables; folders, jobs and outside services follow the same idea, but they are rules a
 project adds, with a reader of its own, when it needs them. Run it with `--base <ref>` (the branch
 the change merges into) in the local gate and in CI: that is what makes a growing baseline fail.

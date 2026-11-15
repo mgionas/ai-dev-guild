@@ -12,10 +12,25 @@ rule only when the owner accepts it.
 
 ## 1. Copy and run the counting script
 
-The ai-dev-guild repository has the script at
-<https://github.com/mgionas/ai-dev-guild/tree/main/examples/flow-stats>. Copy the folder into the
-project (as `scripts/flow-stats/`), once, like the `local-ci` runner. Run it from the project's
-root and keep its output, a JSON file, in `.work/flow-stats/<date>.json`:
+The ai-dev-guild repository has the script in `examples/flow-stats`
+(<https://github.com/mgionas/ai-dev-guild/tree/main/examples/flow-stats>). Copy the folder into the
+project as `scripts/flow-stats/`, once, like the `local-ci` runner.
+
+Copy it from the release that matches the installed plugin, so the script and the skill agree. Read the
+installed version with `claude plugin list` (the `Version:` under `ai-dev-guild@ai-dev-guild`), then run, with that version in
+place of `<version>`:
+
+```bash
+git clone --depth 1 --branch v<version> https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild-v<version>
+mkdir -p scripts/flow-stats && cp -R /tmp/ai-dev-guild-v<version>/examples/flow-stats/. scripts/flow-stats/
+```
+
+On Windows the same two commands work in Git Bash, or copy the folder with your usual tools. Tags
+start at `v0.15.0`; with an older plugin, update it first (see `docs/upgrade-and-remove.md` in the
+repository). If that tag is not there yet, use the newest tag listed at
+<https://github.com/mgionas/ai-dev-guild/tags>.
+
+Run it from the project's root and keep its output, a JSON file, in `.work/flow-stats/<date>.json`:
 
 ```bash
 node scripts/flow-stats/flow-stats.mjs --root . --out .work/flow-stats/<date>.json

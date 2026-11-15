@@ -3,18 +3,38 @@
 One entry per change, so each can be taken or left on its own. **(field-tested)** means it ran in a
 real project's workflow before it was written here; **(new)** means it has not yet.
 
+Each merged pull request cuts a version: the entry moves from Unreleased to a new heading, and the
+tag `vX.Y.Z` marks that version on GitHub. The guards plugin keeps its own version, named under the
+heading where it changed.
+
 ## Unreleased
+
+- Releases and onboarding: this changelog is cut into versions (each merged pull request cuts one, tagged `vX.Y.Z`), `CONTRIBUTING.md` has the release steps, and the skills that need a script (`local-ci`, `flow-stats`, `system-map`) give one command that copies the example folder from the tag matching the installed plugin; `setup` offers the local CI runner when a project has CI and no local check; new pages `docs/upgrade-and-remove.md` (check the version, update, remove what `setup` wrote) and `docs/troubleshooting.md`, linked from the README and `docs/install.md`. (new)
+
+## 0.16.0 (2026-11-15)
+
+*Guards 0.3.2 shipped in this version; the first entry is theirs. The checks and CI entry did not change the plugin version, so it sits under the tag it first appears in.*
 
 - Guards 0.3.2: gaps found in review. `git commit --no-verif` and every other abbreviation of `--no-verify` git accepts for `commit`, `push`, `merge`, `am` and `rebase` is refused (checked against git, and from `--no-v` up whatever the version), and so is `core.hooksPath` set by `git config` (unsetting or reading it passes, judged by the word after `config`, so `git config core.hooksPath get` is refused), `--config-env`, `GIT_CONFIG_KEY_<n>` or `GIT_CONFIG_PARAMETERS`. Asked about, not refused: deleting, moving, writing or re-moding a file under `.git/hooks/`, `.husky/` or `.lefthook/` or `lefthook.yml` / `.pre-commit-config.yaml` (also a Write or Edit to one); `git commit` or `git push` with pre-commit's `SKIP=` set; and a variable set to a secret file name that a later command or a nested shell expands (`F=.env; cat $F`, `F=.env bash -c 'cat $F'`). The same question for `.git/config` and `.git/config.worktree` (also a Write or Edit), `lefthook uninstall`, `pre-commit uninstall`, and `perl -pi` or `ruby -pi` on a hook file. `node -e`, `python3 -c`, `ruby -e`, `perl -e`, `php -r`, `bun -e` and `deno eval` one-liners, and a heredoc or here-string fed to an interpreter, that name a secret file are refused; so is `node --env-file=.env -p process.env` (asked about when the code does not mention `env`). On Node older than 22.5 (or 20.19) the edit and shell hooks refuse every call with a message naming the version needed, where before they died while loading and let the call through; `guard-paths` also refuses when it fails while judging. The guards' README lists what they cannot see. (new)
 
 - CI catches the drift a review found by hand: `check-repo` also checks that role and skill counts, lists and badges match the folders, frontmatter names match file names, every agent has a role document with the same model, `#anchor` links point at a real heading and "in this skill's folder" names a real file; a new `check-pages` parses every page template's data and scripts and runs each script once against a small DOM stand-in with example data, and checks the `<` escape text is still there; all of it runs on Ubuntu and macOS with Node 22 and 24, with the actions pinned to commits. (new)
+
 - Coherence pass: `run-task` starts with a task branch named in the brief and defines the merge (a pull request, or a local merge with no remote); builders and fixers carry the claim-and-evidence rules in their own files instead of calling a skill they cannot run; one severity scale (critical, high, medium, low) in every role and skill, and `flow-stats` reads the old words; `setup` writes a `## Pages` list that `run-task` follows; one combined reviewer only for docs-only changes; the roadmap page accepts `merged` as a stage; counts, links and CI steps in the READMEs match the repository. (new)
+
+## 0.15.0 (2026-11-15)
+
 - `flow-stats` skill and page: a script counts the records the loop already writes (task days, findings, fix rounds, local CI runs, questions to the owner, tokens) and a living page shows them, with at most three suggestions tied to the guild's own rules when a measure passes its threshold; templates and skills now state the record conventions it reads, and `local-ci` gains `--record`. (new)
+
+## 0.14.0 (2026-11-15)
+
+*Guards 0.3.1 shipped in this version; its entry is the third one below. It and the two README entries did not change the plugin version, so they sit under the nearest one.*
+
 - README: screenshots of the five living pages (light and dark, example data), a paragraph on why the
   system map matters when agents change code often, and a "What the loop catches" figure: average rates from
   reviewed tasks. (field-tested)
 
 - README: a "Living pages" section says what the roadmap, QA board, analysis page, project map and system map are, why the guild keeps them, how they work (artifacts or embedded rows) and how they help, a "Plain reports" section explains `plain-report` with a before and after, two rows join the "What changes" table, and each new section has a diagram. (field-tested)
+
 - Guards 0.3.1: three gaps closed. `source` and `.` of `/dev/stdin`, `-` or a `<(…)`, and a shell given
   `<(…)` as its script, are asked about; `$'…'` escapes (`\x65`, octal, `\u`, `\U`, `\cX`, `\e` and the rest)
   are decoded before any rule judges the word, so `cat $'.\x65nv'` is refused; and a shell that reads an
@@ -34,10 +54,14 @@ real project's workflow before it was written here; **(new)** means it has not y
   asks whether a project's pages use the house look or its own brand. The QA board and the project
   map templates are restyled to it (CSS and fonts only; the markup and scripts do not change). (field-tested)
 
+## 0.13.0 (2026-11-15)
+
 - New `plain-report` skill: an agent cleans up the prose it is about to hand to a human reader (a report,
   a pull request body, a summary of a review, a hand-back) so the wording is plain and no claim says more
   than its evidence. The builder, the fixer, the report template and `run-task` point to it.
   (field-tested)
+
+## 0.12.0 (2026-11-15)
 
 - New `analysis-page` skill: when the owner must decide something that rests on facts, the controller
   asks what the decision is and what the page must show, then publishes a page where every figure is
@@ -75,10 +99,14 @@ real project's workflow before it was written here; **(new)** means it has not y
 - The `local-environment` skill says to name what a database reset wipes, including hand-made data,
   before asking the owner for one, and to remind them afterwards what to recreate. (field-tested)
 
+## 0.11.0 (2026-11-14)
+
 - The `local-ci` skill counts the runs one change gets: it lists the places the suite runs (git hooks,
   the local check, remote CI on the pull request, remote CI on main), keeps git hooks to fast checks,
   and says to check for other runs on the machine (CI too, when it runs there) before starting a
   heavy one. The rule and the matching mistake entry say the same. (field-tested)
+
+## 0.10.0 (2026-11-12)
 
 - A `local-environment` skill that advises, and never requires, how a project's local setup could be
   written down: its own named Docker Compose group (explicit names, loopback-only ports), local
@@ -87,12 +115,16 @@ real project's workflow before it was written here; **(new)** means it has not y
   table and hosts block as templates, and `setup` offers it when a project has no written local
   setup. (field-tested)
 
+## 0.9.0 (2026-11-12)
+
 - The designer, builder and `research-review` carry more of the practice they were thin on:
   the designer counts clicks per task, keeps one filled button per view, gives each row and control
   an anatomy and reviews screenshots against stated criteria; the builder builds every state the
   spec names, checks accessibility, comments why, keeps feature folders and runs the system-map
   check; `research-review` ends in a checklist of the findings that keep recurring. A `new-module`
   example joins the four beside it. The role pages say the same. (field-tested)
+
+## 0.8.0 (2026-11-12)
 
 - A system map starter in `examples/system-map/`: the `docs/system-map/` layout (areas, one
   features file per area, a baseline of undescribed items that only shrinks), a small checker that
@@ -108,6 +140,8 @@ real project's workflow before it was written here; **(new)** means it has not y
   are capped at the CI runner's cores. A flaky-test retry and a "did a step change the files" probe
   come as optional parts. CI now runs the example tests. (field-tested)
 
+## 0.7.0 (2026-11-12)
+
 - The roadmap, the QA board and the project map ship as page templates, so every project gets the
   same pages instead of a sentence describing one. Each page reads its rows from the artifact
   database when the view can run it, or from a JSON block in the page when it is a plain file; the
@@ -115,6 +149,18 @@ real project's workflow before it was written here; **(new)** means it has not y
   skills carry the data shape for each page and the capabilities to declare when publishing, and
   the project map template now starts at `<title>` like an artifact, with dark-mode tokens that
   follow a theme setting. (field-tested)
+
+## 0.6.0 (2026-11-11)
+
+*The guard entry below is Guards 0.3.0. It came in after this version and before 0.7.0 without a new plugin version, so it sits under the nearest one.*
+
+- The loop follows the project, not one habit: `setup` asks "squash follow-ups, or fix forward?"
+  and writes the answer under a "History" heading in `AGENTS.md` (default: fix forward); skills and
+  roles follow it. `qa-tester` has a panel mode that edits nothing and reports each missing test as
+  a finding, so it cannot change the head the others review. `run-task` gains a controller
+  checklist and a fallback when `ai-dev-guild:<role>` agent types are not loaded (a general-purpose
+  agent with the role's tools as a hard rule). Briefs gain "Choices already made (do not reopen)".
+  (field-tested)
 
 - The guard hooks ask before a `kill` and refuse secret files from the shell: any kill but the
   agent's own job (`kill %1`, `kill $!`) gets the "ask" answer, because one command does not say
@@ -125,13 +171,7 @@ real project's workflow before it was written here; **(new)** means it has not y
   deny rules left open. Every rule also looks inside `bash -c`, `eval` and wrappers such as
   `sudo -u`, and a command the hook cannot read is refused instead of let through. (field-tested)
 
-- The loop follows the project, not one habit: `setup` asks "squash follow-ups, or fix forward?"
-  and writes the answer under a "History" heading in `AGENTS.md` (default: fix forward); skills and
-  roles follow it. `qa-tester` has a panel mode that edits nothing and reports each missing test as
-  a finding, so it cannot change the head the others review. `run-task` gains a controller
-  checklist and a fallback when `ai-dev-guild:<role>` agent types are not loaded (a general-purpose
-  agent with the role's tools as a hard rule). Briefs gain "Choices already made (do not reopen)".
-  (field-tested)
+## 0.5.0 (2026-11-11)
 
 - A new project loads and runs on its first day: `setup` writes the permission rules (deny reads of
   `.env` files, ask before `git push` and `gh pr merge`, allow edits under `.work/` so reports can
@@ -140,12 +180,16 @@ real project's workflow before it was written here; **(new)** means it has not y
   rules and hooks load only at session start. A builder whose report write is refused hands the
   report back instead. (field-tested)
 
+## 0.4.1 (2026-11-09)
+
 - Narrowed checks fail closed: a changed file outside the packages that nobody has classified runs
   everything; files read across package lines are declared as inputs of the task that reads them,
   in the build tool's config, with a guard test; suites that scan every package declare it; the
   build tool's own selection is checked before it is trusted; the verdict names its reach; the
   example runner gains `--dry-run`, an INERT list and lockfile diffs that external diff tools
   cannot change. Mistake "A hand-kept list of what reads what". (field-tested)
+
+## 0.4.0 (2026-11-09)
 
 - Know where CI runs: a guide (`docs/where-ci-runs.md`) on how CI differs from a developer machine
   (heap and workers sized from the machine, parallel levels that multiply, local state that hides
@@ -156,6 +200,8 @@ real project's workflow before it was written here; **(new)** means it has not y
   a smaller machine" and "Raising a timeout to hide a starved machine"; "A check that never runs"
   now covers CI steps nobody reaches. (field-tested)
 
+## 0.3.0 (2026-11-09)
+
 - Heavy checks run only where the change reaches: the `local-ci` skill and its example runner run
   the affected steps from the merge base by default, using the build tool's own detection; they
   escalate to the full suite for CI files, the check itself, root config, a lockfile change that
@@ -164,20 +210,29 @@ real project's workflow before it was written here; **(new)** means it has not y
   runs at once on a shared machine. New mistake: "Testing everything for a change that reaches
   nothing". (field-tested)
 
-- Repository guards: CI on every pull request (`scripts/check-repo.mjs` keeps the listed plugin
-  Markdown-only, files under 256 KiB, frontmatter quoted and links whole; the hook tests), a
-  CODEOWNERS file, and a protected `main` that needs the maintainer's approval. (new)
+## 0.2.0 (2026-11-08)
 
-- Listing links for the directory: support (GitHub issues), documentation, and a privacy note
-  (`PRIVACY.md`: the plugin collects and sends nothing). (new)
+*The plugin was split in two in this version. Guards 0.2.0 is the first version of the guards plugin. The last two entries did not change the plugin version, so they sit here as the nearest one.*
 
 - Split for the Claude plugin directory: the main plugin (`plugin/`) is roles and skills in Markdown
   only (the project-map page template is now a code block in `map-template.md`), with no hooks or
   scripts; the guard hooks are a separate optional plugin,
   `ai-dev-guild-guards` (`guards/`), in the same marketplace. Install with
   `/plugin install ai-dev-guild-guards@ai-dev-guild`. (new)
+
 - Directory fixes: a square icon, hooks written as `node` plus the script path, every frontmatter
   text value quoted, and the copy instructions no longer chain a download into a copy. (new)
+
+- Listing links for the directory: support (GitHub issues), documentation, and a privacy note
+  (`PRIVACY.md`: the plugin collects and sends nothing). (new)
+
+- Repository guards: CI on every pull request (`scripts/check-repo.mjs` keeps the listed plugin
+  Markdown-only, files under 256 KiB, frontmatter quoted and links whole; the hook tests), a
+  CODEOWNERS file, and a protected `main` that needs the maintainer's approval. (new)
+
+## 0.1.0 (2026-11-08)
+
+*The first seven entries below were written on the same day, before the split into two plugins, so they sit under 0.1.0.*
 
 - README: the "How it works" diagram is now a designed image in the banner's style, with numbered
   steps, the role and the file each step leaves, and the fix loop; a tall version for phones, light
@@ -185,10 +240,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 - Role `token-optimizer` and skill `token-review`: measure where a session spent its tokens and
   adopt a few rules to spend less. (field-tested)
+
 - Skill `roadmap`: milestones a user can see, one step per task with its stage, and "later" items
   with what is done now to keep room for them. (field-tested)
+
 - Skill `project-map`: a self-contained page with a System diagram and a Folders tree, read from the
   code, that never invents a job or shows a secret value. (field-tested, rewritten generic)
+
 - The loop: hand off at about 110 turns or 250K context; hand-backs of a few lines; reviewers block
   only on correctness; reports list existing test assertions they changed; fixup commits; stop by
   default after a confirmed second fix round; rule "Turn a repeated mistake into a check".
@@ -200,8 +258,6 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 - README is now a landing page: a light and dark banner, before-and-after advantages, a diagram of
   the loop, a two-minute install, what's inside and who it is for. (new)
-
-## 0.1.0 — 2026-11-08
 
 First public version.
 

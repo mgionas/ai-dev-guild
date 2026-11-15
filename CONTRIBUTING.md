@@ -30,6 +30,8 @@ node --test 'examples/flow-stats/*.test.mjs'
   && node check.mjs --config example/system-map.config.json --base origin/main)
 ```
 
+Run these by hand before a pull request; CI does not run them.
+
 ```bash
 claude plugin validate .
 claude plugin validate ./plugin
@@ -47,6 +49,26 @@ has not been used in anger yet.
 
 `main` is protected. Every change arrives as a pull request, CI must pass (the seven steps above), and the maintainer reviews and approves it before it is merged. CI on a pull
 request from a first-time or outside contributor runs once the maintainer allows it.
+
+## Releasing a merged change
+
+Each merged pull request cuts a version. The maintainer does these steps, in the pull request or
+right after the merge:
+
+1. Bump `version` in `plugin/.claude-plugin/plugin.json`. Also bump `guards/.claude-plugin/plugin.json`
+   when `guards/` changed; the guards plugin keeps its own version.
+2. In [CHANGELOG.md](CHANGELOG.md), move the entry from `Unreleased` under a new heading
+   `## X.Y.Z (YYYY-MM-DD)` and name the guards version where it changed. Leave `Unreleased` empty.
+3. Tag the merge commit `vX.Y.Z` and push the tag:
+
+   ```bash
+   git tag vX.Y.Z <merge-commit>
+   git push origin vX.Y.Z
+   ```
+
+A minor bump (0.16.0 to 0.17.0) is for a new skill, rule or behaviour. A patch bump (0.16.0 to 0.16.1)
+is for a fix or a wording change. The skills tell users to copy example folders from the tag that
+matches their installed version, so the tag must exist before users update.
 
 ## The rule we keep ourselves
 

@@ -101,3 +101,5 @@ reads refused even without the hooks:
   agent `builder` instead of `ai-dev-guild:builder`.
 - You update by copying again. Read [CHANGELOG.md](../CHANGELOG.md) first: each entry is one
   change, so you can take the ones you want.
+- To check what you have, update or take it out, see [upgrade and remove](upgrade-and-remove.md). If
+  something does not load, see [troubleshooting](troubleshooting.md).
