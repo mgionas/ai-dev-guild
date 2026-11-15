@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.17.2 (2026-11-16)
+
+- The skills that need a script (`local-ci`, `system-map`, `flow-stats`) no longer carry a download command: they ask the user to copy the folder from the matching release tag, following the new `docs/copy-a-script.md`, and never download it themselves. The plugin README says so under "What it runs, sends and fetches". The plugin directory had flagged the commands as download-and-run. `setup` step 8 and `docs/troubleshooting.md` follow. Guards unchanged (0.3.2). (new)
+
 ## 0.17.1 (2026-11-15)
 
 - CI validates the marketplace and both plugins with `claude plugin validate --strict`, the first check the plugin directory runs, using a pinned Claude Code version; `CONTRIBUTING.md` gives the same command. The plugin gets its directory listing name, "AI Dev Guild", and a new icon in place of the unused old one (`plugin/.claude-plugin/icon.png`); the install name `ai-dev-guild` is unchanged. `scripts/check-repo.mjs` now checks that a manifest's `icon` is a real file, because the validator passes a missing one. Guards unchanged (0.3.2). (new)

@@ -25,6 +25,10 @@ building? Try `/ai-dev-guild:stack-advice <your idea>` first.
 ## What it runs, sends and fetches
 
 - **Runs:** nothing by itself. This plugin is roles and skills written in Markdown, and nothing else: no hooks, no MCP servers and no scripts.
+- **Asks you to copy:** three skills (`local-ci`, `system-map`, `flow-stats`) need a script that
+  is not in the plugin. They ask you to copy it into your project from this repository, at the release
+  tag that matches the plugin ([steps](https://github.com/mgionas/ai-dev-guild/blob/main/docs/copy-a-script.md)), and never download it
+  themselves. The copy then becomes your project's code, reviewed like any other change.
 - **Reads:** your project's files, as Claude Code does. The `token-review` skill reads your own
   Claude Code session files in `~/.claude/projects/` to count tokens; it copies no prompt text and
   sends nothing anywhere.
