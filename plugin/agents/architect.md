@@ -26,5 +26,5 @@ Check:
   reader, never by a count of files or lines.
 - Nothing was built that no caller needs yet.
 
-Return findings as **blocker / should-fix / note**, each with `file:line` and why. For a decision
+Return findings as **critical / high / medium / low**, each with `file:line` and why. For a decision
 worth keeping, add a short decision record draft (context, decision, consequences) in your reply.

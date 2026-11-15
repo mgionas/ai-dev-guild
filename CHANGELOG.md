@@ -5,6 +5,7 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- Coherence pass: `run-task` starts with a task branch named in the brief and defines the merge (a pull request, or a local merge with no remote); builders and fixers carry the claim-and-evidence rules in their own files instead of calling a skill they cannot run; one severity scale (critical, high, medium, low) in every role and skill, and `flow-stats` reads the old words; `setup` writes a `## Pages` list that `run-task` follows; one combined reviewer only for docs-only changes; the roadmap page accepts `merged` as a stage; counts, links and CI steps in the READMEs match the repository. (new)
 - `flow-stats` skill and page: a script counts the records the loop already writes (task days, findings, fix rounds, local CI runs, questions to the owner, tokens) and a living page shows them, with at most three suggestions tied to the guild's own rules when a measure passes its threshold; templates and skills now state the record conventions it reads, and `local-ci` gains `--record`. (new)
 - README: screenshots of the five living pages (light and dark, example data), a paragraph on why the
   system map matters when agents change code often, and a "What the loop catches" figure: average rates from

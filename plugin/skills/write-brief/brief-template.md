@@ -2,7 +2,7 @@
 
 **Goal:** <one sentence>
 
-**Branch:** <branch name, optional: lets `flow-stats` find when the task merged>
+**Branch:** <the task branch the builder works on, never `main`; `flow-stats` also uses it to find when the task merged>
 
 **Role:** builder | money-specialist | db-migrations | fixer   **Model:** <haiku | sonnet | opus, and why if not the default>
 

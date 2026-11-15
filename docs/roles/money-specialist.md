@@ -17,7 +17,7 @@ Builds and reviews code that computes, stores or moves money: prices, proration,
 
 ## What it returns
 - As builder: the builder's report (Done, Evidence, Assumptions, Noticed, Questions), plus the list of cases its tests cover.
-- As reviewer: findings as **blocker / should-fix / note**, each with `file:line`.
+- As reviewer: findings as **critical / high / medium / low**, each with `file:line`.
 
 ## Example
 

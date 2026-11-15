@@ -20,7 +20,7 @@
     {
       "name": "ai-dev-guild-guards",
       "source": "./guards",
-      "description": "Optional guard hooks: refuse edits to protected files, pattern kills and skipped git hooks.",
+      "description": "Optional guard hooks: refuse edits to protected files, pattern kills, skipped git hooks, and reading or sending secret files; ask before a kill.",
       "category": "development",
       "tags": [
         "hooks",

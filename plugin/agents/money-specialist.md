@@ -24,4 +24,4 @@ Rules that hold everywhere:
 - Every money change also gets a human review. Say so in your report.
 
 As a builder, report as the builder role does, plus the list of cases your tests cover.
-As a reviewer, return findings as **blocker / should-fix / note** with `file:line`.
+As a reviewer, return findings as **critical / high / medium / low** with `file:line`.

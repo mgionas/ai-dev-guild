@@ -6,15 +6,15 @@ argument-hint: "<task id> <round number>"
 
 1. **Write the findings file** `.work/tasks/<id>/findings-<n>.md` from `findings-template.md`:
    each finding with its severity, `file:line`, what is wrong, how to see it, and the test that
-   should catch it. Leave out Lows and notes that block nothing: they go to `.work/carried.md`.
+   should catch it. Leave out low findings that block nothing: they go to `.work/carried.md`.
 2. **Dispatch a fresh `fixer`** with that path. Never resume the builder's session: a long resumed
    context is slow, costly, and carries the reasoning that made the mistake.
 3. **The fixer runs only the covering tests**, plus lint, typecheck and format of touched files.
    Everything else waits for the single strict local check before merging.
 4. **One combined re-check.** One reviewer (or the one or two whose findings were fixed) confirms
    each fix against the findings file and writes `.work/tasks/<id>/recheck-<n>.md` with a line
-   `**New problems:** <count>` (0 or more), which `flow-stats` counts. Security and money reviewers re-check their own Critical
-   and High findings themselves.
+   `**New problems:** <count>` (0 or more), which `flow-stats` counts. Security and money reviewers re-check their own critical
+   and high findings themselves.
 5. **Mutation survivors in access or permission code go to the `security-reviewer` before anyone
    fixes them.** Some are real gaps, some are equivalent mutants, and some cannot happen because a
    database constraint refuses the value. The report records each survivor's class: real gap,
