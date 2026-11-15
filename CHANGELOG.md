@@ -8,7 +8,13 @@ real project's workflow before it was written here; **(new)** means it has not y
 - Guards 0.3.1: three gaps closed. `source` and `.` of `/dev/stdin`, `-` or a `<(…)`, and a shell given
   `<(…)` as its script, are asked about; `$'…'` escapes (`\x65`, octal, `\u`, `\U`, `\cX`, `\e` and the rest)
   are decoded before any rule judges the word, so `cat $'.\x65nv'` is refused; and a shell that reads an
-  unquoted heredoc whose body expands something (`$name`, `$(…)`, backticks) is asked about. (new)
+  unquoted heredoc whose body expands something (`$name`, `$(…)`, backticks) is asked about. Their
+  bypasses are closed too: a redirect before the file (`source 2>/dev/null <(…)`), another descriptor
+  (`/dev/fd/3`), other spellings of stdin (`//dev/stdin`, `/proc/$$/fd/0`, `bash < /dev/stdin`) and zsh's
+  `=(…)` are asked about; a heredoc delimiter written `$'A'` or `$"A"` no longer hides the commands after
+  it; `$"…"` reads as a double-quoted string; and quoted or backslashed command names and options
+  (`'pkill' -f x`, `git commit "--no-verify"`, `HUSKY='0' git commit`) are refused like the plain ones, as
+  is `tee >(cat) .env`. (new)
 
 - New `analysis-page` skill: when the owner must decide something that rests on facts, the controller
   asks what the decision is and what the page must show, then publishes a page where every figure is

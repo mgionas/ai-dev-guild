@@ -16,6 +16,8 @@
  * cannot tell what a command runs, it throws `Unclear` and the hook refuses the command.
  */
 
+import { posix } from 'node:path';
+
 /** Thrown when the guard cannot tell what a command runs. The hooks refuse such a command. */
 export class Unclear extends Error {}
 
@@ -80,6 +82,7 @@ export function withoutHeredocs(command, bodies = []) {
       i++;
       continue;
     }
+    if (c === '$' && s[i + 1] === '"' && f.quote === null) continue; // `$"…"` reads as `"…"`
     if (c === '\n' && f.quote === null && pending.length) {
       lines ??= lineIndex(s);
       const read = readBodies(s, i + 1, pending, lines);
@@ -259,7 +262,16 @@ function heredocStart(s, i) {
   let quoted = false;
   for (; j < s.length && !/[\s;&|<>()]/.test(s[j]); j++) {
     const c = s[j];
-    if (c === "'" || c === '"') {
+    if (c === '$' && s[j + 1] === "'") {
+      // `$'…'` is a quote in bash, escapes decoded: the delimiter of `<<$'A'` is `A`, not `$A`.
+      const end = ansiCEnd(s, j + 2);
+      if (end === -1) return null;
+      delimiter += decodeAnsiC(s.slice(j + 2, end));
+      quoted = true;
+      j = end;
+    } else if (c === '$' && s[j + 1] === '"') {
+      continue; // `$"…"` is the double-quoted string that follows
+    } else if (c === "'" || c === '"') {
       const end = s.indexOf(c, j + 1);
       if (end === -1) return null;
       delimiter += s.slice(j + 1, end);
@@ -391,7 +403,8 @@ export function shellCommands(command) {
 }
 
 /**
- * Like `shellCommands`, with the wrapper words each command dropped: `{ words, dropped, expanded }`.
+ * Like `shellCommands`, with the wrapper words each command dropped: `{ words, dropped, expanded, pgrep }`.
+ * `pgrep` is true when a `$(…)` or backtick substitution among the command's words runs `pgrep`.
  * `expanded[k]` is true when `words[k]` holds an expansion this shell makes before the command
  * runs (`$name`, `${…}`, `$(…)` or backticks outside single quotes), so its text is not known. The
  * heredoc bodies are collected into `bodies` (see `withoutHeredocs`).
@@ -422,13 +435,18 @@ function splitCommands(command, bodies) {
     word = null;
     expanded = false;
   };
+  let ranPgrep = false; // a command in the current substitution is `pgrep`, or holds a substitution that runs it
   const endCommand = () => {
     endWord();
-    if (words.length) commands.push(words);
+    if (words.length) {
+      commands.push(words);
+      if (words.pgrep || stripWrappers(words).words[0] === 'pgrep') ranPgrep = true;
+    }
     words = fresh();
   };
   const open = (kind, substitution) => {
-    frames.push({ kind, substitution, words, word, quote, expanded });
+    frames.push({ kind, substitution, words, word, quote, expanded, ranPgrep });
+    ranPgrep = false;
     words = fresh();
     word = null;
     quote = null;
@@ -438,10 +456,13 @@ function splitCommands(command, bodies) {
     endCommand();
     if (frames.at(-1)?.kind !== kind) return; // unbalanced: treat it as a separator
     const frame = frames.pop();
-    ({ words, word, quote, expanded } = frame);
+    const ranInside = ranPgrep;
+    ({ words, word, quote, expanded, ranPgrep } = frame);
     if (frame.substitution) {
       add('*');
       expanded = true;
+      // Remember that the substitution runs `pgrep`, so `'kill' $(pgrep x)` can be told from `kill $(cat f)`.
+      if (ranInside) words.pgrep = true;
     }
   };
 
@@ -500,16 +521,33 @@ function splitCommands(command, bodies) {
       add('');
       continue;
     }
-    if (c === '(') open(')', false);
+    if (c === '=' && s[i + 1] === '(' && word === null) {
+      // zsh's `=(…)`: a file holding a command's output, like `<(…)`; its `(` opens the substitution next.
+      words.push(PROCESS_SUBSTITUTION);
+      words.expanded.push(false);
+    } else if (c === '(') open(')', false);
     else if (c === ')') close(')');
-    else if (c === '\n' || c === ';' || c === '&' || c === '|') endCommand();
+    else if (c === '&' && s[i + 1] === '>') {
+      // `&>file` and `&>>file` redirect both outputs: they are not a `&` that ends the command.
+      endWord();
+      i++;
+      let op = '&>';
+      if (s[i + 1] === '>') op += s[++i];
+      words.push(op);
+      words.expanded.push(false);
+    } else if (c === '\n' || c === ';' || c === '&' || c === '|') endCommand();
     else if (/\s/.test(c)) endWord();
     else if (c === '<' || c === '>') {
       endWord();
       let op = c;
       while (s[i + 1] === c) op += s[++i];
-      // `<(…)` is a file whose text the command does not show; its `(` opens the substitution next.
-      words.push(op === '<' && s[i + 1] === '(' ? PROCESS_SUBSTITUTION : op);
+      // `>&2` and `<&3` copy a descriptor: the `&` belongs to the redirect, not to a new command.
+      if (s[i + 1] === '&' && s[i + 2] !== '&') op += s[++i];
+      // `<(…)` is a file whose text the command does not show; `>(…)` is one a command writes to.
+      // Either way the `(` opens the substitution next.
+      if (op === '<' && s[i + 1] === '(') words.push(PROCESS_SUBSTITUTION);
+      else if (op === '>' && s[i + 1] === '(') words.push(PROCESS_OUTPUT);
+      else words.push(op);
       words.expanded.push(false);
     } else add(c);
   }
@@ -563,7 +601,7 @@ export function stripWrappers(words) {
   if (ws.length) ws[0] = ws[0].split('/').pop();
   const offset = words.length - ws.length;
   const expanded = ws.map((_, k) => words.expanded?.[k + offset] ?? false);
-  return { words: ws, dropped, expanded };
+  return { words: ws, dropped, expanded, pgrep: Boolean(words.pgrep) };
 }
 
 // Drops a wrapper's options and their values from the front of `ws`, and `timeout`'s duration.
@@ -607,11 +645,26 @@ const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash']);
 const MAX_NESTING = 3;
 // A shell's long options that take the next word as their value; any other long option is a flag.
 const SHELL_LONG_VALUE = new Set(['--rcfile', '--init-file', '--emulate']);
-// Files that are the shell's own input: `bash /dev/stdin` reads its script from the pipe too.
-const STDIN_FILE = /^\/(dev\/stdin|dev\/fd\/0|proc\/self\/fd\/0)$/;
-const REDIRECT = /^(<|<<|<<<|>|>>)$/;
+// Redirect operators, each followed by its target word (`2>&1` is `2`, `>&`, `1`).
+const REDIRECT = /^(<|<<|<<<|>|>>|>&|<&|&>|&>>)$/;
+
+/**
+ * What a script path stands for: 'stdin' for the shell's own input (`/dev/stdin`, `/dev/fd/0`,
+ * `/proc/self/fd/0`), 'descriptor' for any other file descriptor (`/dev/fd/3`, `/proc/12/fd/5`,
+ * `/proc/$$/fd/0`), null for a file. The path is normalised first, so `//dev/./stdin` and
+ * `/dev/fd//0` count. What a descriptor holds is whatever the enclosing command opened on it
+ * (`3< <(curl x)`), which the hook cannot see.
+ */
+function inputPath(path) {
+  const p = posix.normalize(path);
+  if (/^\/(dev\/stdin|dev\/fd\/0+|proc\/self\/fd\/0+)$/.test(p)) return 'stdin';
+  return /^\/(dev\/fd|proc\/.*\/fd)(\/|$)/.test(p) ? 'descriptor' : null;
+}
+
 // The word `commandParts` gives for a `<(…)`: the file it stands for holds the output of a command.
 const PROCESS_SUBSTITUTION = '<(';
+// The word for a `>(…)`: a file whose writes go to a command. It is not a redirect, so it has no target.
+const PROCESS_OUTPUT = '>(';
 
 /**
  * The command, and every string it hands to another shell to run (`bash -c '…'`, `sh -c "…"`,
@@ -631,10 +684,10 @@ export function scriptsToJudge(command) {
   return all;
 }
 
-// A script with its `$'…'` words decoded, for the rules that read the raw text (`cat $'.\x65nv'` is
+// A script with its `$'…'` words decoded and `$"…"` read as `"…"`, for the rules that read the raw text (`cat $'.\x65nv'` is
 // `cat .env`). It comes in addition to the script itself, so no rule sees less than before.
 function decodedView(script) {
-  return script.includes("$'") ? [withoutHeredocs(script)] : [];
+  return script.includes("$'") || script.includes('$"') ? [withoutHeredocs(script)] : [];
 }
 
 // The strings this command's simple commands hand to a shell (`-c`, a heredoc) or to `eval`.
@@ -663,23 +716,31 @@ export function unseenScript(command) {
   const bodies = [];
   for (const { words, expanded } of commandParts(command, bodies)) {
     if (words[0] === 'source' || words[0] === '.') {
-      if (sourcesUnseenText(words.slice(1))) return `\`${words[0]}\` runs a script from its input or from a process substitution (\`<(…)\`)`;
+      if (sourcesUnseenText(words.slice(1))) return `\`${words[0]}\` runs a script from its input, a file descriptor or a process substitution (\`<(…)\`, \`=(…)\`)`;
       continue;
     }
     if (!SHELLS.has(words[0])) continue;
     const { unseen } = shellSource(words.slice(1), bodies, expanded.slice(1));
     if (unseen === 'input') return `\`${words[0]}\` runs a script from its input (a pipe, or whatever feeds it)`;
-    if (unseen === 'substitution') return `\`${words[0]}\` runs a script from a process substitution (\`<(…)\`)`;
+    if (unseen === 'substitution') return `\`${words[0]}\` runs a script from a process substitution (\`<(…)\` or \`=(…)\`)`;
+    if (unseen === 'descriptor') return `\`${words[0]}\` runs a script from a file descriptor (\`/dev/fd/3\`), whatever the command opened on it`;
     if (unseen === 'expansion') return `\`${words[0]}\` runs a script built from an expansion (\`$name\`, \`$(…)\` or backticks)`;
   }
   return null;
 }
 
-// Whether `source` / `.` is given its own input or a `<(…)` as the file to read: the text it runs
-// is then whatever a pipe or a command sends, which the hook cannot see. `--` ends its options.
+// Whether `source` / `.` is given its own input, a file descriptor or a `<(…)` / `=(…)` as the file to
+// read: the text it runs is then whatever a pipe or a command sends, which the hook cannot see.
+// Redirects (`2>/dev/null`, `2>&1`, `&>`), their targets and fd digits come before the file in
+// bash's reading, so they are skipped; so are `--` and bash 5.3's `-p PATH`.
 function sourcesUnseenText(args) {
-  const file = args.find((w) => w !== '--');
-  return file !== undefined && (file === '-' || file === PROCESS_SUBSTITUTION || STDIN_FILE.test(file));
+  for (let i = 0; i < args.length; i++) {
+    const w = args[i];
+    if (w === PROCESS_OUTPUT || w === '--') continue;
+    if (REDIRECT.test(w) || w === '-p') i++;
+    else if (!(/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? ''))) return w === '-' || w === PROCESS_SUBSTITUTION || inputPath(w) !== null;
+  }
+  return false;
 }
 
 /**
@@ -690,7 +751,10 @@ function sourcesUnseenText(args) {
  * here-string's word is judged as a script, a file redirect (`< x`) is not opened, and anything
  * else is unseen (`unseen: 'input'`). A `-c` string or here-string whose word holds an expansion
  * (`expanded`, from `commandParts`) is still judged for what it shows, and is unseen too
- * (`unseen: 'expansion'`). A redirect's target and the digits of `2>` are never a script file.
+ * (`unseen: 'expansion'`). A redirect's target and the digits of `2>` are never a script file. A
+ * script file that is a descriptor other than 0 (`/dev/fd/3`) is unseen (`unseen: 'descriptor'`).
+ * Of several redirects of the input the last one counts, as in bash, and a descriptor other than 0
+ * (`3< file`) is not the input.
  */
 function shellSource(args, bodies, expanded = []) {
   const operands = [];
@@ -698,12 +762,15 @@ function shellSource(args, bodies, expanded = []) {
   let withC = false;
   let withS = false;
   let optionsDone = false;
+  let fd = null; // the digits written right before a redirect: `3<` is not the shell's input
   for (let i = 0; i < args.length; i++) {
     const w = args[i];
+    if (w === PROCESS_OUTPUT) continue;
     if (REDIRECT.test(w)) {
       i++;
-      inputs.push([w, args[i], expanded[i]]);
-    } else if (/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? '')) continue;
+      if (fd === null || /^0+$/.test(fd)) inputs.push([w, args[i], expanded[i]]);
+      fd = null;
+    } else if (/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? '')) fd = w;
     else if (optionsDone || operands.length) operands.push(i);
     else if (w === '--' || w === '-') optionsDone = true;
     else if (SHELL_LONG_VALUE.has(w)) i++;
@@ -719,7 +786,9 @@ function shellSource(args, bodies, expanded = []) {
     return { scripts: [args[operands[0]]], unseen: expanded[operands[0]] ? 'expansion' : false };
   }
   if (operands.length && args[operands[0]] === PROCESS_SUBSTITUTION) return { scripts: [], unseen: 'substitution' };
-  if (operands.length && !withS && !STDIN_FILE.test(args[operands[0]])) return { scripts: [], unseen: false };
+  const file = operands.length ? inputPath(args[operands[0]]) : null;
+  if (file === 'descriptor') return { scripts: [], unseen: 'descriptor' };
+  if (operands.length && !withS && file !== 'stdin') return { scripts: [], unseen: false };
   const scripts = [];
   let seen = false;
   let built = false;
@@ -735,8 +804,10 @@ function shellSource(args, bodies, expanded = []) {
       seen = true;
       if (targetExpanded) built = true;
       scripts.push(target);
-    } else if (op === '<' && target === PROCESS_SUBSTITUTION) substituted = true;
-    else if (op === '<' && target !== undefined) seen = true;
+    } else if (op === '<' && target === PROCESS_SUBSTITUTION) {
+      substituted = true;
+    } else if (op === '<' && target !== undefined) seen = inputPath(target) === null; // `< /dev/stdin` is the pipe
+    else if (op === '<&') seen = false; // a descriptor: the hook cannot see what it holds
   }
   if (substituted) return { scripts, unseen: 'substitution' };
   if (built) return { scripts, unseen: 'expansion' };
