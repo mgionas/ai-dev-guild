@@ -32,6 +32,8 @@ changelog first, since you replace files you may have edited.
 After upgrading the main plugin, copy again any example folder you took from the repository (the
 local CI runner, `flow-stats`, the system map), from the tag that matches the new version. Each
 skill that uses one gives the command. A copied folder is yours and is not updated by the plugin.
+Copying again overwrites the script files but keeps files you added, so check your own edits (for
+example the runner's `STEPS`) before and after.
 
 ## Read what changed
 

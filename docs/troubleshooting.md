@@ -45,14 +45,15 @@ need and the version you have, because they cannot check anything on an older on
 
 The local CI runner, `flow-stats` and the system map check are example folders in the repository,
 not part of the plugin. Each skill that needs one gives a copy command: read the installed version with
-`claude plugin list`, then clone the matching tag and copy the folder, for example
+`claude plugin list` (the `Version:` under `ai-dev-guild@ai-dev-guild`), then clone the matching tag and copy the folder, for example
 
 ```bash
 git clone --depth 1 --branch v<version> https://github.com/mgionas/ai-dev-guild /tmp/ai-dev-guild-v<version>
-cp -R /tmp/ai-dev-guild-v<version>/examples/ci-local scripts/ci-local
+mkdir -p scripts/ci-local && cp -R /tmp/ai-dev-guild-v<version>/examples/ci-local/. scripts/ci-local/
 ```
 
-On Windows use Git Bash, or copy the folder with your usual tools. Tags start at `v0.15.0`.
+On Windows use Git Bash, or copy the folder with your usual tools. Tags start at `v0.15.0`. If that tag is not there yet, use the newest tag listed at
+<https://github.com/mgionas/ai-dev-guild/tags>.
 
 ## `claude plugin validate` shows warnings
 

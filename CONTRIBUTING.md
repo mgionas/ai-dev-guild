@@ -30,6 +30,8 @@ node --test 'examples/flow-stats/*.test.mjs'
   && node check.mjs --config example/system-map.config.json --base origin/main)
 ```
 
+Run these by hand before a pull request; CI does not run them.
+
 ```bash
 claude plugin validate .
 claude plugin validate ./plugin

@@ -230,7 +230,7 @@ heading where it changed.
   Markdown-only, files under 256 KiB, frontmatter quoted and links whole; the hook tests), a
   CODEOWNERS file, and a protected `main` that needs the maintainer's approval. (new)
 
-## 0.1.0 — 2026-11-08
+## 0.1.0 (2026-11-08)
 
 *The first seven entries below were written on the same day, before the split into two plugins, so they sit under 0.1.0.*
 
