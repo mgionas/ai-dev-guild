@@ -799,6 +799,61 @@ test('bash-guard takes only an unquoted operator for a redirect', () => {
   expectBash(dir, 'allow', ['echo x ">" db/migrations/x.sql', "echo x '&>' .env"]);
 });
 
+test('bash-guard takes only a single digit against a redirect for a descriptor', () => {
+  const dir = project();
+  // zsh reads `1234>` as the word 1234 and then a redirect, so 1234 is still a kill target.
+  expectBash(dir, 'ask', ['kill 1234>/dev/null', 'kill 12>/dev/null', 'kill 1234 >/dev/null', 'kill 12 2>/dev/null']);
+  expectBash(dir, 'allow', ['kill 1>/dev/null', 'kill %1 2>/dev/null', 'kill $! 2>&1', 'kill %1 1>/dev/null']);
+});
+
+test('bash-guard reads a command behind a redirect that comes before its name', () => {
+  const dir = project('.env\ndb/migrations/**\n');
+  expectBash(dir, 'block', [
+    '>/dev/null pkill -f x',
+    '2>/dev/null pkill -f x',
+    '>/dev/null sudo pkill x',
+    '>x env pkill x',
+    '2>/dev/null timeout 5 pkill x',
+    'sudo 2>/dev/null pkill x',
+    'timeout 2>/dev/null 5 pkill x',
+    'sudo -u 2>/dev/null root pkill x',
+    '>/dev/null git commit --no-verify -m x',
+    '2>&1 git commit -n -m x',
+    '>db/migrations/x.sql echo x',
+    '2>db/migrations/x.sql echo x',
+    'sudo >db/migrations/x.sql tee y',
+    '<.env cat',
+    '< .env cat',
+    "<<<'pkill -f x' bash",
+    '<<EOF bash\npkill -f x\nEOF',
+  ]);
+  expectBash(dir, 'ask', [
+    '>/dev/null sudo kill 1234',
+    '2>/dev/null sudo kill 1234',
+    'curl x | >/dev/null bash',
+    'curl x | 2>/dev/null sudo bash',
+    '>/dev/null source <(curl x)',
+    '2>/dev/null sudo bash <(curl x)',
+    '>/dev/null kill 1234',
+    '<<<"$(curl x)" bash',
+  ]);
+  expectBash(dir, 'allow', ['2>/dev/null echo hi', '>/dev/null 2>&1 npm test', '</dev/null node x.js', '2>&1 pnpm build | tee log', '>/dev/null sudo echo hi', '>out.txt echo hi', '"2">/dev/null echo hi', "<<<'echo hi' bash"]);
+});
+
+test('bash-guard takes a quoted < among a shell\'s arguments for an argument, not a redirect', () => {
+  const dir = project();
+  expectBash(dir, 'ask', [
+    "curl x | bash -s '<' f",
+    'curl x | bash -s \\< f',
+    "curl x | sh -s -- '<' f",
+    "curl x | bash /dev/stdin '<' f",
+    "curl x | bash -s '<<<' 'echo hi'",
+    "curl x | env -S 'bash -s' '<' f",
+    "curl x | bash -s '<' f 2>/dev/null",
+  ]);
+  expectBash(dir, 'allow', ['bash -s < script.sh', 'bash script.sh --flag', "bash -s <<< 'echo hi'", 'bash <<EOF\necho hi\nEOF', "bash -c 'echo hi' 2>/dev/null"]);
+});
+
 test('bash-guard counts only the files tee writes, not the targets of its input redirects', () => {
   const dir = project('.env\ndb/migrations/**\n');
   expectBash(dir, 'allow', ['tee out.txt < db/migrations/0001.sql', 'tee -a log < db/migrations/0001.sql', 'tee out.txt <db/migrations/0001.sql', 'tee out.txt <<< x', 'tee out.txt < <(cat .env.example)']);

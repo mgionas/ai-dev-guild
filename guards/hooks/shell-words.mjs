@@ -549,7 +549,8 @@ function splitCommands(command, bodies) {
     } else if (c === '\n' || c === ';' || c === '&' || c === '|') endCommand();
     else if (/\s/.test(c)) endWord();
     else if (c === '<' || c === '>') {
-      const descriptor = word !== null && /^\d+$/.test(word) && !quoted && !expanded;
+      // Only a single digit is a descriptor: zsh reads `1234>x` as the word 1234 and a redirect.
+      const descriptor = word !== null && /^\d$/.test(word) && !quoted && !expanded;
       endWord();
       if (descriptor) words.fd[words.length - 1] = true;
       let op = c;
@@ -594,46 +595,75 @@ const WRAPPERS = new Map([
 ]);
 
 /**
- * Drops leading `VAR=value`, keywords, and wrappers with their options: `{ words, dropped, expanded }`.
- * `expanded` follows `words` from the end, since words are only dropped or added at the front.
+ * Drops leading `VAR=value`, keywords, redirects and wrappers with their options:
+ * `{ words, dropped, expanded, fd, op, lead, pgrep }`. A redirect before the command name, or between
+ * wrappers (`2>/dev/null sudo pkill x`), is not the command: it moves to `lead`, which has the same
+ * shape as the marks (`words`, `expanded`, `fd`, `op`), so a rule that reads redirects still sees it.
  */
 export function stripWrappers(words) {
-  let ws = [...words];
+  let ws = words.map((w, k) => ({ w, op: Boolean(words.op?.[k]), fd: Boolean(words.fd?.[k]), expanded: Boolean(words.expanded?.[k]) }));
   const dropped = [];
-  while (ws.length) {
-    const first = ws[0];
+  const lead = [];
+  while (true) {
+    takeRedirects(ws, lead);
+    if (!ws.length) break;
+    const first = ws[0].w;
     if (/^\w+=/.test(first) || KEYWORDS.has(first)) {
-      dropped.push(ws.shift());
+      dropped.push(ws.shift().w);
       continue;
     }
     const wrapper = first.split('/').pop();
     const spec = WRAPPERS.get(wrapper);
     if (!spec) break;
-    dropped.push(ws.shift());
-    ws = dropOptions(wrapper, spec, ws, dropped);
+    dropped.push(ws.shift().w);
+    dropOptions(wrapper, spec, ws, dropped, lead);
   }
-  if (ws.length) ws[0] = ws[0].split('/').pop();
-  const offset = words.length - ws.length;
-  const expanded = ws.map((_, k) => words.expanded?.[k + offset] ?? false);
-  const fd = ws.map((_, k) => words.fd?.[k + offset] ?? false);
-  const op = ws.map((_, k) => words.op?.[k + offset] ?? false);
-  return { words: ws, dropped, expanded, fd, op, pgrep: Boolean(words.pgrep) };
+  if (ws.length) ws[0] = { ...ws[0], w: ws[0].w.split('/').pop() };
+  const marks = (list) => ({
+    words: list.map((t) => t.w),
+    expanded: list.map((t) => t.expanded),
+    fd: list.map((t) => t.fd),
+    op: list.map((t) => t.op),
+  });
+  return { ...marks(ws), dropped, lead: marks(lead), pgrep: Boolean(words.pgrep) };
+}
+
+// Moves the redirects at the front of `ws` (the operator, its target and a descriptor digit before it) to `lead`.
+function takeRedirects(ws, lead) {
+  while (ws.length) {
+    const digit = ws[0].fd && ws[1]?.op && REDIRECT.test(ws[1].w);
+    if (!digit && !(ws[0].op && REDIRECT.test(ws[0].w))) return;
+    if (digit) lead.push(ws.shift());
+    lead.push(ws.shift());
+    if (ws.length) lead.push(ws.shift());
+  }
 }
 
 // Drops a wrapper's options and their values from the front of `ws`, and `timeout`'s duration.
-function dropOptions(wrapper, spec, ws, dropped) {
-  const take = () => dropped.push(ws.shift());
-  while (ws.length && ws[0].startsWith('-')) {
-    const w = ws[0];
+function dropOptions(wrapper, spec, ws, dropped, lead) {
+  const take = () => dropped.push(ws.shift().w);
+  // A redirect may stand between an option and its value (`sudo -u 2>/dev/null root pkill x`).
+  const takeValue = () => {
+    takeRedirects(ws, lead);
+    if (ws.length) take();
+  };
+  while (true) {
+    takeRedirects(ws, lead);
+    if (!ws.length || !ws[0].w.startsWith('-')) break;
+    const w = ws[0].w;
     if (w === '-' && wrapper !== 'env') break; // `env -` is `env -i`; elsewhere `-` is an argument
     take();
     if (w === '--') break;
     if (w.startsWith('--')) {
       const long = w.slice(2).split('=')[0];
       if (spec.long.includes(long)) {
-        const value = w.includes('=') ? w.slice(w.indexOf('=') + 1) : ws[0];
-        if (!w.includes('=') && ws.length) take();
-        if (long === 'split-string' && value !== undefined) ws.unshift(...value.split(/\s+/).filter(Boolean));
+        let value = w.includes('=') ? w.slice(w.indexOf('=') + 1) : undefined;
+        if (!w.includes('=')) {
+          takeRedirects(ws, lead);
+          value = ws[0]?.w;
+          takeValue();
+        }
+        if (long === 'split-string' && value !== undefined) ws.unshift(...splitTokens(value));
       } else if (!spec.longFlag.includes(long)) throw new Unclear(`it does not know \`${wrapper} --${long}\``);
       continue;
     }
@@ -642,20 +672,23 @@ function dropOptions(wrapper, spec, ws, dropped) {
       const letter = w[k];
       if (spec.value.includes(letter)) {
         let value = w.slice(k + 1);
-        if (!value && ws.length) {
-          value = ws[0];
-          take();
+        if (!value) {
+          takeRedirects(ws, lead);
+          value = ws[0]?.w ?? '';
+          takeValue();
         }
         // `env -S 'cat x'` splits its value into the command it runs.
-        if (wrapper === 'env' && letter === 'S') ws.unshift(...value.split(/\s+/).filter(Boolean));
+        if (wrapper === 'env' && letter === 'S') ws.unshift(...splitTokens(value));
         break;
       }
       if (!spec.flag.includes(letter)) throw new Unclear(`it does not know \`${wrapper} -${letter}\``);
     }
   }
-  if (wrapper === 'timeout' && ws.length) take();
-  return ws;
+  if (wrapper === 'timeout') takeValue();
 }
+
+// The words of an `env -S` string: plain text, so a `<` in it is an argument and not a redirect.
+const splitTokens = (value) => value.split(/\s+/).filter(Boolean).map((w) => ({ w, op: false, fd: false, expanded: false }));
 
 const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash']);
 const MAX_NESTING = 3;
@@ -673,7 +706,11 @@ const OUTPUT_REDIRECT = new Set(['>', '>>', '>|', '&>', '&>>', '>&']);
  * targets of `>`, `>>`, `>|`, `&>`, `&>>` and `>&`, except a `>&` that copies a descriptor
  * (`>&2`, `>&-`). `part` is one entry of `commandParts`.
  */
-export function withoutRedirects({ words, fd, op }) {
+export function withoutRedirects(part) {
+  // The redirects written before the command name (`part.lead`) come first, as in the command.
+  const { words, fd, op } = part.lead
+    ? { words: [...part.lead.words, ...part.words], fd: [...part.lead.fd, ...part.fd], op: [...part.lead.op, ...part.op] }
+    : part;
   const kept = [];
   const outputs = [];
   for (let i = 0; i < words.length; i++) {
@@ -737,13 +774,29 @@ function decodedView(script) {
 function innerScripts(command) {
   const bodies = [];
   const found = [];
-  for (const { words } of commandParts(command, bodies)) {
-    const [name, ...args] = words;
+  for (const part of commandParts(command, bodies)) {
+    const [name, ...args] = part.words;
     if (name === 'eval') {
       if (args.length) found.push(args.join(' '));
-    } else if (SHELLS.has(name)) found.push(...shellSource(args, bodies).scripts);
+    } else if (SHELLS.has(name)) {
+      const { args: shellArgs, ...marks } = shellArguments(part);
+      found.push(...shellSource(shellArgs, bodies, marks).scripts);
+    }
   }
   return found;
+}
+
+// A shell's arguments as `shellSource` reads them: its redirects written before its name come first.
+// `args` are the words after the name, and the marks follow them.
+function shellArguments(part) {
+  const { lead } = part;
+  const rest = (list) => list.slice(1);
+  return {
+    args: [...lead.words, ...rest(part.words)],
+    expanded: [...lead.expanded, ...rest(part.expanded)],
+    op: [...lead.op, ...rest(part.op)],
+    fd: [...lead.fd, ...rest(part.fd)],
+  };
 }
 
 /**
@@ -757,13 +810,15 @@ function innerScripts(command) {
  */
 export function unseenScript(command) {
   const bodies = [];
-  for (const { words, expanded } of commandParts(command, bodies)) {
+  for (const part of commandParts(command, bodies)) {
+    const { words } = part;
     if (words[0] === 'source' || words[0] === '.') {
       if (sourcesUnseenText(words.slice(1))) return `\`${words[0]}\` runs a script from its input, a file descriptor or a process substitution (\`<(…)\`, \`=(…)\`)`;
       continue;
     }
     if (!SHELLS.has(words[0])) continue;
-    const { unseen } = shellSource(words.slice(1), bodies, expanded.slice(1));
+    const { args, ...marks } = shellArguments(part);
+    const { unseen } = shellSource(args, bodies, marks);
     if (unseen === 'input') return `\`${words[0]}\` runs a script from its input (a pipe, or whatever feeds it)`;
     if (unseen === 'substitution') return `\`${words[0]}\` runs a script from a process substitution (\`<(…)\` or \`=(…)\`)`;
     if (unseen === 'descriptor') return `\`${words[0]}\` runs a script from a file descriptor (\`/dev/fd/3\`), whatever the command opened on it`;
@@ -797,23 +852,25 @@ function sourcesUnseenText(args) {
  * (`unseen: 'expansion'`). A redirect's target and the digits of `2>` are never a script file. A
  * script file that is a descriptor other than 0 (`/dev/fd/3`) is unseen (`unseen: 'descriptor'`).
  * Of several redirects of the input the last one counts, as in bash, and a descriptor other than 0
- * (`3< file`) is not the input.
+ * (`3< file`) is not the input. A word is a redirect or a descriptor only when `op` and `fd` (the
+ * marks `commandParts` gives) say it was unquoted, so `'<'` among the arguments is an argument.
  */
-function shellSource(args, bodies, expanded = []) {
+function shellSource(args, bodies, { expanded = [], op = [], fd = [] } = {}) {
   const operands = [];
   const inputs = [];
   let withC = false;
   let withS = false;
   let optionsDone = false;
-  let fd = null; // the digits written right before a redirect: `3<` is not the shell's input
+  const isRedirect = (i) => op[i] === true && REDIRECT.test(args[i] ?? '');
+  let descriptor = null; // the digit written right before a redirect: `3<` is not the shell's input
   for (let i = 0; i < args.length; i++) {
     const w = args[i];
     if (w === PROCESS_OUTPUT) continue;
-    if (REDIRECT.test(w)) {
+    if (isRedirect(i)) {
       i++;
-      if (fd === null || /^0+$/.test(fd)) inputs.push([w, args[i], expanded[i]]);
-      fd = null;
-    } else if (/^\d+$/.test(w) && REDIRECT.test(args[i + 1] ?? '')) fd = w;
+      if (descriptor === null || /^0+$/.test(descriptor)) inputs.push([w, args[i], expanded[i]]);
+      descriptor = null;
+    } else if (fd[i] === true && isRedirect(i + 1)) descriptor = w;
     else if (optionsDone || operands.length) operands.push(i);
     else if (w === '--' || w === '-') optionsDone = true;
     else if (SHELL_LONG_VALUE.has(w)) i++;
