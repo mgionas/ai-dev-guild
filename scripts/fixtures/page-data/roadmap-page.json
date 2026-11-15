@@ -1,0 +1,24 @@
+{
+  "meta": [{ "id": "info", "headline": "Milestone one is built; two is in review.", "updated": "2026-01-15" }],
+  "milestones": [
+    { "id": "m1", "code": "M1", "name": "First release", "status": "done", "order": 1 },
+    { "id": "m2", "code": "M2", "name": "Second release", "status": "active", "order": 2 },
+    { "id": "m3", "code": "M3", "name": "Later", "status": "planned", "order": 3, "summary": "Not yet broken into steps." }
+  ],
+  "items": [
+    { "id": "i1", "milestone": "m1", "title": "Sign-in", "status": "done", "order": 1 },
+    {
+      "id": "i2", "milestone": "m2", "title": "Orders", "note": "Needs a decision on refunds.", "status": "active", "order": 2, "needsOwner": true, "ref": "plan 2",
+      "subtasks": [
+        { "title": "Order list", "stage": "merged", "ref": "t-1" },
+        { "title": "Order detail", "stage": "review", "note": "Two findings." },
+        { "title": "Refunds", "stage": "waiting" },
+        { "title": "Export", "stage": "planned" },
+        { "title": "Search", "stage": "building" },
+        { "title": "Archive", "stage": "fixing" }
+      ]
+    },
+    { "id": "i3", "milestone": "m2", "title": "Reports", "status": "planned", "order": 3 },
+    { "id": "i4", "title": "Ideas", "status": "pending", "order": 4 }
+  ]
+}
