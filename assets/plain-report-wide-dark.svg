@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 250" width="1280" height="250" role="img" aria-label="How plain-report works: 1 a draft report such as “Robust fix. All tests pass.”; 2 check one, plain phrasing; 3 check two, each claim matched to its evidence; 4 the sent report, the plain version with the test count and what was not run.">
+<defs>
+<marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9198a1"/></marker>
+<marker id="ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#e3b341"/></marker>
+</defs>
+<rect x="1" y="1" width="1278" height="248" rx="18" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+<rect x="25" y="58" width="270" height="118" rx="14" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<circle cx="58" cy="88" r="15" fill="#e3b341"/>
+<text x="58" y="94" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0d1117">1</text>
+<text x="81" y="95" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="650" fill="#f0f6fc">Draft report</text>
+<text x="45" y="130" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" fill="#e3b341">what the agent wrote</text>
+<text x="45" y="156" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14.5" fill="#9198a1">“Robust fix. All tests pass.”</text>
+<rect x="345" y="58" width="270" height="118" rx="14" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<circle cx="378" cy="88" r="15" fill="#e3b341"/>
+<text x="378" y="94" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0d1117">2</text>
+<text x="401" y="95" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="650" fill="#f0f6fc">Plain phrasing</text>
+<text x="365" y="130" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" fill="#e3b341">no filler, no hype</text>
+<text x="365" y="156" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14.5" fill="#9198a1">one point per sentence</text>
+<rect x="665" y="58" width="270" height="118" rx="14" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<circle cx="698" cy="88" r="15" fill="#e3b341"/>
+<text x="698" y="94" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0d1117">3</text>
+<text x="721" y="95" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="650" fill="#f0f6fc">Claim vs evidence</text>
+<text x="685" y="130" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" fill="#e3b341">verb no stronger than</text>
+<text x="685" y="156" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14.5" fill="#9198a1">the test, command or file</text>
+<rect x="985" y="58" width="270" height="118" rx="14" fill="#12261e" stroke="#3fb950" stroke-width="1.6"/>
+<circle cx="1018" cy="88" r="15" fill="#3fb950"/>
+<text x="1018" y="94" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0d1117">4</text>
+<text x="1041" y="95" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="650" fill="#f0f6fc">Sent report</text>
+<text x="1005" y="130" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" fill="#3fb950">the plain version</text>
+<text x="1005" y="156" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14.5" fill="#9198a1">212/212 tests; suite not run</text>
+<path d="M298 117 L342 117" stroke="#9198a1" stroke-width="2" marker-end="url(#m)"/>
+<path d="M618 117 L662 117" stroke="#9198a1" stroke-width="2" marker-end="url(#m)"/>
+<path d="M938 117 L982 117" stroke="#9198a1" stroke-width="2" marker-end="url(#m)"/>
+<text x="640" y="34" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#9198a1">Two checks run on every text an agent writes for a person.</text>
+<text x="23" y="218" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#f0f6fc">“Fixed” only after a test went red, then green. A skipped step goes in the main text.</text>
+</svg>

@@ -5,6 +5,7 @@ real project's workflow before it was written here; **(new)** means it has not y
 
 ## Unreleased
 
+- README: a "Living pages" section says what the roadmap, QA board, analysis page, project map and system map are, why the guild keeps them, how they work (artifacts or embedded rows) and how they help, a "Plain reports" section explains `plain-report` with a before and after, two rows join the "What changes" table, and each new section has a diagram. (field-tested)
 - Guards 0.3.1: three gaps closed. `source` and `.` of `/dev/stdin`, `-` or a `<(…)`, and a shell given
   `<(…)` as its script, are asked about; `$'…'` escapes (`\x65`, octal, `\u`, `\U`, `\cX`, `\e` and the rest)
   are decoded before any rule judges the word, so `cat $'.\x65nv'` is refused; and a shell that reads an
