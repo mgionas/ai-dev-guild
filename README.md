@@ -13,11 +13,11 @@
 </p>
 
 <p align="center">
-  <a href="#install-in-2-minutes">Install</a> ·
+  <a href="#what-the-loop-catches">What it catches</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#what-changes">What changes</a> ·
-  <a href="#whats-inside">What's inside</a> ·
   <a href="#living-pages">Living pages</a> ·
+  <a href="#install-in-2-minutes">Install</a> ·
+  <a href="#whats-inside">What's inside</a> ·
   <a href="docs/mistakes.md">Mistakes it prevents</a>
 </p>
 
@@ -29,6 +29,21 @@ AI agents write code fast and report success with confidence, even when no test 
 craft guild, no maker stamps their own work: a master inspects it first. **ai-dev-guild is a
 Claude Code plugin that brings that rule to your project.** Each task goes to a fresh builder
 agent. A different agent reviews it, and the task is not done until the test output is pasted in.
+
+## What the loop catches
+
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/stats-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/stats-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/stats-wide-dark.svg">
+  <img alt="What the loop catches, on average across reviewed tasks built with this workflow: about 90% of tasks had a blocking issue found by an independent reviewer before merge; about 70% of security reviews found a real issue; about 95% of question batches were answered with one accept all; at least 20% of tasks needed a second fix round; about 10% of fix rounds broke something new that the next check caught; at least 5% of done reports claimed more than their evidence." src="assets/stats-wide-light.svg" width="100%">
+</picture>
+
+Counted from the review, fix and decision records of real work, weighted by the number of tasks.
+A builder's own report would have shipped most of these issues: the reviewer who did not write the
+code is the one who finds them, and the re-check after a fix still catches about one new problem in
+ten. To see where your own sessions spend their time and tokens, run the
+[`token-review`](plugin/skills/token-review/SKILL.md) skill.
 
 ## What changes
 
@@ -66,6 +81,95 @@ agent. A different agent reviews it, and the task is not done until the test out
 Bigger choices (scope, pricing, legal exposure) go to the **board**: eight advisor agents who
 answer independently, a summary that keeps disagreement visible, and you making the call.
 More on the loop: [docs/loop.md](docs/loop.md).
+
+## Living pages
+
+The guild keeps a few pages current for you, so you can see where a project stands without asking.
+
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/pages-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/pages-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/pages-wide-dark.svg">
+  <img alt="How the living pages stay current: 1 an agent's change (a merge, a stage change, a test result or a decision); 2 written in the same turn into the page's data; 3 the living pages (roadmap, QA board, analysis page, project and system map); 4 you read them on a phone. 5 Testers mark Pass, Fail or Blocked back on the QA board." src="assets/pages-wide-light.svg" width="100%">
+</picture>
+
+| Page | What you see there |
+| --- | --- |
+| **Roadmap** | Milestones a user can see, each step with its stage (planned, building, review, fixing, merged), and what waits on you. |
+| **QA board** | One entry per change, with the features it touched and the checks a tester should run. |
+| **Analysis page** | The facts behind a decision, each figure tagged sourced, assumption or gap, with your dated answer written back. |
+| **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
+| **System map** | Which feature owns each API operation, screen, table and job. A starter check in [`examples/system-map`](examples/system-map) refuses anything new and undescribed. |
+
+**What they look like** (example data, as the templates ship):
+
+<table>
+<tr><td colspan="2"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/roadmap-dark.png"><img alt="Roadmap page: a headline, four milestone cards with progress bars, then a board of work items in four lanes (completed, in progress, planned, pending), one item marked needs you, and an item's tasks each with a stage." src="assets/screens/roadmap-light.png" width="100%"></picture><br><sub><b>Roadmap</b>: milestones, a four-lane board, and what waits on you.</sub></td></tr>
+<tr><td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/qa-dark.png"><img alt="QA board page: totals for to test, failed, blocked and passed, filters, then one update with its features and checks, each with Pass, Fail and Blocked buttons and a note." src="assets/screens/qa-light.png" width="100%"></picture><br><sub><b>QA board</b>: each change's checks, marked by testers.</sub></td>
+<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/analysis-dark.png"><img alt="Analysis page: the question, a summary, figures tagged sourced, assumption or gap with source numbers, and options with the recommended one marked for you to decide." src="assets/screens/analysis-light.png" width="100%"></picture><br><sub><b>Analysis page</b>: every figure tagged, you decide.</sub></td></tr>
+<tr><td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/system-map-dark.png"><img alt="System map page: counts of areas, features, API operations, screens and tables, then one card per feature with its status, area, operations, screens and tables." src="assets/screens/system-map-light.png" width="100%"></picture><br><sub><b>System map</b>: which feature owns each operation, screen and table.</sub></td>
+<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/map-dark.png"><img alt="Project map page: a diagram of the web app, API, database and email provider with the links between them, and one card per part." src="assets/screens/map-light.png" width="100%"></picture><br><sub><b>Project map</b>: the parts and who talks to whom.</sub></td></tr>
+</table>
+
+**Why.** Progress, test results and decisions get lost in a chat's scrollback. A page you can open
+on a phone answers "where are we?" without you asking an agent.
+
+**Why a system map.** Agents write and change code often and fast, and a developer can lose track of
+what now exists and why. The system map is read from the code, so it shows what is really there: each
+API operation, screen and table and the feature that owns it, plus the decisions people recorded for
+that feature. The starter check in [`examples/system-map`](examples/system-map), run with `--base`
+against the main branch, refuses a new operation, screen or table that no feature describes, so the
+map cannot quietly fall behind the code.
+
+**How it works.**
+
+- In Claude Code the pages publish as claude.ai artifacts. For the roadmap and the QA board, agents
+  write the rows into the artifact's database in the same turn as each change, unprompted, so a
+  status change is a data write and not a new page.
+- If you do not use artifacts, the same page works as a plain file with the rows embedded in it.
+  The QA board's buttons are then read-only.
+- On the QA board, testers mark each check Pass, Fail or Blocked and add a note. The board shows who
+  marked it and when, and an agent never overwrites a tester's result.
+- On an analysis page, a figure with no tag is not put on the page. The page reports and never
+  decides: the options come with a recommendation, and your answer is written back with its date.
+- All pages share one design ([`page-design.md`](plugin/skills/progress-boards/page-design.md)), for
+  light and dark themes and for a phone. `setup` asks which pages the project wants and whether they
+  use the house look or the project's brand.
+
+**How it helps.**
+
+- A tester knows what changed and what to retest, because each update lists its checks.
+- You answer a decision from numbers whose trust level is on the page, and the answer stays beside them.
+- A newcomer gets the picture of the parts and folders from a page read from the code, so it matches
+  what is there.
+- After a run of agent changes, a developer finds which feature a new route or table belongs to in
+  one search, instead of reading the diff.
+
+Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/skills/progress-boards/SKILL.md),
+[`analysis-page`](plugin/skills/analysis-page/SKILL.md), [`project-map`](plugin/skills/project-map/SKILL.md),
+[`system-map`](plugin/skills/system-map/SKILL.md).
+
+### Plain reports
+
+<picture>
+  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/plain-report-tall-dark.svg">
+  <source media="(max-width: 700px)" srcset="assets/plain-report-tall-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/plain-report-wide-dark.svg">
+  <img alt="How plain-report works: 1 a draft report such as “Robust fix. All tests pass.”; 2 check one, plain phrasing; 3 check two, each claim matched to its evidence; 4 the sent report, the plain version with the test count and what was not run." src="assets/plain-report-wide-light.svg" width="100%">
+</picture>
+
+Agents report success with confidence and pad with filler. The [`plain-report`](plugin/skills/plain-report/SKILL.md)
+skill edits every text an agent writes for a person: builder and fixer reports, the controller's
+messages to you, pull request bodies. It makes the wording plain and keeps each claim no stronger than
+its evidence. "Fixed" is written only after a test failed and then passed. A loose size becomes a number
+with its source. A skipped step is said in the main text, not parked in a linked file.
+
+| Before | After |
+| --- | --- |
+| Robust, comprehensive fix. All tests pass. | Fixed the date parsing for February 29. The new test failed before the change and passes now. Unit tests 212/212; the integration suite was not run. |
+
+Written fresh from the ideas of [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer)
+and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copied.
 
 ## Install in 2 minutes
 
@@ -225,110 +329,6 @@ open on bad input: your pre-commit hooks and CI stay the authority. With the def
 so create and rename secret files yourself. The hooks do not protect their own files or
 `.claude/protected-paths`.
 </details>
-
-## Living pages
-
-The guild keeps a few pages current for you, so you can see where a project stands without asking.
-
-<picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/pages-tall-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/pages-tall-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/pages-wide-dark.svg">
-  <img alt="How the living pages stay current: 1 an agent's change (a merge, a stage change, a test result or a decision); 2 written in the same turn into the page's data; 3 the living pages (roadmap, QA board, analysis page, project and system map); 4 you read them on a phone. 5 Testers mark Pass, Fail or Blocked back on the QA board." src="assets/pages-wide-light.svg" width="100%">
-</picture>
-
-| Page | What you see there |
-| --- | --- |
-| **Roadmap** | Milestones a user can see, each step with its stage (planned, building, review, fixing, merged), and what waits on you. |
-| **QA board** | One entry per change, with the features it touched and the checks a tester should run. |
-| **Analysis page** | The facts behind a decision, each figure tagged sourced, assumption or gap, with your dated answer written back. |
-| **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
-| **System map** | Which feature owns each API operation, screen, table and job. A starter check in [`examples/system-map`](examples/system-map) refuses anything new and undescribed. |
-
-**What they look like** (example data, as the templates ship):
-
-<table>
-<tr><td colspan="2"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/roadmap-dark.png"><img alt="Roadmap page: a headline, four milestone cards with progress bars, then a board of work items in four lanes (completed, in progress, planned, pending), one item marked needs you, and an item's tasks each with a stage." src="assets/screens/roadmap-light.png" width="100%"></picture><br><sub><b>Roadmap</b>: milestones, a four-lane board, and what waits on you.</sub></td></tr>
-<tr><td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/qa-dark.png"><img alt="QA board page: totals for to test, failed, blocked and passed, filters, then one update with its features and checks, each with Pass, Fail and Blocked buttons and a note." src="assets/screens/qa-light.png" width="100%"></picture><br><sub><b>QA board</b>: each change's checks, marked by testers.</sub></td>
-<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/analysis-dark.png"><img alt="Analysis page: the question, a summary, figures tagged sourced, assumption or gap with source numbers, and options with the recommended one marked for you to decide." src="assets/screens/analysis-light.png" width="100%"></picture><br><sub><b>Analysis page</b>: every figure tagged, you decide.</sub></td></tr>
-<tr><td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/system-map-dark.png"><img alt="System map page: counts of areas, features, API operations, screens and tables, then one card per feature with its status, area, operations, screens and tables." src="assets/screens/system-map-light.png" width="100%"></picture><br><sub><b>System map</b>: which feature owns each operation, screen and table.</sub></td>
-<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/map-dark.png"><img alt="Project map page: a diagram of the web app, API, database and email provider with the links between them, and one card per part." src="assets/screens/map-light.png" width="100%"></picture><br><sub><b>Project map</b>: the parts and who talks to whom.</sub></td></tr>
-</table>
-
-**Why.** Progress, test results and decisions get lost in a chat's scrollback. A page you can open
-on a phone answers "where are we?" without you asking an agent.
-
-**Why a system map.** Agents write and change code often and fast, and a developer can lose track of
-what now exists and why. The system map is read from the code, so it shows what is really there: each
-API operation, screen and table and the feature that owns it, plus the decisions people recorded for
-that feature. The starter check in [`examples/system-map`](examples/system-map), run with `--base`
-against the main branch, refuses a new operation, screen or table that no feature describes, so the
-map cannot quietly fall behind the code.
-
-**How it works.**
-
-- In Claude Code the pages publish as claude.ai artifacts. For the roadmap and the QA board, agents
-  write the rows into the artifact's database in the same turn as each change, unprompted, so a
-  status change is a data write and not a new page.
-- If you do not use artifacts, the same page works as a plain file with the rows embedded in it.
-  The QA board's buttons are then read-only.
-- On the QA board, testers mark each check Pass, Fail or Blocked and add a note. The board shows who
-  marked it and when, and an agent never overwrites a tester's result.
-- On an analysis page, a figure with no tag is not put on the page. The page reports and never
-  decides: the options come with a recommendation, and your answer is written back with its date.
-- All pages share one design ([`page-design.md`](plugin/skills/progress-boards/page-design.md)), for
-  light and dark themes and for a phone. `setup` asks which pages the project wants and whether they
-  use the house look or the project's brand.
-
-**How it helps.**
-
-- A tester knows what changed and what to retest, because each update lists its checks.
-- You answer a decision from numbers whose trust level is on the page, and the answer stays beside them.
-- A newcomer gets the picture of the parts and folders from a page read from the code, so it matches
-  what is there.
-- After a run of agent changes, a developer finds which feature a new route or table belongs to in
-  one search, instead of reading the diff.
-
-Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/skills/progress-boards/SKILL.md),
-[`analysis-page`](plugin/skills/analysis-page/SKILL.md), [`project-map`](plugin/skills/project-map/SKILL.md),
-[`system-map`](plugin/skills/system-map/SKILL.md).
-
-### Plain reports
-
-<picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/plain-report-tall-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/plain-report-tall-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/plain-report-wide-dark.svg">
-  <img alt="How plain-report works: 1 a draft report such as “Robust fix. All tests pass.”; 2 check one, plain phrasing; 3 check two, each claim matched to its evidence; 4 the sent report, the plain version with the test count and what was not run." src="assets/plain-report-wide-light.svg" width="100%">
-</picture>
-
-Agents report success with confidence and pad with filler. The [`plain-report`](plugin/skills/plain-report/SKILL.md)
-skill edits every text an agent writes for a person: builder and fixer reports, the controller's
-messages to you, pull request bodies. It makes the wording plain and keeps each claim no stronger than
-its evidence. "Fixed" is written only after a test failed and then passed. A loose size becomes a number
-with its source. A skipped step is said in the main text, not parked in a linked file.
-
-| Before | After |
-| --- | --- |
-| Robust, comprehensive fix. All tests pass. | Fixed the date parsing for February 29. The new test failed before the change and passes now. Unit tests 212/212; the integration suite was not run. |
-
-Written fresh from the ideas of [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer)
-and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copied.
-
-## What the loop catches
-
-<picture>
-  <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/stats-tall-dark.svg">
-  <source media="(max-width: 700px)" srcset="assets/stats-tall-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/stats-wide-dark.svg">
-  <img alt="What the loop catches, on average across reviewed tasks built with this workflow: about 90% of tasks had a blocking issue found by an independent reviewer before merge; about 70% of security reviews found a real issue; about 95% of question batches were answered with one accept all; at least 20% of tasks needed a second fix round; about 10% of fix rounds broke something new that the next check caught; at least 5% of done reports claimed more than their evidence." src="assets/stats-wide-light.svg" width="100%">
-</picture>
-
-Counted from the review, fix and decision records of real work, weighted by the number of tasks.
-A builder's own report would have shipped most of these issues: the reviewer who did not write the
-code is the one who finds them, and the re-check after a fix still catches about one new problem in
-ten. To see where your own sessions spend their time and tokens, run the
-[`token-review`](plugin/skills/token-review/SKILL.md) skill.
 
 ## Who it's for
 
