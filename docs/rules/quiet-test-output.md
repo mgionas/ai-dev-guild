@@ -22,6 +22,10 @@ assertion out of view. The test runners' own options already do this, so no extr
   `console.error`; `--reporter=dot --silent=false` kept it in two projects' probes, while the
   `minimal` reporter hid it on one patch version and kept it on another. Repeat the probe after
   every runner upgrade, patch versions included, and write its date next to the flags.
+- Pass the flags to the runner itself, not through a package-manager script. A package manager can
+  read a flag such as `--reporter` as its own and refuse the run, and a script that chains two
+  commands passes the flags to the last one only. Run the exact command once before writing it into
+  a brief or a role.
 - Some runners turn quiet on by themselves when they detect an agent. Check what the default does
   as well as the flags you add.
 - The count names how many test files and how many tests ran. Zero tests, a missing count, or a
