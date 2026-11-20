@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.18.0 (2026-11-20)
+
+- Lessons from a real project's workflow, each where it applies. Fixers run the guard tests every round as well as the covering tests, and the findings file names them (`fixer`, `fix-round`). Builders and fixers stop and report when a hook refuses (roles and their pages), instead of taking the alternative the refusal suggests. The `security-reviewer` checks a cap on requests in flight, statement timeouts shorter than the connection wait, and one person setting off two limits at once. A wait-until-quiet loop runs as its own command and counts only named busy signals, with two quiet checks and a time limit; a port clash or a hung process is ruled out before a test is called flaky (`local-ci`, `docs/rules/heavy-runs-once.md`). A branch too big for one reviewer is reviewed by area, and a reviewer may be resumed for its own confirm-only re-check (`review-panel`, `fix-round`). Pull requests that change the lockfile merge one at a time (`run-task`). `docs/mistakes.md` gains "A wait that waits on itself" and a connection-dependent count. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.17.2 (2026-11-16)
 
 - The skills that need a script (`local-ci`, `system-map`, `flow-stats`) no longer carry a download command: they ask the user to copy the folder from the matching release tag, following the new `docs/copy-a-script.md`, and never download it themselves. The plugin README says so under "What it runs, sends and fetches". The plugin directory had flagged the commands as download-and-run. `setup` step 8 and `docs/troubleshooting.md` follow. Guards unchanged (0.3.2). (new)

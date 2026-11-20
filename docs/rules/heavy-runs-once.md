@@ -25,6 +25,9 @@ and on a machine shared by several agents it starves everyone else's runs.
   sessions' runs, and if CI runs on this machine, ask the CI host whether a run is in progress.
   Tell the other sessions you are starting, and wait for a "done" from any that is running its own.
   Repeat the check before each run, since runners take jobs at any moment.
+- A wait-until-quiet loop runs as its own command, before the heavy one, and counts only named
+  busy signals (CI runs, named test tools, their containers), never "any container not ours". It
+  needs two quiet checks in a row and a time limit.
 
 **Where it lives:** the `local-ci`, `write-brief` and `fix-round` skills.
 

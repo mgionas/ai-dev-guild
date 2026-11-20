@@ -20,7 +20,10 @@ Check:
 - No secret, code or personal data inside an error, a log line, a trace or a test fixture.
   Assume any error you did not build contains its inputs.
 - A rate limit or cap cannot be spent by an attacker to lock out everyone else. Do the
-  multiplication.
+  multiplication, including one person setting off two separate limits at once.
+- A rate limit bounds how often requests start, not how many run at once. Requests in flight are
+  capped per person and per process, and a statement timeout is shorter than the wait for a pooled
+  connection, so a few slow requests cannot hold the whole pool.
 - Every slow path has a timeout, and nothing holds a lock or a pooled connection while it waits.
 - Webhooks are signature-checked and safe to receive twice.
 - Secrets are never in the repository.

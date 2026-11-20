@@ -53,6 +53,15 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   session: runners take jobs at any moment, so a check made at the start of the day is out of date
   by the time you run. The check does not cover git hooks, which is one more reason they stay
   light.
+- **A loop that waits for a quiet machine must not wait on itself.** Run the wait as its own
+  command and the heavy run as the next one. In `wait-quiet && run-tests` the waiting shell's own
+  command line names the test tool, so a `ps` check sees "busy" for ever. Name each busy signal: CI
+  runs in progress or queued, the named test tools in `ps`, and the containers those tools start
+  (Testcontainers and its reaper, for example). Never "any container that is not ours": another
+  project's always-on container keeps the loop waiting for hours. Call the machine quiet only after
+  two checks in a row, about 30 seconds apart. Give the loop a time limit; when it runs out, report
+  what kept it busy instead of starting anyway. A hung process left by an earlier run blocks every
+  wait the same way: name it in the report, and stop it only if you started it, by its PID.
 
 ## What makes it strict
 
@@ -120,7 +129,10 @@ suites at once on a shared machine, even in different checkouts: they compete fo
 and a database or container they share turns that into failures. Check what is already running
 before you start. If a run is killed with exit code 143, check whether some agent ran `pkill -f`
 before you blame the machine's load. A test that times out only on CI is a question about the
-machine first: count the processes per core before you raise a timeout.
+machine first: count the processes per core before you raise a timeout. Before you call a test
+flaky, rule out two causes that look like one: another process already holding a port the test or
+its runner binds (a dev server, another checkout's run), and a hung process from an earlier run
+holding a port, a lock or a database.
 
 Paste the summary in the report: the mode line, each step's line and the verdict.
 

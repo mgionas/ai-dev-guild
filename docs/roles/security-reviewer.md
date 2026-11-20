@@ -25,6 +25,6 @@ Use the ai-dev-guild:security-reviewer agent on the diff of branch T-12 against 
 ```
 
 ## Why it exists
-Security faults hide in what a builder assumed. The role checks the same list every time: one permission check, account isolation, failing closed, no secrets in errors, caps an attacker cannot spend, timeouts and signed webhooks. It reads the assumptions last so they do not steer it.
+Security faults hide in what a builder assumed. The role checks the same list every time: one permission check, account isolation, failing closed, no secrets in errors, caps an attacker cannot spend, a cap on requests in flight, timeouts and signed webhooks. It reads the assumptions last so they do not steer it.
 
 Origin: field-tested — this role ran in a production project's workflow before it was made generic.

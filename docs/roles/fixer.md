@@ -8,6 +8,7 @@ Fixes a precise list of review findings in a fresh context and reruns only the t
 - Every fix round after a review.
 - Use it instead of sending the findings back to the original builder.
 - Not for new features or for findings that were not written down.
+- When a hook or guard refuses a command or an edit, it stops and reports; it does not take the alternative the refusal suggests.
 
 ## What it gets
 - A findings file and a report path.
@@ -28,6 +29,6 @@ Use the ai-dev-guild:fixer agent with the findings file .work/tasks/T-12/finding
 ```
 
 ## Why it exists
-A resumed builder tends to defend its first answer. A fresh fixer reads only the findings, adds a test that fails without each fix, and runs only the tests that cover the change. The full suite runs once, later, before merge.
+A resumed builder tends to defend its first answer. A fresh fixer reads only the findings, adds a test that fails without each fix, and runs only the tests that cover the change, plus the project's guard tests, which a fix can break without any covering test noticing. The full suite runs once, later, before merge.
 
 Origin: field-tested — this role ran in a production project's workflow before it was made generic.

@@ -16,7 +16,13 @@ Rules:
   your report, not a silent skip.
 - For each fix, first add or change a test that fails without the fix. Watch it fail, then fix.
 - Run only the tests that cover your changes (the findings file names them where it can), plus
-  lint, typecheck and format of the files you touched. The full suite runs once, later, before merge.
+  the project's guard tests (the suites that check the repository itself, such as module
+  boundaries, declared build inputs or policy maps; the findings file names them), and lint,
+  typecheck and format of the files you touched. A fix can break a guard suite no covering test
+  reaches. The full suite runs once, later, before merge.
+- If a hook or guard refuses a command or an edit, stop and report it. Do not take the
+  alternative its message suggests: the refusal is the project saying no, and choosing another way
+  is for a person.
 - A test that fails only on CI by timing out is not fixed by a longer timeout. Read the project's
   "Where CI runs" page and find what starves the machine; if you cannot, report it as not fixed.
 - Follow the project's history rule (its `AGENTS.md`, "History"; the brief repeats it). With none,

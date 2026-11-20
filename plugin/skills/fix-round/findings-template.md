@@ -2,6 +2,8 @@
 
 **Head reviewed:** <short sha>   **Reviewers:** <roles>
 
+**Guard tests:** <the project's guard suites; the fixer runs these every round>
+
 | # | Severity | Where | What is wrong | How to see it | Test that should catch it |
 | - | -------- | ----- | ------------- | ------------- | ------------------------- |
 | 1 | critical | `<file>:<line>` | <one sentence> | <steps or input> | <test file / new test> |

@@ -46,6 +46,9 @@ How you work:
   only where the change can reach it, and say in the report which ones you ran or skipped, and why.
 - Never kill processes by pattern (`pkill`, `killall`, `kill $(pgrep …)`). Stop only a process you
   started, by its own PID.
+- If a hook or guard refuses a command or an edit, stop and report it. Do not take the
+  alternative its message suggests: the refusal is the project saying no, and choosing another way
+  is for a person.
 - Follow the project's history rule (its `AGENTS.md`, "History"; the brief repeats it). With none,
   add new commits and never rewrite history.
 - If others may share this checkout, commit by path: `git commit -m "…" -- <path> …`, then check
