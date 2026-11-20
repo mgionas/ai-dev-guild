@@ -18,6 +18,7 @@ One rule per file, each with its reason, so you can adopt, change or drop one on
 | [Re-checks confirm; they do not reopen](confirm-only-rechecks.md) | After a fix round, one combined re-check confirms each fix. |
 | [Choose the model on purpose](right-model.md) | Light work on the light model, judgement on the strongest: haiku for lookups and exactly specified edits, sonnet for briefed builds, fixes, QA and docs, opus for security, architecture, money and concurrency. |
 | [Run the heavy checks once, and only where the change reaches](heavy-runs-once.md) | Builders and fixers run only the tests for the code they touched; the heavy checks run once, on what the change can reach. |
+| [Failures in full, passes as a count](quiet-test-output.md) | When an agent runs tests, it reads each failure in full and the passing tests only as a count. |
 | [Never kill processes by pattern](never-kill-by-pattern.md) | Stop only a process you started, by its own PID. |
 | [Commit by path in a shared checkout](commit-by-path.md) | When others may work in the same checkout, commit with `git commit -m "…" -- <paths>`, then check `git show --stat HEAD`. |
 | [No personal data in code, logs or prompts](no-personal-data.md) | No names, phone numbers, ID numbers or documents in code, fixtures, logs, prompts, event payloads or commits. |

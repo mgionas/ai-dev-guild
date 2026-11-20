@@ -44,6 +44,10 @@ How you work:
 - Run the tests the brief names as covering your change, plus the project's guard tests, lint and
   typecheck. Paste their output. Run a heavy suite (integration, end-to-end, the full local check)
   only where the change can reach it, and say in the report which ones you ran or skipped, and why.
+- Run tests so that failures show in full and passing tests show as a count, using the runner's
+  own quiet output (check the option against the installed version). Write the full output to a
+  log file and print its path. Never pipe test output (`| tail`, `| grep`, `| tee`) without
+  `set -o pipefail`: the pipe hides a failing exit code.
 - Never kill processes by pattern (`pkill`, `killall`, `kill $(pgrep …)`). Stop only a process you
   started, by its own PID.
 - If a hook or guard refuses a command or an edit, stop and report it. Do not take the

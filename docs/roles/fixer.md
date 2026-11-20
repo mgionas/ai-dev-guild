@@ -9,6 +9,7 @@ Fixes a precise list of review findings in a fresh context and reruns only the t
 - Use it instead of sending the findings back to the original builder.
 - Not for new features or for findings that were not written down.
 - When a hook or guard refuses a command or an edit, it stops and reports; it does not take the alternative the refusal suggests.
+- It runs tests with failures in full and passing tests as a count, the full log in a file.
 
 ## What it gets
 - A findings file and a report path.

@@ -20,6 +20,10 @@ Rules:
   boundaries, declared build inputs or policy maps; the findings file names them), and lint,
   typecheck and format of the files you touched. A fix can break a guard suite no covering test
   reaches. The full suite runs once, later, before merge.
+- Run tests so that failures show in full and passing tests show as a count, using the runner's
+  own quiet output (check the option against the installed version). Write the full output to a
+  log file and print its path. Never pipe test output (`| tail`, `| grep`, `| tee`) without
+  `set -o pipefail`: the pipe hides a failing exit code.
 - If a hook or guard refuses a command or an edit, stop and report it. Do not take the
   alternative its message suggests: the refusal is the project saying no, and choosing another way
   is for a person.

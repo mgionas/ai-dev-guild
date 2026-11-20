@@ -36,6 +36,8 @@ and the controller itself. If the field names differ in the version you find, sa
   the exception: that is cheap, and the `fix-round` skill asks for it.
 - **Double work:** two reviewers answering one question, a reviewer rerunning tests the builder
   already pasted, context retyped instead of read from a file.
+- **Long test output:** agents reading a line for every passing test instead of the failures and
+  a count.
 - **Long hand-backs:** reports pasted into the controller instead of written to a file. A hand-back
   of a few lines, pointing at the file, is enough.
 - **Context growth:** where the controller passed about 250K tokens of context, and where a
