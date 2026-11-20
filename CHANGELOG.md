@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.19.0 (2026-11-21)
+
+- New rule, "Failures in full, passes as a count" (`docs/rules/quiet-test-output.md`): agents run tests with the runner's own quiet output, read each failure in full and the passing tests as a count (test files and tests, where zero, a missing count or an unexplained drop is a failure), still see standard error, warnings and unhandled errors in full, list mutation survivors in full, paste the exit code and the log's path, prove once per runner that a passing test's error output still shows, keep the full log in a file, and never hide a failing exit code behind a pipe. The `builder`, `fixer` and `qa-tester` roles, the `write-brief` template, `token-review` and the `token-optimizer` follow. It should save input tokens on every test run; not yet measured. Guards unchanged (0.3.2). (new)
+
 ## 0.18.0 (2026-11-20)
 
 - Lessons from a real project's workflow, each where it applies. Fixers run the guard tests every round as well as the covering tests, and the findings file names them (`fixer`, `fix-round`). Builders and fixers stop and report when a hook refuses (roles and their pages), instead of taking the alternative the refusal suggests. The `security-reviewer` checks a cap on requests in flight, statement timeouts shorter than the connection wait, and one person setting off two limits at once. A wait-until-quiet loop runs as its own command and counts only named busy signals, with two quiet checks and a time limit; a port clash or a hung process is ruled out before a test is called flaky (`local-ci`, `docs/rules/heavy-runs-once.md`). A branch too big for one reviewer is reviewed by area, and a reviewer may be resumed for its own confirm-only re-check (`review-panel`, `fix-round`). Pull requests that change the lockfile merge one at a time (`run-task`). `docs/mistakes.md` gains "A wait that waits on itself" and a connection-dependent count. Guards unchanged (0.3.2). (field-tested)

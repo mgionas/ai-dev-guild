@@ -29,6 +29,7 @@ Common findings, so you recognise them:
 | Agents ran past about 110 turns                          | split the task, or hand off with a written handover at about 250K context                                          |
 | The controller's context passed 250K                     | `/compact` after each merge, and hand-backs of a few lines pointing at the report file                             |
 | Two reviewers covered the same ground                    | one scope per reviewer                                                                                             |
+| Test runs printed every passing test                     | the runner's quiet output: failures in full, passes as a count, the full log in a file                             |
 
 Report what you measured, not what you expected. If the numbers are too thin to say anything,
 say that.
