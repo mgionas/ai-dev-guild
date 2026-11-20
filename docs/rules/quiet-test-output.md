@@ -24,8 +24,10 @@ assertion out of view. The test runners' own options already do this, so no extr
   every runner upgrade, patch versions included, and write its date next to the flags.
 - Pass the flags to the runner itself, not through a package-manager script. A package manager can
   read a flag such as `--reporter` as its own and refuse the run, and a script that chains two
-  commands passes the flags to the last one only. Run the exact command once before writing it into
-  a brief or a role.
+  commands passes the flags to the last one only. Worse, a forwarded flag can arrive in a form the
+  runner ignores while the run still exits 0. Run the exact command once before writing it into a
+  brief or a role, and check the output really changed (the dots print, the summary is short), not
+  just the exit code.
 - Some runners turn quiet on by themselves when they detect an agent. Check what the default does
   as well as the flags you add.
 - The count names how many test files and how many tests ran. Zero tests, a missing count, or a
