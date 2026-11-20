@@ -16,7 +16,12 @@ assertion out of view. The test runners' own options already do this, so no extr
 - Leave out ordinary console output from passing tests, where the runner can show logs for failing
   tests only. Standard error, error and warning output still show in full, from passing tests
   too, and so does the runner's section for unhandled errors: a run can report every test passed
-  and still fail there.
+  and still fail there. Prove it once per runner: add a passing test that writes to the error
+  output and a failing one, run them, and check both show. Settings that silence passing tests can
+  silence their errors too. In Vitest 5, `--silent=passed-only` hides a passing test's
+  `console.error`, so pair a quiet reporter with `--silent=false`.
+- Some runners turn quiet on by themselves when they detect an agent. Check what the default does
+  as well as the flags you add.
 - The count names how many test files and how many tests ran. Zero tests, a missing count, or a
   count that dropped against the last run with no reason in the change, is a failure: a bare
   "passed" can hide a suite that never ran.
