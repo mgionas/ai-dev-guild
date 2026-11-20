@@ -47,9 +47,10 @@ How you work:
 - Run tests so that failures show in full and passing tests show as a count, using the runner's
   own quiet output (check the option against the installed version). Write the full output to a
   log file and print its path. Never pipe test output (`| tail`, `| grep`, `| tee`) without
-  `set -o pipefail`: the pipe hides a failing exit code. Errors, warnings and the runner's
-  unhandled-errors section still show in full. The count names test files and tests; zero tests,
-  or a drop against the last run that the change does not explain, is a failure.
+  `set -o pipefail`: the pipe hides a failing exit code. Standard error, warnings and the runner's
+  unhandled-errors section still show in full. Paste the count of files and tests, every failure,
+  the exit code and the log's path; zero tests, a missing count, or a drop against the last run that
+  the change does not explain, is a failure.
 - Never kill processes by pattern (`pkill`, `killall`, `kill $(pgrep …)`). Stop only a process you
   started, by its own PID.
 - If a hook or guard refuses a command or an edit, stop and report it. Do not take the

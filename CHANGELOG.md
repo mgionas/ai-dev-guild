@@ -11,7 +11,7 @@ heading where it changed.
 
 ## 0.19.0 (2026-11-21)
 
-- New rule, "Failures in full, passes as a count" (`docs/rules/quiet-test-output.md`): agents run tests with the runner's own quiet output, read each failure in full and the passing tests as a count (test files and tests, where zero or an unexplained drop is a failure), still see errors, warnings and unhandled errors in full, keep the full log in a file, and never hide a failing exit code behind a pipe. The `builder`, `fixer` and `qa-tester` roles, the `write-brief` template, `token-review` and the `token-optimizer` follow. It should save input tokens on every test run; not yet measured. Guards unchanged (0.3.2). (new)
+- New rule, "Failures in full, passes as a count" (`docs/rules/quiet-test-output.md`): agents run tests with the runner's own quiet output, read each failure in full and the passing tests as a count (test files and tests, where zero, a missing count or an unexplained drop is a failure), still see standard error, warnings and unhandled errors in full, list mutation survivors in full, paste the exit code and the log's path, keep the full log in a file, and never hide a failing exit code behind a pipe. The `builder`, `fixer` and `qa-tester` roles, the `write-brief` template, `token-review` and the `token-optimizer` follow. It should save input tokens on every test run; not yet measured. Guards unchanged (0.3.2). (new)
 
 ## 0.18.0 (2026-11-20)
 
