@@ -19,7 +19,9 @@ assertion out of view. The test runners' own options already do this, so no extr
   and still fail there. Prove it once per runner: add a passing test that writes to the error
   output and a failing one, run them, and check both show. Settings that silence passing tests can
   silence their errors too. In Vitest 5, `--silent=passed-only` hides a passing test's
-  `console.error`, so pair a quiet reporter with `--silent=false`.
+  `console.error`; `--reporter=dot --silent=false` kept it in two projects' probes, while the
+  `minimal` reporter hid it on one patch version and kept it on another. Repeat the probe after
+  every runner upgrade, patch versions included, and write its date next to the flags.
 - Some runners turn quiet on by themselves when they detect an agent. Check what the default does
   as well as the flags you add.
 - The count names how many test files and how many tests ran. Zero tests, a missing count, or a
