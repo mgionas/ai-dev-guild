@@ -28,6 +28,9 @@ assertion out of view. The test runners' own options already do this, so no extr
 - Write the full output to a log file outside the checkout (or a git-ignored one) and print its
   path, and keep it until the report is accepted. Nothing is lost: whoever needs a passing test's
   output reads the file.
+- The runner's own files (reports, traces, screenshots, result folders) go there too. Set the
+  runner's output folder, or run from a scratch folder: some runners write into the current folder
+  and leave files in the checkout.
 - Never pipe test output (`| tail`, `| grep`, `| tee`) without `set -o pipefail`. A pipeline reports
   the exit code of its last command, so a failing run reads as a pass. Or write to the file first
   and print the summary from it.
