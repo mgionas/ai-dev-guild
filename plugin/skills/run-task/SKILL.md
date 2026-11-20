@@ -31,7 +31,8 @@ The task: $ARGUMENTS
    model or no human available, go ahead with the panel and say so in the merge report.
 7. **Fix.** Merge the findings into one file and run the `fix-round` skill: a fresh `fixer`, never
    the builder's session resumed.
-8. **Re-check.** One combined re-check confirms the fixes. It does not reopen the review. New
+8. **Re-check.** One combined re-check confirms the fixes, by the reviewer who wrote each finding,
+   resumed where you can. It does not reopen the review. New
    non-blocking points go to the carried list. If the second re-check confirms every fix, stopping is the default: say so in the merge report, and
    the owner can still say "continue".
 9. **Strict local check.** Run the `local-ci` skill on the final head, once. First write down
@@ -102,5 +103,8 @@ Put these in every brief, because they were each learned the hard way:
 - Before any heavy run (a full suite, integration, end-to-end or mutation tests), write down which
   parts the change can reach and which steps cover them. Never two heavy runs at once on a shared
   machine.
+- Pull requests that each change the lockfile (dependency upgrades or overrides) merge one at a
+  time: merge one, update the next from main, and check it again. Opened in parallel, they
+  conflict in the lockfile.
 
 As the controller, `/compact` after each merge and whenever your context passes about 250K.

@@ -36,3 +36,11 @@ no human is available, go ahead with the panel you have and say so in the merge 
 - Ask each for findings with a severity and `file:line`. Merge them into one findings file for the
   `fix-round` skill, with duplicates removed and disagreements between reviewers shown, not hidden.
 - Product questions in the findings go to the owner as one batch (`decision-batch`), not to a fixer.
+
+## A branch too big for one reviewer
+
+When a merge brings in a long-lived branch of many tasks (tens of thousands of changed lines), one
+final reviewer cannot read it well. Split the final review by area, one reviewer each, in
+parallel: for example domain and database, API and background jobs, and screens. Give each the
+carried list for its area, to sort into must fix, cheap to fix now, or carry. After the fix round,
+resume the same reviewers, where you can, for the confirm-only re-check (the `fix-round` skill).

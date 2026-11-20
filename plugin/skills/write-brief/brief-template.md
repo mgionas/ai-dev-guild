@@ -27,7 +27,7 @@
 
 - Covering tests: <existing test files for this area>
 - New tests go: <beside the file they test, or the project's rule>
-- Guard tests to run: <boundary check, protected-paths check, docs index, system map, …>
+- Guard tests to run: <boundary check, protected-paths check, docs index, system map, …> (the same list goes in every fix round's findings file)
 - Commands: <exact test, lint, typecheck commands>
 - Where CI runs: <link, when the task touches CI, build config, timeouts or heavy tests>
 - Heavy steps: <which integration, end-to-end or full-suite steps this change can reach, and why;

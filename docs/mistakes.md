@@ -182,6 +182,12 @@ inside the window. The test then fails now and then, and mostly when the whole s
 **Fix:** measure the thing itself, not a side effect others share. For a database query, run
 `EXPLAIN` on the exact statement; for a cache, assert on that one call's result.
 
+A count can also depend on the connection that takes it. A test counted the locks one query takes.
+A pooled connection that had run the query before reused its cached plan, which locks only the
+indexes that plan reads; a fresh connection locks every index on the table. The bound held on some
+runs only. Take such a count on a fresh connection, or the bound is pinned to a number nobody can
+repeat.
+
 ## Evidence gathered where something repairs the bug
 
 A test compares a generated file with the committed one. On the author's machine the editor
@@ -219,6 +225,22 @@ that machine, and remote CI on main. Two failures on one day were load, not defe
 module-boundary check in the hook failed while another session's integration run was going. Count
 the places the suite runs and give each one run; keep git hooks to fast checks; before a heavy run,
 check for other sessions' runs and, when CI runs on the same machine, for a CI run in progress.
+
+## A wait that waits on itself
+
+```sh
+wait-quiet.sh && run-mutation-tests   # one shell command
+```
+
+Every session's busy check looked for test tool names in `ps`. This shell's own command line named
+the tool, so every loop saw "busy" and none ever started. Elsewhere a loop counted any container not
+named after the project as busy, and another project's always-on container kept it waiting for over
+nine hours.
+
+**Fix:** run the wait as its own command, then the heavy run. Count only named busy signals: CI
+runs, named test tools, and the containers those tools start. Call the machine quiet after two
+checks in a row about 30 seconds apart, and give the loop a time limit. (The
+[`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
 
 ## Believing the label instead of the artifact
 

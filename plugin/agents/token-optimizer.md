@@ -32,7 +32,8 @@ and the controller itself. If the field names differ in the version you find, sa
 - **The lightest model's chances:** lookups, running one command and reporting the result.
 - **Fix rounds:** how many per task, and whether a better brief would have prevented the findings.
 - **Resumed sessions:** sending findings back into a long builder session instead of a fresh fixer
-  is usually the single largest cost.
+  is usually the single largest cost. A reviewer resumed for its own confirm-only re-check is
+  the exception: that is cheap, and the `fix-round` skill asks for it.
 - **Double work:** two reviewers answering one question, a reviewer rerunning tests the builder
   already pasted, context retyped instead of read from a file.
 - **Long hand-backs:** reports pasted into the controller instead of written to a file. A hand-back

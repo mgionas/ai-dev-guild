@@ -9,12 +9,17 @@ argument-hint: "<task id> <round number>"
    should catch it. Leave out low findings that block nothing: they go to `.work/carried.md`.
 2. **Dispatch a fresh `fixer`** with that path. Never resume the builder's session: a long resumed
    context is slow, costly, and carries the reasoning that made the mistake.
-3. **The fixer runs only the covering tests**, plus lint, typecheck and format of touched files.
-   Everything else waits for the single strict local check before merging.
+3. **The fixer runs only the covering tests and the guard tests**, plus lint, typecheck and format
+   of touched files. Guard tests are the suites that check the repository itself (module
+   boundaries, declared build inputs, policy maps); name them in the findings file every round,
+   because a fix can break one that no covering test reaches. Everything else waits for the single
+   strict local check before merging.
 4. **One combined re-check.** One reviewer (or the one or two whose findings were fixed) confirms
    each fix against the findings file and writes `.work/tasks/<id>/recheck-<n>.md` with a line
    `**New problems:** <count>` (0 or more), which `flow-stats` counts. Security and money reviewers re-check their own critical
-   and high findings themselves.
+   and high findings themselves. Where you can, resume the reviewer who wrote a finding for its
+   re-check: it still has the context, so confirming costs a few tool calls. This is the one resume
+   the loop allows; a builder or fixer is never resumed.
 5. **Mutation survivors in access or permission code go to the `security-reviewer` before anyone
    fixes them.** Some are real gaps, some are equivalent mutants, and some cannot happen because a
    database constraint refuses the value. The report records each survivor's class: real gap,

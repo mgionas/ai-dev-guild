@@ -9,6 +9,7 @@ Builds one task from a brief file and writes a report file with evidence.
 - A task that must assume no country: UTC and IANA time zones, money with its currency code, locale formatting.
 - One task per agent; split a task that is too large.
 - Never use it to review its own work, or to fix review findings (use `fixer`).
+- When a hook or guard refuses a command or an edit, it stops and reports; it does not take the alternative the refusal suggests.
 
 ## What it gets
 - The path of the brief file. The brief is its whole world.
