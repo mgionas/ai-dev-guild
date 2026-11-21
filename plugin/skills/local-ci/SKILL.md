@@ -41,12 +41,22 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   format, protected files and text checks. Typecheck, the test suites and module-boundary checks run
   in the local check and in remote CI, not in a hook.
 - **Remote CI on main after a merge stays.** It catches a merge that went in out of date.
+- **A step that merges the main branch in stops when the merge fails.** A script or queue that
+  runs `git merge origin/main` before checking a branch reads the merge's exit code. On failure it
+  lists the unmerged files (`git diff --name-only --diff-filter=U`; an empty list means the merge
+  failed for another reason, so print git's message), runs `git merge --abort` so the next branch
+  starts from a clean tree, and stops with a failure. If it carries on, the build and the tests
+  run over conflict markers, and nothing may notice.
 - **One heavy run at a time on a machine, across sessions.** This is a rule with a check before you
   start, not a lock. If remote CI runs on this machine (a self-hosted runner), ask the CI host
-  whether a run is in progress (for GitHub,
-  `gh run list --repo <owner/repo> --status in_progress --limit 1`) and start only if it printed
-  nothing. Read the output, not the exit code. Hosted runners don't load this machine, so their
-  runs don't count. Also look for other sessions' test containers
+  whether a run is in progress or queued (for GitHub,
+  `gh run list --repo <owner/repo> --status in_progress --limit 1` and the same with
+  `--status queued`) and start only if both printed nothing. Read the output, not the exit code.
+  A queued run takes the machine as soon as a runner is free. Hosted runners don't load this
+  machine, so their runs don't count. On a self-hosted machine any push that starts remote CI (to
+  a branch with an open pull request, or a merge into the main branch) runs here, so it is a heavy
+  run too: a session that has asked for the machine, or is waiting for another session's "done",
+  holds those pushes and merges as well as its local runs. Also look for other sessions' test containers
   (`docker ps`) and other projects' test runners (`ps`). When other agent sessions share the
   machine and can message each other, tell them before you start, and if one is running its own
   heavy run, wait for its "done". Do all of this immediately before each heavy run, not once per
