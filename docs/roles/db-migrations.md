@@ -16,7 +16,8 @@ Designs schema changes and writes backward-compatible migrations with the tests 
 
 ## What it returns
 - A report as the builder role writes it, with the migration output and the integration test output pasted.
-- It follows expand, migrate, contract, and states each new table's retention answer.
+- It follows expand, migrate, contract, and states each new table's retention answer. A contract
+  step names the earlier expand migration it completes, so a check can refuse one that does not.
 - If the project isolates accounts in the database, the report shows a test that one account cannot see another's rows.
 
 ## Example

@@ -31,7 +31,8 @@ with an example is far less likely to come back.
 [Editing the decision to match the code](#editing-the-decision-to-match-the-code) ·
 [Killing processes by pattern](#killing-processes-by-pattern) ·
 [A commit that sweeps in someone else's staged files](#a-commit-that-sweeps-in-someone-elses-staged-files) ·
-[Resuming the builder to fix its own findings](#resuming-the-builder-to-fix-its-own-findings)
+[Resuming the builder to fix its own findings](#resuming-the-builder-to-fix-its-own-findings) ·
+[History where the reason should be](#history-where-the-reason-should-be)
 
 ---
 
@@ -354,3 +355,20 @@ mistakes.
 
 **Fix:** each fix round goes to a new `fixer` agent with a findings file (the
 [`fix-round`](../plugin/skills/fix-round/SKILL.md) skill).
+
+## History where the reason should be
+
+```ts
+// Task 14 adds the retry; fix round 2 moved it here (owner answer 367).
+```
+
+A comment like this tells a newcomer nothing they can use. Folder guides fill up the same way,
+with milestone stories and deploy notes. One project with a sound structure (boundary rules
+enforced, no violations) still felt too complex to read: about a third of its source lines were
+comments, much of it plan history, and its folder guides reached 24,000 lines that every agent
+loaded.
+
+**Fix:** a comment gives the reason and links the decision; a guide holds current rules
+([comments explain why](rules/comments-explain-why.md),
+[folder guides hold current rules](rules/guides-hold-current-rules.md)). Add a check that refuses
+new task references in source, and clean old ones only when a file is touched anyway.

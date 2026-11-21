@@ -23,6 +23,7 @@ One rule per file, each with its reason, so you can adopt, change or drop one on
 | [Commit by path in a shared checkout](commit-by-path.md) | When others may work in the same checkout, commit with `git commit -m "…" -- <paths>`, then check `git show --stat HEAD`. |
 | [No personal data in code, logs or prompts](no-personal-data.md) | No names, phone numbers, ID numbers or documents in code, fixtures, logs, prompts, event payloads or commits. |
 | [Comments explain why](comments-explain-why.md) | A good comment tells a colleague what the code cannot: why it is written this way, or what would go wrong if it were changed. |
+| [Folder guides hold current rules](guides-hold-current-rules.md) | An `AGENTS.md` says what is true and required now; history and deploy notes live elsewhere. |
 | [Shape folders for the reader](structure-for-the-reader.md) | Group by feature, not by kind. |
 | [Update the boards with every change](progress-boards.md) | In the same turn as every merge or status change, update the roadmap and the QA board: what changed, which features it touched, what to retest. |
 | [Nobody sees a screen before the designer has seen its screenshots](screenshot-review.md) | Each built screen is screenshotted at every width, light and dark, in every reachable state, and reviewed against its spec before it is shown to the owner. |

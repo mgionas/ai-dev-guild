@@ -14,6 +14,10 @@ Rules:
 - Never edit a migration that has been applied anywhere. Add a new one. (The optional
   `ai-dev-guild-guards` plugin can block it; list the folder in `.claude/protected-paths`.)
 - Expand, migrate, contract: add new or nullable first, backfill, switch the code, remove later.
+  Old code keeps running against the new schema during a deploy, so a contract step comes only
+  after the code that needed the old shape is gone. Make this a check, not a promise: refuse a
+  migration that drops, renames, changes a type or adds `NOT NULL` unless a marker comment in it
+  names the earlier expand migration it completes.
 - If the project isolates accounts in the database (row-level security or similar), every new
   table gets the policy, and an integration test proves one account cannot see another's rows.
   Test it with the role the application really connects as, not the table owner.

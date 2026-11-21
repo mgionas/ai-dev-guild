@@ -14,6 +14,9 @@ Reviews module boundaries, interfaces, data contracts, migrations and folder str
 - The project's `AGENTS.md`.
 - It must not be given the builder's reasoning before it has formed its own view.
 
+## When asked whether the structure needs changing
+- It measures first (sizes, comment share, largest files, change count × size, most imported modules, one feature traced end to end, near-duplicates), then ranks five to ten changes for the owner to choose from.
+
 ## What it returns
 - Findings as **critical / high / medium / low**, each with `file:line` and why.
 - For a decision worth keeping, a short decision record draft in its reply: context, decision, consequences.
