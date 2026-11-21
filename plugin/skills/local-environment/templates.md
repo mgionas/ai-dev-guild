@@ -251,12 +251,15 @@ services:
       # The certificate authority every project's addresses depend on. Copied from the old
       # project proxy's volume when moving, so the root the machine trusts stays the same.
       - <shared>-proxy-data:/data
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./sites:/etc/caddy/sites:ro
+      # The whole folder, as the validate command mounts it. A single-file mount of the
+      # Caddyfile keeps the old file when an editor or git replaces it, and reload would then
+      # apply the old content without an error.
+      - .:/etc/caddy:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     # No project network: every upstream is a host port, so no project has to be up for the
-    # proxy to start.
+    # proxy to start. On Linux, loopback-only ports are not reachable this way: use
+    # `network_mode: host` instead of `ports` and `extra_hosts`, and 127.0.0.1 upstreams.
 
 volumes:
   <shared>-proxy-data:
@@ -308,6 +311,12 @@ docker exec <shared>-proxy caddy reload --config /etc/caddy/Caddyfile
 Copying the certificate authority when moving out of a project (the old proxy stopped first):
 
 ```bash
+# The target must be empty; this prints nothing when it is. Anything listed means stop.
+docker run --rm -v <shared>-proxy-data:/to alpine:3.24.4 ls -A /to
 docker run --rm -v <project>-proxy-data:/from -v <shared>-proxy-data:/to alpine:3.24.4 \
   cp -a /from/. /to/
+# After the shared proxy starts: the two fingerprints must match.
+docker cp <shared>-proxy:/data/caddy/pki/authorities/local/root.crt ./new-root.crt
+openssl x509 -noout -fingerprint -sha256 -in old-root.crt
+openssl x509 -noout -fingerprint -sha256 -in new-root.crt
 ```
