@@ -27,8 +27,12 @@ and on a machine shared by several agents it starves everyone else's runs.
   Repeat the check before each run, since runners take jobs at any moment.
 - A wait-until-quiet loop runs as its own command, before the heavy one, and counts only named
   busy signals (CI runs, named test tools, their containers), never "any container not ours". It
-  needs two quiet checks in a row and a time limit.
+  matches a test tool by the program that runs it, never by a command line alone, because other
+  agents' waiting shells name the tool too. It needs two quiet checks in a row and a time limit.
+- When a controller hands out the work, several heavy runs go in one queue it runs one after
+  another, not one wait per agent: waiters released together start together. Waiting for another
+  session's "done" is for sessions with no controller between them.
 
-**Where it lives:** the `local-ci`, `write-brief` and `fix-round` skills.
+**Where it lives:** the `local-ci`, `write-brief`, `fix-round` and `run-task` skills.
 
 Origin: field-tested.

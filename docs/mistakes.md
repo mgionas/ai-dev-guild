@@ -237,9 +237,16 @@ the tool, so every loop saw "busy" and none ever started. Elsewhere a loop count
 named after the project as busy, and another project's always-on container kept it waiting for over
 nine hours.
 
+Running each wait as its own command fixed one waiter, but not four. Every waiter still ran as
+`wait && run`, so each waiting shell named the tool in its command line, each saw the others as
+busy, and four agents waited over twenty minutes for one another. Once that was fixed, waiters
+released at the same moment started their heavy runs together.
+
 **Fix:** run the wait as its own command, then the heavy run. Count only named busy signals: CI
-runs, named test tools, and the containers those tools start. Call the machine quiet after two
-checks in a row about 30 seconds apart, and give the loop a time limit. (The
+runs, test tools matched by the program that runs them rather than by command line, and the
+containers those tools start. Call the machine quiet after two checks in a row about 30 seconds
+apart, and give the loop a time limit. Put several heavy runs in one queue the controller runs one
+after another, instead of each agent waiting on its own. (The
 [`local-ci`](../plugin/skills/local-ci/SKILL.md) skill.)
 
 ## Believing the label instead of the artifact

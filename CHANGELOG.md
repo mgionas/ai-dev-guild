@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.20.1 (2026-11-21)
+
+- The wait for a quiet machine no longer deadlocks with other waiters (`local-ci`, `docs/rules/heavy-runs-once.md`, `run-task`): a test tool is matched by the program that runs it (or by the containers it starts), never by a command line alone, because every other agent's `wait && run` shell names the tool too and two waiters each saw the other as busy. Several heavy runs go in one queue the controller runs one after another, because waiters released together start together. `docs/mistakes.md`, "A wait that waits on itself", gains the case. Guards unchanged (0.3.2). (field-tested: the deadlock and the program-name match; the queue is new)
+
 ## 0.20.0 (2026-11-21)
 
 - New role, `status-keeper` (`plugin/agents/status-keeper.md`, `docs/roles/status-keeper.md`): it checks the roadmap and its published page against git after every merge and agent hand-back, and once a day on a schedule. A step whose pull request is merged, or whose branch is already in the main branch, becomes done; a step at building, review or fixing, not merged, with no commit for 2 days, which the controller does not name as running, becomes `paused` (a new roadmap stage; `waiting` on the page), and a scheduled run with no list of running work only reports it; an item whose steps are all done becomes done; every milestone's status and count is checked against its items, and a parent with no children is never marked done; a sentence git contradicts is replaced; a merge with no QA board entry is reported. It changes a status only with evidence, never deletes or rewrites notes, never marks the owner's step done without proof, and reports each change as "from → to, evidence". The `progress-boards`, `roadmap` and `run-task` skills and `docs/rules/progress-boards.md` call it, and say that a parent status the page stores on its own is worked out from its children or checked. Guards unchanged (0.3.2). (new)
