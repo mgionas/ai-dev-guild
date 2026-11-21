@@ -1,6 +1,6 @@
 ---
 name: local-environment
-description: "Advise how a project's local development environment could be set up and written down: its own named container group, local HTTPS on a .test domain, one ports registry, and a wiki and API reference where there is an API. Use it for a new project, a project with no written local setup, or two projects clashing on one machine. It advises; the project's owner decides."
+description: "Advise how a project's local development environment could be set up and written down: its own named container group, local HTTPS on a .test domain, one ports registry, a wiki and API reference where there is an API, local telemetry with dashboards kept in the repository, and fake message providers locally with real ones only from staging. Use it for a new project, a project with no written local setup, or two projects clashing on one machine. It advises; the project's owner decides."
 ---
 
 **This skill advises. Nothing here is required.** A project may keep a simpler setup, or none, and
@@ -43,6 +43,49 @@ in this skill's folder.
    its own old code. A change to the supervisor itself can then sit unused for days with nothing
    to show it. Have it print its own commit when it starts, or restart itself when its own files
    change.
+6. **Local telemetry, one stack per project.** One all-in-one container (Grafana with logs,
+   traces and metrics behind it) under an optional profile, on its own `grafana.<project>.test`
+   host. Give each project its own rather than sharing one across projects: data, dashboards
+   and restarts then stay apart, and wiping one project's data never touches another's. Its
+   ports go in the registry like any other.
+   - **Start telemetry only when an endpoint is set.** The app's tracing setup does nothing
+     unless the standard `OTEL_EXPORTER_OTLP_ENDPOINT` variable is set, so a developer without
+     the container, and every test run, pays nothing. Load it before the app's own code (Node's
+     `--import`, for example), or the libraries it should trace are already loaded unpatched.
+   - **Tag every span with the environment** (`deployment.environment.name`), read from the
+     same variable that decides everything else about the environment, so local, staging and
+     production data never mix on a dashboard.
+   - **Scrub before export, not in the dashboard.** Client addresses, request bodies and
+     headers, error messages and SQL parameters can all carry personal data or secrets. Strip
+     them in the app, where every exporter benefits, and test the scrubbers.
+   - **Logs as one JSON line per entry on standard output.** In production the platform
+     collects them. Locally, a small forwarder can send them to the container's log store;
+     give it a batch size, a bounded queue that drops the oldest, and a short timeout, so a
+     stopped container never slows the app. Parse the JSON after any prefix the runner adds
+     (`[api] {…}`), or every line arrives as raw text.
+   - **Export only what the dashboards read.** A project that builds its dashboards on traces
+     can turn the metrics and logs exporters off (`OTEL_METRICS_EXPORTER=none`,
+     `OTEL_LOGS_EXPORTER=none`) and derive request rates and durations from spans.
+7. **Dashboards kept in the repository.** Dashboard JSON files and a provider file in a
+   `grafana/` folder, mounted read-only into the container, with UI edits switched off
+   (`allowUiUpdates: false`). An edit made in the browser is otherwise lost at the next
+   recreate, or kept on one machine only. Mount the provider over the image's own provider
+   file to drop the stock dashboards. Grafana reads provisioned files at start only, so a
+   change needs the container recreated; if it has no data volume, that also wipes the
+   collected data, and the page should say so.
+8. **Fake message providers locally, real ones only from staging.** Every outside provider
+   that sends something to a person (text messages, email, push) gets a fake chosen by
+   configuration. The fake writes one JSON line per message (time, recipient, text) to a file
+   the configuration names: the delivery log, which a developer or an end-to-end test reads
+   instead of a phone. A fixed sign-in code, allowed in development only, saves reading even
+   that. Staging uses the providers' sandbox or test accounts; production the real ones.
+   - **Refuse to start with a fake outside development.** At boot, check that the environment
+     is development, and that the runtime is not in production mode, before accepting any
+     fake provider or the fixed code; otherwise stop with a message naming the environment.
+     Check both, so one wrong variable is not enough. Fail closed: an unknown environment name
+     counts as not development. Test the guard, and break it once to see the test fail.
+   - **Name it a fake everywhere.** The provider's name in configuration, logs and the
+     delivery log says fake, so nobody mistakes a log line for a message that went out.
 
 ## What to write down
 
@@ -62,7 +105,13 @@ A local-development page, linked from `AGENTS.md`, holding:
 - a short "when something looks wrong" list: a browser warning (authority not trusted, or recreated
   after a volume was deleted), a handshake that fails outright (hostname missing from the proxy
   config), a hostname that does not resolve (hosts block missing), and a proxy dial error (the dev
-  server listens only on loopback, so a proxy in a container cannot reach it).
+  server listens only on loopback, so a proxy in a container cannot reach it). Where the project
+  has them, add: a changed dashboard that does not show (provisioned files load at start, so
+  recreate the container), a new mount the proxy ignores (`restart` keeps the old mounts;
+  `up -d` recreates the container with the new ones), and a blank page with no error (Caddy
+  answers a hostname it has no block for with an empty 200, which looks like success);
+- the telemetry start command, the dashboards folder, and the variables that switch tracing on;
+- where the delivery log is, the fixed sign-in code's variable, and the test accounts to use.
 
 ### Trusting the local certificate authority
 
@@ -120,5 +169,9 @@ A port that merely looked free today is not a decision.
   first. The registry is edited first, and the rest reads from it.
 - **Commit the certificate authority's key or root file**, or put a real credential in the compose
   file. Development-only passwords are fine in it and nowhere else.
+- **Share one telemetry stack between projects**, or edit a dashboard in the browser and expect
+  it to stay.
+- **Let a fake provider decide for itself whether it may run.** The check lives at boot, in one
+  place, and refuses; a fake that only logs a warning outside development has already failed.
 - **Create any of this unasked.** If the project has a setup that works, leave it; mention the
   gaps and let the owner choose.

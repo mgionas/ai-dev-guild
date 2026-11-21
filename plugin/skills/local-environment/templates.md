@@ -59,7 +59,15 @@ services:
       - "127.0.0.1:4317:4317" # OTLP over gRPC
       - "127.0.0.1:4318:4318" # OTLP over HTTP
     networks: [<project>-local]
-    image: grafana/otel-lgtm:0.40.0
+    # 0.41.0 checked on 2026-11-21: the provider path below is this version's. Read the image's
+    # own provisioning folder again when you change the tag.
+    image: grafana/otel-lgtm:0.41.0
+    volumes:
+      # Mounted over the image's own provider file, so the stock dashboards go and only the
+      # repository's load. Read-only: dashboards change in the repository, not in the browser.
+      - ./grafana/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml:ro
+      - ./grafana/dashboards:/<project>-dashboards:ro
+    # No data volume: recreating the container (needed to reload dashboards) wipes the data.
 
   # Optional, off by default. Speaks the S3 protocol and forgets everything on restart,
   # so it suits generated fixtures only.
@@ -87,6 +95,57 @@ volumes:
     name: <project>-proxy-data
 ```
 
+## Dashboard provider (`grafana/dashboards.yaml`)
+
+```yaml
+apiVersion: 1
+
+providers:
+  - name: <project>
+    folder: <project>
+    type: file
+    # Edits in the browser are refused, so the repository stays the only copy.
+    allowUiUpdates: false
+    options:
+      path: /<project>-dashboards
+```
+
+Export a dashboard's JSON from Grafana once, save it in `grafana/dashboards/`, then
+`docker compose --profile telemetry up -d --force-recreate telemetry` to load it.
+
+## Telemetry variables (the app's local environment file)
+
+```bash
+# Unset means no tracing at all, which is what tests and a developer without the container get.
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318
+OTEL_SERVICE_NAME=<project>-api
+# Only traces are exported here; drop these two lines if the dashboards read metrics or logs.
+OTEL_METRICS_EXPORTER=none
+OTEL_LOGS_EXPORTER=none
+```
+
+## Fake providers and their guard (in the app's boot code)
+
+```text
+at boot, before any provider is built:
+  env      = the project's environment variable   (development | staging | production)
+  runtime  = the runtime's own production flag    (NODE_ENV=production, say)
+  isDev    = env == "development" and runtime is not production
+             (an unknown or missing env is not development)
+
+  if any provider is a fake and not isDev:
+      stop: "Refusing to start in <env> with fake message providers"
+  if the fixed sign-in code is set and not isDev:
+      stop: "Refusing to start in <env> with a fixed sign-in code"
+
+fake provider, per message:
+  append one JSON line to the file in the delivery-log variable:
+  {"at": <time>, "provider": "fake-sms", "to": <recipient>, "text": <text>}
+```
+
+The delivery log holds the recipients and texts of test accounts only; keep it out of the
+repository (`.gitignore`) like any other local data.
+
 ## Proxy config (`Caddyfile`)
 
 ```caddyfile
@@ -111,7 +170,8 @@ grafana.<project>.test {
 	reverse_proxy telemetry:3000
 }
 
-# A hostname with no block here is answered by the proxy itself and never reaches the app.
+# A hostname with no block here is answered by the proxy itself with an empty 200 and never
+# reaches the app: a blank page with no error usually means a missing block.
 ```
 
 Add the hosts block below, then `docker compose up -d`.
