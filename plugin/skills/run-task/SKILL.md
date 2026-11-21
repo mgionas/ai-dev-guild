@@ -44,7 +44,8 @@ The task: $ARGUMENTS
     merge locally (`git merge --no-ff task/<id>`) when it has none. Then update the pages the
     project lists under `## Pages` in its `AGENTS.md` (the roadmap and QA board by the
     `progress-boards` skill, the system map by the `system-map` skill) in the same turn, and no
-    others. Pass each report or message for the owner through the `plain-report` skill before
+    others. Then run the `status-keeper` agent with the steps still running, so the roadmap matches
+    git. Pass each report or message for the owner through the `plain-report` skill before
     sending; the builder and fixer have only its claim-and-evidence rules in their role files.
 
 ## Controller checklist

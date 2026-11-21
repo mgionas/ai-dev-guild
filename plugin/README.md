@@ -10,10 +10,10 @@ questions go to you in one batch, each with a recommended answer.
 
 ## What you get
 
-- **22 roles** (subagents): builders (builder, fixer, money-specialist, db-migrations, i18n),
+- **23 roles** (subagents): builders (builder, fixer, money-specialist, db-migrations, i18n),
   inspectors (architect, security-reviewer, domain-guardian, qa-tester, designer, ux-researcher,
   docs-keeper), a board of eight advisors for decisions with real trade-offs, a stack advisor for
-  new projects, and a token optimizer.
+  new projects, a token optimizer, and a status keeper that checks the roadmap against git.
 - **20 skills**, run as `/ai-dev-guild:<name>`: `setup`, `run-task`, `write-brief`, `review-panel`,
   `fix-round`, `decision-batch`, `board`, `stack-advice`, `roadmap`, `project-map`, `token-review`,
   `design-review`, `research-review`, `local-ci`, `local-environment`, `system-map`,

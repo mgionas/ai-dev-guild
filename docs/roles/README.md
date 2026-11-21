@@ -43,9 +43,10 @@ Board members advise in a [board session](../../plugin/skills/board/SKILL.md). E
 
 ## Outside the board
 
-Advisors for getting started and for running the loop cheaply.
+Advisors for getting started and for running the loop cheaply, and a keeper for the status pages.
 
 | Role | Does | Edits | Model |
 | --- | --- | --- | --- |
 | [stack-advisor](stack-advisor.md) | Proposes a stack and online services, with current free tiers and a way to test | `docs/stack.md` only | opus |
 | [token-optimizer](token-optimizer.md) | Measures where a session spent its tokens and suggests cheaper habits | its report only | sonnet |
+| [status-keeper](status-keeper.md) | Checks the roadmap and its page against git; corrects what evidence proves wrong | the roadmap and its page | sonnet |
