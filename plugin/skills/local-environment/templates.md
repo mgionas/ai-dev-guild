@@ -126,7 +126,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:<otlp-http-port>
 # Some SDKs default to gRPC, which fails against the HTTP port with no clear error.
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_SERVICE_NAME=<project>-api
-# Or set it in code from the project's own environment variable.
+# Local file only: staging and production set their own value, or set it in code from the
+# project's own environment variable.
 OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=development
 # Only traces are exported here; drop these two lines if the dashboards read metrics or logs.
 OTEL_METRICS_EXPORTER=none
