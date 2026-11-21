@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.5 (2026-11-21)
+
+- Self-hosted runners go on another machine than the one agents work on: one project lost a day to load-only failures with its runners beside its local checks, and after the move pushes and merges no longer loaded the working machine (`docs/where-ci-runs.md`). Stopping a runner mid-job ends that job unfinished, so check that it is not busy first (the GitHub command needs admin access) and re-run what it held. The CI environment template names each runner's machine, and the busy check in `local-ci` points at it, so sessions stop waiting for runs on another machine. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.23.4 (2026-11-21)
 
 - A comment check that reads only added lines needs the base it compares with: in CI, fetch the main branch's history (`fetch-depth: 0` on GitHub's checkout) and fail the step when git cannot find the base; a check that ignores git's failure gets no lines and passes having read nothing (`docs/rules/comments-explain-why.md`). Where the migration tool runs each file in one transaction, PostgreSQL refuses `CREATE INDEX CONCURRENTLY`, so the expand-only check refuses it and passes an index on an existing table only with a `-- reviewed:` reason (`db-migrations` agent and role page). Both come from a real project's plan for adopting 0.23. Guards unchanged (0.3.2). (field-tested: the shallow checkout; the transaction rule is new)

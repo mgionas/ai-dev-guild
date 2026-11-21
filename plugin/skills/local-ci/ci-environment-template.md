@@ -6,10 +6,10 @@ this page changes in the same pull request.
 
 ## Runners
 
-| Job      | Runner      | Labels          | OS / arch      | Cores | Memory | Node heap by default | Jobs at once | Shared with                      |
-| -------- | ----------- | --------------- | -------------- | ----- | ------ | -------------------- | ------------ | -------------------------------- |
-| `checks` | hosted      | `ubuntu-latest` | Linux / x86-64 | <n>   | <GB>   | <MB, measured>       | 1 per job    | nobody                           |
-| `<job>`  | self-hosted | `<labels>`      | <OS> / <arch>  | <n>   | <GB>   | <MB, measured>       | <instances>  | <agent sessions, other projects> |
+| Job      | Runner      | Labels          | OS / arch      | Cores | Memory | Node heap by default | Jobs at once | Shared with                                   |
+| -------- | ----------- | --------------- | -------------- | ----- | ------ | -------------------- | ------------ | --------------------------------------------- |
+| `checks` | hosted      | `ubuntu-latest` | Linux / x86-64 | <n>   | <GB>   | <MB, measured>       | 1 per job    | nobody                                        |
+| `<job>`  | self-hosted | `<labels>`      | <OS> / <arch>  | <n>   | <GB>   | <MB, measured>       | <instances>  | <its machine; agent sessions, other projects> |
 
 Measure the default heap on the runner itself, once:
 `node -e "console.log(require('v8').getHeapStatistics().heap_size_limit / 2**20)"`.
