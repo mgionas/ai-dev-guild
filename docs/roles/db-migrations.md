@@ -21,6 +21,9 @@ Designs schema changes and writes backward-compatible migrations with the tests 
   type change, new `NOT NULL` or new constraint that does not. The check passes a listed set of
   additive statements, judges each action of an `ALTER TABLE`, and refuses `CREATE OR REPLACE`,
   `REVOKE`, `DROP POLICY`, dynamic SQL without a `-- reviewed:` reason, and anything unlisted.
+  Where the migration tool runs each file in one transaction, it refuses `CREATE INDEX
+  CONCURRENTLY` and asks for the `-- reviewed:` reason on an index on an existing table, a new
+  `UNIQUE`'s included, since a plain build blocks writes.
   Where the project has no such check, it proposes one.
 - If the project isolates accounts in the database, the report shows a test that one account cannot see another's rows.
 
