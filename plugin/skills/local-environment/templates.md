@@ -56,10 +56,20 @@ services:
     ports:
       # Remap the outside only; the UI keeps listening on 3000 in the container.
       - "127.0.0.1:<telemetry-ui-port>:3000"
-      - "127.0.0.1:4317:4317" # OTLP over gRPC
-      - "127.0.0.1:4318:4318" # OTLP over HTTP
+      # The OTLP defaults are 4317 and 4318; a second project on the machine remaps the outside.
+      - "127.0.0.1:<otlp-grpc-port>:4317" # OTLP over gRPC
+      - "127.0.0.1:<otlp-http-port>:4318" # OTLP over HTTP
     networks: [<project>-local]
-    image: grafana/otel-lgtm:0.40.0
+    # 0.41.0 checked on 2026-11-21: the provider path below is this version's. Read the image's
+    # own provisioning folder again when you change the tag.
+    image: grafana/otel-lgtm:0.41.0
+    volumes:
+      # Mounted over the image's own provider file, so the stock dashboards go and only the
+      # repository's load. Read-only: dashboards change in the repository, not in the browser.
+      - ./grafana/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml:ro
+      - ./grafana/dashboards:/<project>-dashboards:ro
+    # Dashboard files reload by themselves within seconds. A changed provider file or a new
+    # mount needs a recreate, and with no data volume a recreate wipes the data.
 
   # Optional, off by default. Speaks the S3 protocol and forgets everything on restart,
   # so it suits generated fixtures only.
@@ -87,6 +97,68 @@ volumes:
     name: <project>-proxy-data
 ```
 
+## Dashboard provider (`grafana/dashboards.yaml`)
+
+```yaml
+apiVersion: 1
+
+providers:
+  - name: <project>
+    folder: <project>
+    type: file
+    # Edits in the browser are refused, so the repository stays the only copy.
+    allowUiUpdates: false
+    options:
+      path: /<project>-dashboards
+```
+
+Export a dashboard's JSON from Grafana once and save it in `grafana/dashboards/`; Grafana picks
+it up within seconds. Only after changing this provider file, or adding a mount, run
+`docker compose --profile telemetry up -d --force-recreate telemetry`.
+
+## Telemetry variables (the app's local environment file)
+
+```bash
+# Unset means no tracing at all, which is what tests and a developer without the container get.
+# A base endpoint: the SDK appends /v1/traces itself. A signal-specific one
+# (OTEL_EXPORTER_OTLP_TRACES_ENDPOINT) is used exactly as written.
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:<otlp-http-port>
+# Some SDKs default to gRPC, which fails against the HTTP port with no clear error.
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_SERVICE_NAME=<project>-api
+# Local file only: staging and production set their own value, or set it in code from the
+# project's own environment variable.
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=development
+# Only traces are exported here; drop these two lines if the dashboards read metrics or logs.
+OTEL_METRICS_EXPORTER=none
+OTEL_LOGS_EXPORTER=none
+```
+
+## Fake providers and their guard (in the app's boot code)
+
+```text
+in every process that builds providers (API, worker, scripts), before it builds any:
+  env      = the project's environment variable   (development | staging | production),
+             read in one function that never defaults a missing value to development
+  runtime  = the runtime's own production flag    (NODE_ENV=production, say)
+  isDev    = env == "development" and runtime is not production
+             (an unknown or missing env is not development)
+
+  if a provider name is empty or not in the known list:
+      stop: "Unknown message provider <name>"   (never fall back to the fake)
+  if any provider is a fake and not isDev:
+      stop: "Refusing to start in <env> with fake message providers"
+  if the fixed sign-in code variable is present at all (even empty) and not isDev:
+      stop: "Refusing to start in <env> with a fixed sign-in code"
+
+fake provider, per message:
+  append one JSON line to the file in the delivery-log variable:
+  {"at": <time>, "provider": "fake-sms", "to": <recipient>, "text": <text>}
+```
+
+The delivery log holds the recipients and texts of test accounts only; keep it out of the
+repository (`.gitignore`) like any other local data.
+
 ## Proxy config (`Caddyfile`)
 
 ```caddyfile
@@ -111,7 +183,9 @@ grafana.<project>.test {
 	reverse_proxy telemetry:3000
 }
 
-# A hostname with no block here is answered by the proxy itself and never reaches the app.
+# A hostname with no block here never reaches the app. When a certificate already covers the
+# name, the proxy answers it with an empty 200, so a blank page with no error usually means a
+# missing block; with no certificate, the handshake fails instead.
 ```
 
 Add the hosts block below, then `docker compose up -d`.
@@ -128,7 +202,7 @@ its row. Bind to loopback (`127.0.0.1`) only.
 | `<api-port>` | API                       | `PORT` default in its config                       |
 | `<free>`     | reserved for the next app | Take it before opening a new range                 |
 | `<ui-port>`  | telemetry UI              | Published on this port, listens on 3000 inside     |
-| `4317/4318`  | OTLP receivers            | The OpenTelemetry defaults; keep them              |
+| `<otlp-ports>` | OTLP receivers          | 4317/4318 by default; a second project remaps them |
 | `<db-port>`  | database, `<project>-…`   | The database default, unless another project has it |
 | `80 / 443`   | proxy, `<project>-proxy`  | `<project>.test` and its subdomains                |
 

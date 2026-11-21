@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.21.0 (2026-11-21)
+
+- The `local-environment` skill now covers local telemetry and fake message providers. It advises one telemetry stack per project, never one shared between projects. Tracing starts only when the OTLP endpoint is set, every span carries the environment, and data is scrubbed in the app before export. Logs go out as JSON lines, through a forwarder with a bounded queue. Dashboards are kept in the repository, mounted read-only with browser edits off. Edited dashboard files reload within seconds, while a changed provider file needs a recreate, which wipes the data when there is no volume (checked on the container: an edited title showed within 25 seconds). Every outside provider that messages a person has a fake chosen by configuration, writing a delivery log, plus a fixed sign-in code in development only. A boot check in every process refuses either one outside development, treats an unknown environment as not development, and stops on an unknown provider name instead of falling back to the fake. The OTLP ports are placeholders, so two projects can run their stacks side by side. `templates.md` adds the dashboard provider, its mounts (with the image's provider path, checked on 0.41.0), the telemetry variables and the guard. The troubleshooting list gains three proxy and dashboard cases. Guards unchanged (0.3.2). (field-tested: telemetry, dashboards and the guard come from a real project's setup; the template is new)
+
 ## 0.20.1 (2026-11-21)
 
 - The wait for a quiet machine no longer deadlocks with other waiters (`local-ci`, `docs/rules/heavy-runs-once.md`, `run-task`): a test tool is matched by the program that runs it (or by the containers it starts), never by a command line alone, because every other agent's `wait && run` shell names the tool too and two waiters each saw the other as busy. Several heavy runs go in one queue the controller runs one after another, because waiters released together start together. `docs/mistakes.md`, "A wait that waits on itself", gains the case. Guards unchanged (0.3.2). (field-tested: the deadlock and the program-name match; the queue is new)
