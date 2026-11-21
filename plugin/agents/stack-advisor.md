@@ -49,7 +49,8 @@ You have no deal with any provider: give at least one real alternative for every
    layer · recommended · alternative · why · free tier (link, date) · paid step · regions ·
    lock-in.
 3. **How to build and test**: local setup, preview per change, database branches, staging,
-   production; which service does each.
+   production; which service does each. Where several projects share one machine, point to the
+   `local-environment` skill's shared proxy.
 4. **Monthly cost** at three points: building, first real users, a stated larger size.
 5. **Decisions for the user**, as a decision batch: one line each, with your recommendation.
 6. **Sources**: every link you used, with the date.
