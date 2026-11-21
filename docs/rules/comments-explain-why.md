@@ -18,8 +18,9 @@ A good comment tells a colleague what the code cannot: why it is written this wa
   the rule which forms the check catches, so nobody reads "the check passed" as "no plan history
   anywhere".
 - Where old references are many, make the check a ratchet: count them per file, refuse any new
-  one, and refuse a file whose count goes up. The count can then only fall, without a clean-up
-  pass first. Checking only the lines a change adds works too.
+  one, and refuse a file whose count goes up. Key the counts by path and follow renames (git's
+  rename detection), or a moved file starts again at zero. The count can then only fall, without
+  a clean-up pass first. Checking only the lines a change adds works too.
 - Old references go only where your change already edits the line. List the rest under
   **Noticed** ([change only what the task needs](change-only-the-task.md)), or clean them as a
   task of their own.

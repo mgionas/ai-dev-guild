@@ -26,17 +26,33 @@ Rules:
     or its index is built concurrently;
   - `CREATE OR REPLACE` of a function or view old code calls, `REVOKE`, and `DROP POLICY`: old
     code may depend on what they change or take away;
-  - a `DO` block or other dynamic SQL, which can hide any of the above, unless the migration has
-    an exemption line (`-- reviewed: <why>`) that a reviewer has read;
+  - a `DO` block, or a function body that uses `EXECUTE`, since dynamic SQL can hide any of the
+    above, unless the migration has an exemption line (`-- reviewed: <why>`). The check refuses
+    an empty reason and prints every exemption in its output, so the reviewer sees each one;
   - any statement it does not recognise. An unknown statement means refuse, not allow.
 
   To keep that last rule from raising false alarms, the check lists what only adds and passes it:
-  `CREATE` of a table, index, sequence, type, view, function, trigger, policy, schema or
-  extension; `ADD COLUMN` that is nullable or has a default; `GRANT`; `COMMENT ON`; `INSERT` of
-  seed rows; row security enabled on a table this migration creates. A project adds its own
-  additive statements to that list, so the list grows on purpose and an unlisted one is
-  refused rather than waved through. A check that lists only the refused statements and passes
-  everything else is weaker: a statement nobody thought of passes silently.
+  - `CREATE` of a table, sequence, type, view, function (without `EXECUTE`), schema or extension;
+  - on a table this migration creates: its indexes, triggers, policies and row security;
+  - on an existing table: `CREATE INDEX CONCURRENTLY` (outside a transaction; a plain build
+    blocks writes for its whole length), and `ADD COLUMN` that is nullable or has a constant
+    default (a volatile one such as a random value or the current time rewrites the table
+    under a lock; the fast path for constant defaults needs PostgreSQL 11 or later);
+  - `GRANT`, `COMMENT ON`, and plain `INSERT … VALUES` of seed rows (not `ON CONFLICT DO
+    UPDATE`, not `INSERT … SELECT`).
+
+  A trigger or policy on an existing table runs against old code's writes and reads, so it
+  needs the `-- reviewed:` line; `AS RESTRICTIVE` on an existing table is always refused.
+  `ALTER POLICY`, `ALTER FUNCTION`, `CREATE RULE`, `ALTER DEFAULT PRIVILEGES` and ownership
+  changes are unlisted on purpose, so they are refused. A project adds its own additive
+  statements to the list through review, like any rule change, so the list grows on purpose
+  and an unlisted statement is refused rather than waved through. A check that lists only the
+  refused statements and passes everything else is weaker: a statement nobody thought of
+  passes silently.
+
+  The check strips comments and string literals before it reads a statement, and splits an
+  `ALTER TABLE` into its comma-separated actions and judges each one: `ADD COLUMN a int, DROP
+  COLUMN b` is refused for its second action.
 
   A contract migration passes only with a marker line, `-- completes: <earlier-migration-file>`,
   and the check confirms that file exists and comes earlier in the migration order. Show it
