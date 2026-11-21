@@ -47,14 +47,17 @@ in this skill's folder.
    traces and metrics behind it) under an optional profile, on its own `grafana.<project>.test`
    host. Give each project its own rather than sharing one across projects: data, dashboards
    and restarts then stay apart, and wiping one project's data never touches another's. Its
-   ports go in the registry like any other.
+   UI and OTLP ports go in the registry like any other: two projects both publishing the
+   OpenTelemetry defaults (4317, 4318) cannot run at once, so the second remaps the outside.
    - **Start telemetry only when an endpoint is set.** The app's tracing setup does nothing
      unless the standard `OTEL_EXPORTER_OTLP_ENDPOINT` variable is set, so a developer without
      the container, and every test run, pays nothing. Load it before the app's own code (Node's
      `--import`, for example), or the libraries it should trace are already loaded unpatched.
    - **Tag every span with the environment** (`deployment.environment.name`), read from the
      same variable that decides everything else about the environment, so local, staging and
-     production data never mix on a dashboard.
+     production data never mix on a dashboard. Set it in code from that variable, or with
+     `OTEL_RESOURCE_ATTRIBUTES`. Older SDKs and dashboards use `deployment.environment`; query
+     the key your SDK writes.
    - **Scrub before export, not in the dashboard.** Client addresses, request bodies and
      headers, error messages and SQL parameters can all carry personal data or secrets. Strip
      them in the app, where every exporter benefits, and test the scrubbers.
@@ -70,9 +73,10 @@ in this skill's folder.
    `grafana/` folder, mounted read-only into the container, with UI edits switched off
    (`allowUiUpdates: false`). An edit made in the browser is otherwise lost at the next
    recreate, or kept on one machine only. Mount the provider over the image's own provider
-   file to drop the stock dashboards. Grafana reads provisioned files at start only, so a
-   change needs the container recreated; if it has no data volume, that also wipes the
-   collected data, and the page should say so.
+   file to drop the stock dashboards. Grafana rereads the dashboards folder every few seconds,
+   so an edited or added dashboard file shows without a restart. The provider file is read at
+   start only: a change to it, or a new mount, needs the container recreated, and if it has no
+   data volume that also wipes the collected data. The page should say so.
 8. **Fake message providers locally, real ones only from staging.** Every outside provider
    that sends something to a person (text messages, email, push) gets a fake chosen by
    configuration. The fake writes one JSON line per message (time, recipient, text) to a file
@@ -82,8 +86,12 @@ in this skill's folder.
    - **Refuse to start with a fake outside development.** At boot, check that the environment
      is development, and that the runtime is not in production mode, before accepting any
      fake provider or the fixed code; otherwise stop with a message naming the environment.
-     Check both, so one wrong variable is not enough. Fail closed: an unknown environment name
-     counts as not development. Test the guard, and break it once to see the test fail.
+     Check both, so one wrong variable is not enough. Fail closed at every step: an unknown or
+     missing environment name counts as not development, and nothing else in the app may
+     default a missing one to development; an unknown or empty provider name stops the start
+     rather than falling back to the fake; an empty fixed code still counts as set. Every
+     process that builds providers (API, worker, scripts) calls the same check. Test the
+     guard, and break it once to see the test fail.
    - **Name it a fake everywhere.** The provider's name in configuration, logs and the
      delivery log says fake, so nobody mistakes a log line for a message that went out.
 
@@ -106,10 +114,12 @@ A local-development page, linked from `AGENTS.md`, holding:
   after a volume was deleted), a handshake that fails outright (hostname missing from the proxy
   config), a hostname that does not resolve (hosts block missing), and a proxy dial error (the dev
   server listens only on loopback, so a proxy in a container cannot reach it). Where the project
-  has them, add: a changed dashboard that does not show (provisioned files load at start, so
-  recreate the container), a new mount the proxy ignores (`restart` keeps the old mounts;
-  `up -d` recreates the container with the new ones), and a blank page with no error (Caddy
-  answers a hostname it has no block for with an empty 200, which looks like success);
+  has them, add: a dashboard that still does not show after a minute (check its JSON is valid
+  and its folder is mounted; a changed provider file needs the container recreated), a new
+  mount a container ignores (`restart` keeps the old mounts; `up -d` recreates the container
+  with the new ones), and a blank page with no error (when a certificate already covers the
+  name, Caddy answers a hostname it has no block for with an empty 200, which looks like
+  success; with no certificate, the handshake fails as above);
 - the telemetry start command, the dashboards folder, and the variables that switch tracing on;
 - where the delivery log is, the fixed sign-in code's variable, and the test accounts to use.
 
