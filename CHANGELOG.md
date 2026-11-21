@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.3 (2026-11-21)
+
+- A failed merge step runs `git merge --abort` only when branches share one checkout (`local-ci`, `docs/mistakes.md`). With one worktree per branch, the step stops and leaves the conflict in place for someone to resolve, so it stays visible. A real project pointed out that 0.23.2 asked for the abort in every case. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.23.2 (2026-11-21)
 
 - Two lessons from a real project's automated CI queue. A step that merges the main branch into a branch reads the merge's exit code and, when it fails, lists the unmerged files, aborts the merge and stops; the queue that carried on ran the build and the full suite over conflict markers (`local-ci`, `docs/mistakes.md` "A merge step that carried on"). On a machine with a self-hosted runner, the busy check counts queued runs as well as runs in progress, and a session waiting for the machine also holds any push that starts remote CI there, a merge into main included (`local-ci`, `docs/rules/heavy-runs-once.md`). Guards unchanged (0.3.2). (field-tested)

@@ -386,8 +386,9 @@ files conflicted, the script (which had no `set -e`) ignored the merge's exit co
 and the full suite ran over conflict markers. Only the format step, which happened to read those
 files, failed.
 
-**Fix:** stop when the merge fails, say why, and leave a clean tree for the next branch. `set -e`
-alone would stop the script, but say nothing and leave the merge half done.
+**Fix:** stop when the merge fails, and say why. `set -e` alone would stop the script, but say
+nothing. The `git merge --abort` line is for branches that share one checkout, so the next branch
+starts clean; with one worktree per branch, drop it and leave the conflict for someone to resolve.
 
 ```bash
 git fetch origin
