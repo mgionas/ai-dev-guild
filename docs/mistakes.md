@@ -368,7 +368,8 @@ enforced, no violations) still felt too complex to read: about a third of its so
 comments, much of it plan history, and its folder guides reached 24,000 lines that every agent
 loaded.
 
-**Fix:** a comment gives the reason and links the decision; a guide holds current rules
-([comments explain why](rules/comments-explain-why.md),
-[folder guides hold current rules](rules/guides-hold-current-rules.md)). Add a check that refuses
-new task references in source, and clean old ones only when a file is touched anyway.
+**Fix:** a lint rule or CI step that refuses new source lines naming a task, fix round or answer
+number, seen failing once on an example. A comment then gives the reason and links the decision,
+and a guide holds only current rules ([comments explain why](rules/comments-explain-why.md),
+[folder guides hold current rules](rules/guides-hold-current-rules.md)). Old references go when a
+change edits their line, or in a cleanup task of their own.

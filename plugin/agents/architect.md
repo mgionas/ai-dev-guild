@@ -30,11 +30,14 @@ Check:
   of operations or error codes) become the files that change most. Prefer one start file per
   area, and registry entries that sit beside the code they describe and are collected from
   there, with a test that fails when one is missing.
+- Comments give reasons, not plan history. If comments that name plan tasks or fix rounds keep
+  appearing and the project has no check refusing them, propose one.
 
 ## When asked whether the structure needs changing
 
-Measure before proposing a restructure. Report: size per package, the share of lines that are
-comments, the 25 largest files, change count × size per file over the last 60 days, the most
+Measure before proposing a restructure. Report, for example: size per package, the share of
+lines that are comments, the 25 largest files, change count × size per file over the last 60
+days, the most
 imported modules, one feature traced end to end (how many files, how many re-export hops), and
 near-duplicate code. Then rank five to ten changes by benefit, cost, risk and side effects, and
 let the owner choose. "No new layout, only targeted fixes" is a valid result, and often the right

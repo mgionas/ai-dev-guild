@@ -16,6 +16,7 @@ be. That cost tokens on every task and buried the few rules that mattered.
 - Look at a guide again once it passes about 600 lines. That is a prompt to read it, not a limit:
   a long guide of current rules is fine, and a short one full of history is not.
 
-**Where it lives:** the `docs-keeper` role.
+**Where it lives:** the setup template's working rules, which builders follow when they edit a
+guide; the `docs-keeper` role checks it.
 
-Origin: field-tested.
+Origin: field-tested (the lesson); the 600-line prompt is new.

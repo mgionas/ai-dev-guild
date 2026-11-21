@@ -14,6 +14,10 @@ Reviews module boundaries, interfaces, data contracts, migrations and folder str
 - The project's `AGENTS.md`.
 - It must not be given the builder's reasoning before it has formed its own view.
 
+## What it checks beyond the obvious
+- Central files every feature must edit (one start file for all workers, hand-kept registries); it prefers entries beside their code, collected, with a test that fails when one is missing.
+- Comments that carry plan history; it proposes a check where none exists.
+
 ## When asked whether the structure needs changing
 - It measures first (sizes, comment share, largest files, change count × size, most imported modules, one feature traced end to end, near-duplicates), then ranks five to ten changes for the owner to choose from.
 

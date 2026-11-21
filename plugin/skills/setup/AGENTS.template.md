@@ -20,7 +20,8 @@
 5. **Work in your own area.** Use other modules only through their public interface.
 6. **Keep personal data out** of code, test data, logs, prompts and commit messages.
 7. **Comments give reasons.** Say why the code is like this, in plain sentences, not what it does.
-   Never name a plan task or fix round; link the decision instead.
+   Never name a plan task or fix round; link the decision instead. Folder guides hold what is true
+   now; history goes in the plan or a history file.
 8. **Organise by feature, for the next reader.** Tests live beside their code; no catch-all
    folders. The test is whether a newcomer can find things, not a file count.
 9. **Prefer a well-kept open-source library to new code.** Permissive licences only (MIT,
