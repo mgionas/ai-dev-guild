@@ -109,13 +109,15 @@ A local-development page, linked from `AGENTS.md`, holding:
   more than the line that would have prevented it;
 - what a database reset wipes, including data the owner made by hand, so that an agent asking for
   a reset can say so first and remind the owner afterwards what to recreate;
-- the ports table, and the three rules under it: add the row with the commit that opens the port, bind to
+- the ports table (or, with a shared proxy, a pointer to the shared registry and the project's
+  range), and the three rules under it: add the row with the commit that opens the port, bind to
   loopback (`127.0.0.1`) only, and remap the outside of a container port rather than the inside;
 - the hosts block, with a comment line at each end so it can be removed cleanly;
 - the certificate-trust step for each operating system the team uses (see below);
 - a short "when something looks wrong" list: a browser warning (authority not trusted, or recreated
   after a volume was deleted), a handshake that fails outright (hostname missing from the proxy
-  config), a hostname that does not resolve (hosts block missing), and a proxy dial error (the dev
+  config, or from the project's sites file when the proxy is shared), a hostname that does not
+  resolve (hosts block missing), and a proxy dial error (the dev
   server listens only on loopback, so a proxy in a container cannot reach it). Where the project
   has them, add: a dashboard that still does not show after a minute (check its JSON is valid
   and its folder is mounted; a changed provider file needs the container recreated), a new
@@ -184,6 +186,8 @@ on its machine keeps the setup above. The templates are under "Shared proxy" in 
   Desktop (macOS, Windows) forwards it to the host's loopback; Docker Engine on Linux resolves it
   to the bridge gateway, where a loopback-only port is closed, and the proxy answers 502. On
   Linux, run the proxy with `network_mode: host` and use `127.0.0.1:<port>` upstreams instead.
+  Host mode drops the compose file's `127.0.0.1` port bindings, so add `default_bind 127.0.0.1`
+  to the main config's global options, or the proxy listens on every interface.
   Widening a bind to every interface would expose development passwords to the network, so that
   is the owner's decision, never an agent's fix for a 502.
 - **Who owns what.** The compose file, the main config and the list of ranges belong to the

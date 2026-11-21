@@ -259,7 +259,8 @@ services:
       - "host.docker.internal:host-gateway"
     # No project network: every upstream is a host port, so no project has to be up for the
     # proxy to start. On Linux, loopback-only ports are not reachable this way: use
-    # `network_mode: host` instead of `ports` and `extra_hosts`, and 127.0.0.1 upstreams.
+    # `network_mode: host` instead of `ports` and `extra_hosts`, 127.0.0.1 upstreams, and
+    # `default_bind 127.0.0.1` in the Caddyfile, since host mode has no port bindings.
 
 volumes:
   <shared>-proxy-data:
