@@ -10,9 +10,23 @@ change, unprompted.
 ## The roadmap
 
 Milestones, and under each its tasks, one per plan task, each with a stage: planned → building →
-review → fixing → merged (or waiting on the owner). A progress report without a roadmap update is
+review → fixing → merged (or waiting on the owner, or paused when nobody is on it). A progress report without a roadmap update is
 incomplete, and that includes relaying a parallel agent's result. Mark only what waits on the owner
 now as needing the owner.
+
+### Check it against git
+
+Updating by hand is the rule, and under load it gets skipped: merged work keeps showing as being
+built, stalled work as active, and a milestone keeps a status nobody has touched for weeks. So after
+every merge and every agent hand-back (other than the keeper's own), run the `status-keeper` agent,
+and give it the steps still running (it cannot see other agents). Also schedule it once a day, if
+the project can run scheduled tasks, so a forgotten run is caught the next morning; with no list of
+running work, that run only reports stalled steps. It changes a status only with evidence and
+reports each change as "from → to, evidence"; read its report before you send the owner yours.
+
+A status the page stores for a parent (a milestone, an item with steps) is the one that drifts,
+because nothing updates it when its children change. Work it out from the children where the page
+can, and check it where it cannot.
 
 The `roadmap` skill builds the first version; this skill keeps it current. Refresh the
 `project-map` page in the same turn when a merge adds a part, a link or a folder.

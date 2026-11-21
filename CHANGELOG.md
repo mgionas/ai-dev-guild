@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.20.0 (2026-11-21)
+
+- New role, `status-keeper` (`plugin/agents/status-keeper.md`, `docs/roles/status-keeper.md`): it checks the roadmap and its published page against git after every merge and agent hand-back, and once a day on a schedule. A step whose pull request is merged, or whose branch is already in the main branch, becomes done; a step at building, review or fixing, not merged, with no commit for 2 days, which the controller does not name as running, becomes `paused` (a new roadmap stage; `waiting` on the page), and a scheduled run with no list of running work only reports it; an item whose steps are all done becomes done; every milestone's status and count is checked against its items, and a parent with no children is never marked done; a sentence git contradicts is replaced; a merge with no QA board entry is reported. It changes a status only with evidence, never deletes or rewrites notes, never marks the owner's step done without proof, and reports each change as "from → to, evidence". The `progress-boards`, `roadmap` and `run-task` skills and `docs/rules/progress-boards.md` call it, and say that a parent status the page stores on its own is worked out from its children or checked. Guards unchanged (0.3.2). (new)
+
 ## 0.19.0 (2026-11-21)
 
 - New rule, "Failures in full, passes as a count" (`docs/rules/quiet-test-output.md`): agents run tests with the runner's own quiet output, read each failure in full and the passing tests as a count (test files and tests, where zero, a missing count or an unexplained drop is a failure), still see standard error, warnings and unhandled errors in full, list mutation survivors in full, paste the exit code and the log's path, prove once per runner that a passing test's error output still shows, keep the full log in a file, and never hide a failing exit code behind a pipe. The `builder`, `fixer` and `qa-tester` roles, the `write-brief` template, `token-review` and the `token-optimizer` follow. It should save input tokens on every test run; not yet measured. Guards unchanged (0.3.2). (new)

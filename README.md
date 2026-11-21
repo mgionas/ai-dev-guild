@@ -8,7 +8,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
-  <img alt="22 roles" src="https://img.shields.io/badge/roles-22-9a6700">
+  <img alt="23 roles" src="https://img.shields.io/badge/roles-23-9a6700">
   <img alt="20 skills" src="https://img.shields.io/badge/skills-20-9a6700">
 </p>
 
@@ -272,7 +272,8 @@ run your own formatter after every edit. The main plugin has no hooks or scripts
 | | | [domain-expert](docs/roles/board-domain-expert.md) |
 
 Outside the board: [stack-advisor](docs/roles/stack-advisor.md) for choosing tools and services, and
-[token-optimizer](docs/roles/token-optimizer.md) for spending fewer tokens.
+[token-optimizer](docs/roles/token-optimizer.md) for spending fewer tokens, and
+[status-keeper](docs/roles/status-keeper.md) for keeping the roadmap true to git.
 
 Each role has a default model: opus where judgement is the whole job (security, architecture,
 money, the stack advisor, the board's chair, finance and legal seats, design), sonnet for the rest.
