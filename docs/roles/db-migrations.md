@@ -18,8 +18,9 @@ Designs schema changes and writes backward-compatible migrations with the tests 
 - A report as the builder role writes it, with the migration output and the integration test output pasted.
 - It follows expand, migrate, contract, and states each new table's retention answer. A contract
   step carries `-- completes: <earlier-migration-file>`, so a check can refuse a drop, rename,
-  type change, new `NOT NULL` or new constraint that does not. Where the project has no such
-  check, it proposes one.
+  type change, new `NOT NULL` or new constraint that does not. The check passes a listed set of
+  additive statements and refuses `DO` blocks and anything unlisted. Where the project has no
+  such check, it proposes one.
 - If the project isolates accounts in the database, the report shows a test that one account cannot see another's rows.
 
 ## Example

@@ -24,7 +24,19 @@ Rules:
   - `SET NOT NULL`, or a new `NOT NULL` column without a default;
   - a new `CHECK`, `UNIQUE` or foreign key on an existing table, unless it is added `NOT VALID`
     or its index is built concurrently;
+  - `CREATE OR REPLACE` of a function or view old code calls, `REVOKE`, and `DROP POLICY`: old
+    code may depend on what they change or take away;
+  - a `DO` block or other dynamic SQL, which can hide any of the above, unless the migration has
+    an exemption line (`-- reviewed: <why>`) that a reviewer has read;
   - any statement it does not recognise. An unknown statement means refuse, not allow.
+
+  To keep that last rule from raising false alarms, the check lists what only adds and passes it:
+  `CREATE` of a table, index, sequence, type, view, function, trigger, policy, schema or
+  extension; `ADD COLUMN` that is nullable or has a default; `GRANT`; `COMMENT ON`; `INSERT` of
+  seed rows; row security enabled on a table this migration creates. A project adds its own
+  additive statements to that list, so the list grows on purpose and an unlisted one is
+  refused rather than waved through. A check that lists only the refused statements and passes
+  everything else is weaker: a statement nobody thought of passes silently.
 
   A contract migration passes only with a marker line, `-- completes: <earlier-migration-file>`,
   and the check confirms that file exists and comes earlier in the migration order. Show it

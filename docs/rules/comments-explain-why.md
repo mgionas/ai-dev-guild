@@ -14,7 +14,12 @@ A good comment tells a colleague what the code cannot: why it is written this wa
   reason and link the decision that set it; the history is in git and the plan.
 - Enforce it with a check the project adds (a lint rule or a CI step): refuse new source lines
   matching words such as `task \d+`, `fix round`, `finding \d+` or `answer \d+`, tuned to how the
-  project numbers its tasks. The guild ships no such check; the `architect` proposes it.
+  project numbers its tasks. The guild ships no such check; the `architect` proposes it. Say in
+  the rule which forms the check catches, so nobody reads "the check passed" as "no plan history
+  anywhere".
+- Where old references are many, make the check a ratchet: count them per file, refuse any new
+  one, and refuse a file whose count goes up. The count can then only fall, without a clean-up
+  pass first. Checking only the lines a change adds works too.
 - Old references go only where your change already edits the line. List the rest under
   **Noticed** ([change only what the task needs](change-only-the-task.md)), or clean them as a
   task of their own.

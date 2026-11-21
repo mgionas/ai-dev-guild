@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.1 (2026-11-21)
+
+- The expand-only migration check (`db-migrations`) now lists the statements that only add (creating tables, indexes, functions, triggers, policies and the like; nullable or defaulted columns; grants; comments; seed rows), so refusing unknown statements does not flag ordinary migrations. It also refuses `CREATE OR REPLACE` of a function or view, `REVOKE`, `DROP POLICY`, and `DO` blocks without a reviewed exemption line. A real project found that the 0.23.0 wording, read literally, would refuse its policies, grants and functions. The comment check (`docs/rules/comments-explain-why.md`) may be a per-file ratchet, or check only added lines, so it can start before old references are cleaned; the rule says which forms it catches. Guards unchanged (0.3.2). (field-tested: the false alarms and the ratchet; the additive list is new)
+
 ## 0.23.0 (2026-11-21)
 
 - Lessons from a real project's architecture review, where a sound structure still felt too heavy to read. Comments never name a plan task, fix round or owner's answer, and the project adds a check that refuses new ones (the guild ships none; the `architect` proposes it) (`docs/rules/comments-explain-why.md`, the setup template, `docs-keeper`). A new rule, "Folder guides hold current rules" (`docs/rules/guides-hold-current-rules.md`): history goes to a history file or the plan, deploy notes beside their migration, and a guide past about 600 lines is read again, as a prompt, not a limit (`docs-keeper`). `db-migrations` defines the expand-only check a project adds: it refuses drops, renames, type changes, new `NOT NULL` and new constraints on existing tables, and any statement it does not recognise, unless a `-- completes: <file>` line names an earlier migration that exists. The `architect` flags central files every feature must edit, and measures before proposing a restructure, then ranks five to ten changes for the owner. `docs/mistakes.md` gains "History where the reason should be". Guards unchanged (0.3.2). (field-tested: the measurements and the findings; the checks are new)
