@@ -82,8 +82,19 @@ A self-hosted runner is a program on a machine you own that runs whatever a work
 - **Cancelling is not instant.** Post steps that have started (cache uploads, cleanup) keep running
   after a cancel. A cancelled run is not a failed one: when it was replaced by a newer run, the
   newer run is the result to read.
-- **The machine is shared.** If agent sessions or other projects use it too, load-sensitive tests
-  get flaky and parallel pre-push hooks time out. The rule "never two heavy suites at once" applies
-  to the runner as well.
+- **Put the runner on another machine than the one agents work on.** If agent sessions or other
+  projects use the runner's machine too, load-sensitive tests get flaky and parallel pre-push hooks
+  time out. One project kept three runners on the machine where its agents ran local checks, beside
+  a sibling project's checks, and lost a day to failures that only load caused: containers that
+  missed their start-up time, network errors, unit tests past their timeout. After the runner moved
+  to a second machine, pushes and merges no longer loaded the working one. A separate account or
+  container protects secrets, not load. Where a second machine is not possible, the rule "never
+  two heavy suites at once" applies to the runner as well.
+- **Stopping a runner mid-job ends that job.** The job does not finish: it fails, or hangs until
+  the CI host notices the runner is gone. Before you stop or retire one, ask the CI host whether it
+  is busy (for GitHub, `gh api repos/<owner>/<repo>/actions/runners` shows `"busy": true`; it needs
+  admin access to the repository, and runners registered to an organization are listed under
+  `orgs/<org>/actions/runners` instead). Wait for it to go idle, and re-run anything it was
+  holding.
 - **Disks fill up.** Caches, container images and old workspaces grow on every run. Prune them on a
   schedule.
