@@ -373,3 +373,30 @@ number, seen failing once on an example. A comment then gives the reason and lin
 and a guide holds only current rules ([comments explain why](rules/comments-explain-why.md),
 [folder guides hold current rules](rules/guides-hold-current-rules.md)). Old references go when a
 change edits their line, or in a cleanup task of their own.
+
+## A merge step that carried on
+
+```bash
+git merge origin/main
+npm run build && npm test
+```
+
+One project's automated CI queue merged the main branch into each branch before checking it. Two
+files conflicted, the script (which had no `set -e`) ignored the merge's exit code, and the build
+and the full suite ran over conflict markers. Only the format step, which happened to read those
+files, failed.
+
+**Fix:** stop when the merge fails, say why, and leave a clean tree for the next branch. `set -e`
+alone would stop the script, but say nothing and leave the merge half done.
+
+```bash
+git fetch origin
+if ! git merge origin/main; then
+  git diff --name-only --diff-filter=U   # empty: the merge failed for another reason, see above
+  git merge --abort
+  exit 1
+fi
+```
+
+The same goes for any step whose failure leaves the tree in a state the next steps were not
+written for ([`local-ci`](../plugin/skills/local-ci/SKILL.md)).

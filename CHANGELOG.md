@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.2 (2026-11-21)
+
+- Two lessons from a real project's automated CI queue. A step that merges the main branch into a branch reads the merge's exit code and, when it fails, lists the unmerged files, aborts the merge and stops; the queue that carried on ran the build and the full suite over conflict markers (`local-ci`, `docs/mistakes.md` "A merge step that carried on"). On a machine with a self-hosted runner, the busy check counts queued runs as well as runs in progress, and a session waiting for the machine also holds any push that starts remote CI there, a merge into main included (`local-ci`, `docs/rules/heavy-runs-once.md`). Guards unchanged (0.3.2). (field-tested)
+
 ## 0.23.1 (2026-11-21)
 
 - The expand-only migration check (`db-migrations`) now lists the statements that only add (new tables, types, views and functions; indexes, triggers and policies on a new table; concurrent indexes and nullable or constant-default columns on an existing one; grants; comments; plain seed inserts), so refusing unknown statements does not flag ordinary migrations. It also refuses `CREATE OR REPLACE` of a function or view, `REVOKE`, `DROP POLICY`, and dynamic SQL (`DO` blocks, `EXECUTE` in a function) without a reviewed reason, which the check prints. It judges each action of an `ALTER TABLE` and strips comments and strings first. A real project found that the 0.23.0 wording, read literally, would refuse its policies, grants and functions. The comment check (`docs/rules/comments-explain-why.md`) may be a per-file ratchet, or check only added lines, so it can start before old references are cleaned; the rule says which forms it catches, and a ratchet follows renames. Guards unchanged (0.3.2). (field-tested: the false alarms and the ratchet; the additive list is new)

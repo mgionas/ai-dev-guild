@@ -22,9 +22,11 @@ and on a machine shared by several agents it starves everyone else's runs.
 - Count the places the suite runs (git hooks, the local check, remote CI on the pull request, remote
   CI on main) and give each one full run, no more. A git hook holds fast checks only.
 - Never run two heavy suites at once on a shared machine. Before starting one, check for other
-  sessions' runs, and if CI runs on this machine, ask the CI host whether a run is in progress.
-  Tell the other sessions you are starting, and wait for a "done" from any that is running its own.
-  Repeat the check before each run, since runners take jobs at any moment.
+  sessions' runs, and if CI runs on this machine, ask the CI host whether a run is in progress or
+  queued. Tell the other sessions you are starting, and wait for a "done" from any that is running
+  its own. Repeat the check before each run, since runners take jobs at any moment. When CI runs
+  on this machine, any push that starts remote CI, including a merge into main, is a heavy run too:
+  hold it while you wait for the machine.
 - A wait-until-quiet loop runs as its own command, before the heavy one, and counts only named
   busy signals (CI runs, named test tools, their containers), never "any container not ours". It
   matches a test tool by the program that runs it, never by a command line alone, because other
