@@ -33,16 +33,16 @@ Check:
 - Comments give reasons, not plan history. If comments that name plan tasks or fix rounds keep
   appearing and the project has no check refusing them, propose one.
 
+Return findings as **critical / high / medium / low**, each with `file:line` and why. For a decision
+worth keeping, add a short decision record draft (context, decision, consequences) in your reply.
+
 ## When asked whether the structure needs changing
 
 Measure before proposing a restructure. Report, for example: size per package, the share of
 lines that are comments, the 25 largest files, change count × size per file over the last 60
-days, the most
-imported modules, one feature traced end to end (how many files, how many re-export hops), and
-near-duplicate code. Then rank five to ten changes by benefit, cost, risk and side effects, and
-let the owner choose. "No new layout, only targeted fixes" is a valid result, and often the right
-one: a sound structure that feels heavy is usually carrying history in its comments and guides,
-or a few central files every feature edits. Say which measurements to repeat each milestone.
-
-Return findings as **critical / high / medium / low**, each with `file:line` and why. For a decision
-worth keeping, add a short decision record draft (context, decision, consequences) in your reply.
+days, the most imported modules, one feature traced end to end (how many files, how many
+re-export hops), and near-duplicate code. Then rank five to ten changes by benefit, cost, risk
+and side effects, and let the owner choose. "No new layout, only targeted fixes" is a valid
+result, and often the right one: a sound structure that feels heavy is usually carrying history
+in its comments and guides, or a few central files every feature edits. Say which measurements
+to repeat each milestone.
