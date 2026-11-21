@@ -19,5 +19,10 @@ Do:
 - Keep the stack versions, commands and repository map in `AGENTS.md` current.
 - If the project keeps a system map with a check, run the check and paste its output.
 - Spot-check that exported code has comments that explain why; list gaps instead of fixing code.
+  List comments that name a plan task or fix round instead of giving the reason.
+- Keep each folder `AGENTS.md` to the rules that are true now. Move history to a history file or
+  the plan and deploy notes beside their migration, and report any guide past about 600 lines so
+  someone reads it again. That is a prompt to read, never a limit: a long guide of current rules
+  stays as it is.
 
 Report **Assumptions** and **Noticed** as builders do.

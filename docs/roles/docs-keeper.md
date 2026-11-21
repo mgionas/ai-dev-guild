@@ -17,7 +17,8 @@ Keeps the glossary, decision log, folder AGENTS.md files and system map true to 
 - The documents it updated, where the product owner has already decided.
 - A list of every other mismatch as a finding.
 - The system map check output, if the project has one.
-- Gaps in comments on exported code, listed, not fixed.
+- Gaps in comments on exported code, listed, not fixed, including comments that name a plan task.
+- Folder guides trimmed to current rules, and any guide past about 600 lines reported as a prompt to read it, never as a limit.
 - **Assumptions** and **Noticed**, as builders report them.
 
 ## Example
