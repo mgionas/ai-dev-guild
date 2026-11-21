@@ -53,15 +53,28 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   session: runners take jobs at any moment, so a check made at the start of the day is out of date
   by the time you run. The check does not cover git hooks, which is one more reason they stay
   light.
-- **A loop that waits for a quiet machine must not wait on itself.** Run the wait as its own
-  command and the heavy run as the next one. In `wait-quiet && run-tests` the waiting shell's own
-  command line names the test tool, so a `ps` check sees "busy" for ever. Name each busy signal: CI
-  runs in progress or queued, the named test tools in `ps`, and the containers those tools start
-  (Testcontainers and its reaper, for example). Never "any container that is not ours": another
-  project's always-on container keeps the loop waiting for hours. Call the machine quiet only after
+- **A loop that waits for a quiet machine must not wait on itself, or on other waiters.** Run the
+  wait as its own command and the heavy run as the next one. In `wait-quiet && run-tests` the
+  waiting shell's own command line names the test tool, so a `ps` check sees "busy" for ever. That
+  is not enough on its own: every other agent's waiting shell names the tool too, so two waiters
+  each see the other as busy and neither starts. Never match a test tool by its command line alone.
+  Match the program that runs it: list `ps -eo comm=,args=`, keep the lines whose first field, by
+  its last path part, is the runtime (`node`, for example; macOS prints the full path there, and
+  Linux cuts it to 15 characters), and grep only those for the tool. A shell waiting with `sh -c`
+  is then left out, and a tool started through a package-manager script is found by its runtime
+  child. A wait written in the runtime itself (`node -e …`) would still match: write it as a shell
+  script. Or look at the containers the tools start instead of processes. Name each busy signal:
+  CI runs in progress or queued, the named test tools run by their runtime, and the containers
+  those tools start (Testcontainers and its reaper, for example). Never "any container that is not
+  ours": another project's always-on container keeps the loop waiting for hours. Call the machine quiet only after
   two checks in a row, about 30 seconds apart. Give the loop a time limit; when it runs out, report
   what kept it busy instead of starting anyway. A hung process left by an earlier run blocks every
   wait the same way: name it in the report, and stop it only if you started it, by its PID.
+- **Heavy runs go in one queue, not one wait per agent.** Agents that each wait for a quiet
+  machine are all released at the same moment and start together. When a controller hands out the
+  work and has several heavy runs to do, it runs them one after another itself, or gives agents
+  their turn one at a time; its agents never wait on their own for a quiet machine. Waiting for
+  another session's "done" (above) is for sessions with no controller between them.
 
 ## What makes it strict
 

@@ -103,7 +103,8 @@ Put these in every brief, because they were each learned the hard way:
   parts it changed once before its report; fixers stay with the covering tests.
 - Before any heavy run (a full suite, integration, end-to-end or mutation tests), write down which
   parts the change can reach and which steps cover them. Never two heavy runs at once on a shared
-  machine.
+  machine: with several to do, run them one after another yourself rather than letting each agent
+  wait for a quiet machine (`local-ci`).
 - Pull requests that each change the lockfile (dependency upgrades or overrides) merge one at a
   time: merge one, update the next from main, and check it again. Opened in parallel, they
   conflict in the lockfile.

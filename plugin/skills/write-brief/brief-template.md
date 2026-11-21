@@ -31,7 +31,8 @@
 - Commands: <exact test, lint, typecheck commands, in their quiet form: failures in full, passes as a count, full log to a file>
 - Where CI runs: <link, when the task touches CI, build config, timeouts or heavy tests>
 - Heavy steps: <which integration, end-to-end or full-suite steps this change can reach, and why;
-  or "none", and why>
+  or "none", and why; and whether you run them now or the controller runs them in its queue (never
+  a wait-for-quiet loop of your own)>
 
 ## Owner's answers
 
