@@ -97,6 +97,24 @@ in this skill's folder.
      guard, and break it once to see the test fail.
    - **Name it a fake everywhere.** The provider's name in configuration, logs and the
      delivery log says fake, so nobody mistakes a log line for a message that went out.
+9. **A strict content security policy, loosened only for the dev server.** A policy with a
+   nonce and no `'unsafe-inline'` blocks the inline styles a framework's dev overlay injects, so
+   the overlay renders broken in development. Some frameworks' development builds also call
+   `eval()`, which a policy without `'unsafe-eval'` refuses. Loosen only the directives that need
+   it, and only when the runtime mode is exactly development (`NODE_ENV === 'development'`,
+   strict equality). Read the mode the framework's own dev command sets, never a separate flag
+   that a deployed environment could also switch on, and decide it on the server where the policy
+   header is built. Any other value, unset included, keeps the strict policy, so it fails closed.
+   - **Styles:** in the loosened style directive write `'unsafe-inline'` and drop the nonce and
+     any hash. Current browsers ignore `'unsafe-inline'` when a nonce or hash is in the same
+     directive, and a nonce never covers `style=""` attributes anyway.
+   - **`eval()`:** only if a development build needs it, add `'unsafe-eval'` to the script
+     directive and keep its nonce and `'strict-dynamic'`. A nonce does not cancel
+     `'unsafe-eval'`.
+   - **Test it:** a non-development value returns the strict header; break the check once to see
+     the test fail.
+   - Staging and production run a production build, never the dev server, so the loosening
+     cannot reach them. Write that rule in the local-development page.
 
 ## What to write down
 
@@ -265,5 +283,9 @@ A port that merely looked free today is not a decision.
   place, and refuses; a fake that only logs a warning outside development has already failed.
 - **Put a catch-all, or another project's host, in a project's sites file.** The first decides
   for every project; the second refuses the whole config.
+- **Loosen the content security policy by a separate setting a deployed environment can carry.**
+  Key it to the mode the dev command sets.
+- **Keep the nonce beside `'unsafe-inline'`.** The browser then ignores `'unsafe-inline'`, and
+  the loosening does nothing.
 - **Create any of this unasked.** If the project has a setup that works, leave it; mention the
   gaps and let the owner choose.
