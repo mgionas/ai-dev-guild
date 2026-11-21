@@ -1,6 +1,6 @@
 ---
 name: local-environment
-description: "Advise how a project's local development environment could be set up and written down: its own named container group, local HTTPS on a .test domain, one ports registry, a wiki and API reference where there is an API, local telemetry with dashboards kept in the repository, and fake message providers locally with real ones only from staging. Use it for a new project, a project with no written local setup, or two projects clashing on one machine. It advises; the project's owner decides."
+description: "Advise how a project's local development environment could be set up and written down: its own named container group, local HTTPS on a .test domain, one ports registry, a wiki and API reference where there is an API, local telemetry with dashboards kept in the repository, fake message providers locally with real ones only from staging, and one shared proxy when several projects share a machine. Use it for a new project, a project with no written local setup, or two projects clashing on one machine. It advises; the project's owner decides."
 ---
 
 **This skill advises. Nothing here is required.** A project may keep a simpler setup, or none, and
@@ -18,7 +18,9 @@ in this skill's folder.
    folder, so two checkouts of one project, or two projects with a folder called `app`, share
    containers and volumes without anyone choosing that. Name services by their role (`database`,
    `proxy`, and optional ones such as `telemetry` or `object-store`), not by the image behind them,
-   so the image can change without renaming anything. Bind every published port to `127.0.0.1`:
+   so the image can change without renaming anything. The proxy belongs in this group only while
+   the project is alone on the machine; see "Several projects on one machine" below. Bind every
+   published port to `127.0.0.1`:
    a development password is usually in the repository, and the machine is often on a network.
 2. **Local HTTPS on a `.test` domain.** Most browsers treat `localhost` as a secure
    context, so it covers a lot. It falls short on subdomains, on sign-in providers that require a
@@ -33,7 +35,8 @@ in this skill's folder.
    truth for ports. A table that lags behind the code is worse than none, so the commit that
    opens a port also adds its row. Group ports in ranges (application processes,
    developer tooling, telemetry, datastores) so a newcomer can see where a service belongs. When several
-   projects share one machine, each registry avoids the others' ports.
+   projects share one machine and one proxy, the shared registry takes this role (see "Several
+   projects on one machine"), and the project's page points to it and names its own range.
 4. **A wiki and an API reference**, when the project has an API. Advise them as part of the same
    page set: the wiki for what people need to do and understand, the reference generated from the
    code or the contract (an OpenAPI document, for instance) and never typed by hand, so it cannot
@@ -100,19 +103,21 @@ in this skill's folder.
 A local-development page, linked from `AGENTS.md`, holding:
 
 - the start and stop commands, and what `down -v` deletes (the database, and the certificate
-  authority with it);
+  authority with it, unless the proxy is shared and its authority lives in the shared folder);
 - how to run the end-to-end tests, with every switch they need that is off by default (a feature
   flag that holds back outgoing messages, say). A first run that fails on configuration alone costs
   more than the line that would have prevented it;
 - what a database reset wipes, including data the owner made by hand, so that an agent asking for
   a reset can say so first and remind the owner afterwards what to recreate;
-- the ports table, and the three rules under it: add the row with the commit that opens the port, bind to
+- the ports table (or, with a shared proxy, a pointer to the shared registry and the project's
+  range), and the three rules under it: add the row with the commit that opens the port, bind to
   loopback (`127.0.0.1`) only, and remap the outside of a container port rather than the inside;
 - the hosts block, with a comment line at each end so it can be removed cleanly;
 - the certificate-trust step for each operating system the team uses (see below);
 - a short "when something looks wrong" list: a browser warning (authority not trusted, or recreated
   after a volume was deleted), a handshake that fails outright (hostname missing from the proxy
-  config), a hostname that does not resolve (hosts block missing), and a proxy dial error (the dev
+  config, or from the project's sites file when the proxy is shared), a hostname that does not
+  resolve (hosts block missing), and a proxy dial error (the dev
   server listens only on loopback, so a proxy in a container cannot reach it). Where the project
   has them, add: a dashboard that still does not show after a minute (check its JSON is valid
   and its folder is mounted; a changed provider file needs the container recreated), a new
@@ -126,7 +131,7 @@ A local-development page, linked from `AGENTS.md`, holding:
 ### Trusting the local certificate authority
 
 Copy the root certificate out of the proxy's container once, then trust it. The path below is
-Caddy's; another proxy keeps its own.
+Caddy's; another proxy keeps its own. With a shared proxy, the container is `<shared>-proxy`.
 
 ```
 docker cp <project>-proxy:/data/caddy/pki/authorities/local/root.crt ./root.crt
@@ -158,6 +163,81 @@ To undo the trust, remove the certificate again:
   `Get-ChildItem Cert:\LocalMachine\Root | Where-Object Subject -like '*Caddy Local*' | Remove-Item`.
 - **Firefox:** remove the imported entry under Certificates, or switch the setting back.
 
+## Several projects on one machine
+
+Only one proxy can hold ports 80 and 443. When a second project arrives on a machine that already
+runs one, move the proxy and the ports registry out of both projects into a small folder that
+belongs to neither, best its own git repository so every change shows in a diff. A project alone
+on its machine keeps the setup above. The templates are under "Shared proxy" in `templates.md`.
+
+- **What the folder holds.** One compose file with one proxy container on `127.0.0.1:80` and
+  `:443` and no project's network; the main proxy config (local certificates, an import of
+  `sites/*`, and the answer every unknown host gets); one sites file per project; the one ports
+  registry, with a number range per project, which replaces each project's own table as the place
+  a port is decided; and a short README: start, hosts lines, certificate trust, validate and
+  reload, adding a project. Each project's own data services (database, object store, telemetry)
+  stay in its own container group.
+- **Every upstream is a host port**, reached through `host.docker.internal`, a telemetry UI
+  included. Never a container name: that needs the proxy on the project's network, and a network
+  that does not exist yet stops the proxy from starting, so one project being down takes every
+  project's addresses down. Never `127.0.0.1` either: inside the proxy's container that is the
+  container itself.
+- **On Linux, `host.docker.internal` does not reach a port bound to `127.0.0.1`.** Docker
+  Desktop (macOS, Windows) forwards it to the host's loopback; Docker Engine on Linux resolves it
+  to the bridge gateway, where a loopback-only port is closed, and the proxy answers 502. On
+  Linux, run the proxy with `network_mode: host` and use `127.0.0.1:<port>` upstreams instead.
+  Host mode drops the compose file's `127.0.0.1` port bindings, so add `default_bind 127.0.0.1`
+  to the main config's global options, or the proxy listens on every interface.
+  Widening a bind to every interface would expose development passwords to the network, so that
+  is the owner's decision, never an agent's fix for a 502.
+- **Who owns what.** The compose file, the main config and the list of ranges belong to the
+  owner. A project's agent edits only its own sites file and its own rows in the registry. The
+  answer for unknown hosts sits in the main config, never in a project's file, because it decides
+  what every project's missing or misspelt host gets.
+- **Check every edit before it reaches the proxy.** One bad sites file refuses the whole config,
+  for every project. A sites file names only `<project>.test` and its subdomains, and no host
+  appears in two files (Caddy refuses a duplicate as an "ambiguous site definition"). Validate the
+  full config in a throwaway container of the same image, then reload the running proxy. Never
+  restart it: a failed reload keeps the old config serving, while a restart with a bad config
+  leaves every project with no proxy at all. Validation checks syntax and duplicates, not
+  upstreams: after the reload, `curl -sI` the project's own hosts.
+- **Agents never stop or recreate the shared proxy, and never start a second one.** When Docker
+  refuses port 443, that is the shared proxy doing its job; it is not something to fix by
+  stopping it. Put this in each project's rules about containers an agent did not start. A change
+  to the compose file itself (a new image, a new mount) needs a recreate; the owner does that,
+  after validating, and expects a short gap for every project.
+- **Adding a project:** claim a range in the registry first, in its own commit; then add the
+  sites file and the hosts block, validate and reload. The new project's compose file has no
+  proxy service.
+
+### Moving an existing proxy out
+
+Plan for a gap of about a minute, with the owner present for the hosts lines and the trust step.
+
+1. Build the shared folder (compose file, main config, every project's sites file, the registry)
+   and validate it. Merge every project's existing ports into the shared registry and check that
+   no port appears twice: moving is when ports collide.
+2. Copy the root certificate out of the old proxy (as under "Trusting the local certificate
+   authority") and keep it as `old-root.crt`: the check in step 4 compares against it.
+3. Stop the old proxy (`docker compose stop proxy`, never `down -v`). While it is stopped, copy
+   its data volume into a new, empty one with a neutral name, so the certificate authority moves
+   with it. Copy from **one** project's volume only, the one whose root the machine trusts, and
+   check first that the target is empty: a second copy, or a shared proxy started once before,
+   overwrites the root and every address stops matching. Another project that had its own proxy
+   does not copy; its old root stays trusted until someone removes it.
+4. Start the shared proxy on the new volume and check that it serves the same root: compare
+   `openssl x509 -noout -fingerprint -sha256 -in` on `old-root.crt` and on the root copied out
+   of the new proxy, then `curl -sI --cacert old-root.crt https://<project>.test`. The machine's
+   trust then holds without trusting anything again.
+5. Check every host of every project, in a browser and with `curl -sI`.
+6. Only then remove the proxy service from each project and point its local-development page to
+   the shared folder.
+
+Keep the old volume, and the old proxy service on a branch or commented out, until every
+project's addresses have worked through the new proxy for a while; deleting them is a later step
+for the owner. **Rollback:** stop the shared proxy and start the old one, which still has the
+same volume and the same root. It works only while that volume and that service exist.
+
 ## How to check for a clash
 
 Before choosing a port, and when something fails to start, ask what is already listening.
@@ -183,5 +263,7 @@ A port that merely looked free today is not a decision.
   it to stay.
 - **Let a fake provider decide for itself whether it may run.** The check lives at boot, in one
   place, and refuses; a fake that only logs a warning outside development has already failed.
+- **Put a catch-all, or another project's host, in a project's sites file.** The first decides
+  for every project; the second refuses the whole config.
 - **Create any of this unasked.** If the project has a setup that works, leave it; mention the
   gaps and let the owner choose.

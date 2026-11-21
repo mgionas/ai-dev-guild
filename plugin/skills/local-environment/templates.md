@@ -229,3 +229,95 @@ restart the browser, which may remember a failed lookup.
 
 One line per name: hosts files have no wildcards. A resolver such as dnsmasq can answer for a whole
 `*.<project>.test` from one rule, if the list becomes tiresome.
+
+## Shared proxy (one folder for several projects)
+
+For "Several projects on one machine" in the skill. The folder is named `<shared>` here (for
+example `local-proxy`); it belongs to no project.
+
+`<shared>/docker-compose.yml`:
+
+```yaml
+name: <shared>
+
+services:
+  proxy:
+    container_name: <shared>-proxy
+    image: caddy:2.11.9-alpine
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      # The certificate authority every project's addresses depend on. Copied from the old
+      # project proxy's volume when moving, so the root the machine trusts stays the same.
+      - <shared>-proxy-data:/data
+      # The whole folder, as the validate command mounts it. A single-file mount of the
+      # Caddyfile keeps the old file when an editor or git replaces it, and reload would then
+      # apply the old content without an error.
+      - .:/etc/caddy:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # No project network: every upstream is a host port, so no project has to be up for the
+    # proxy to start. On Linux, loopback-only ports are not reachable this way: use
+    # `network_mode: host` instead of `ports` and `extra_hosts`, 127.0.0.1 upstreams, and
+    # `default_bind 127.0.0.1` in the Caddyfile, since host mode has no port bindings.
+
+volumes:
+  <shared>-proxy-data:
+    name: <shared>-proxy-data
+```
+
+`<shared>/Caddyfile`, the owner's:
+
+```caddyfile
+{
+	local_certs
+}
+
+# One file per project; each names only <project>.test and its subdomains.
+import sites/*.caddy
+
+# What every host with no block gets, decided once for all projects. Over HTTPS such a host
+# has no certificate, so the handshake fails before this is reached.
+http:// {
+	respond "No site for this host: check sites/ and the hosts file" 404
+}
+```
+
+`<shared>/sites/<project>.caddy`, the project's own:
+
+```caddyfile
+<project>.test,
+app.<project>.test {
+	reverse_proxy host.docker.internal:<web-port>
+}
+
+grafana.<project>.test {
+	# A host port, never a container name or 127.0.0.1.
+	reverse_proxy host.docker.internal:<telemetry-ui-port>
+}
+```
+
+Before every reload, check that each sites file names only its own project's hosts and that no
+host appears in two files, then validate and reload:
+
+```bash
+# A throwaway container of the same image reads the whole config; nothing is served.
+docker run --rm -v "$PWD":/etc/caddy:ro caddy:2.11.9-alpine \
+  caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+# Only after "Valid configuration": a failed reload keeps the old config serving.
+docker exec <shared>-proxy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Copying the certificate authority when moving out of a project (the old proxy stopped first):
+
+```bash
+# The target must be empty; this prints nothing when it is. Anything listed means stop.
+docker run --rm -v <shared>-proxy-data:/to alpine:3.24.4 ls -A /to
+docker run --rm -v <project>-proxy-data:/from -v <shared>-proxy-data:/to alpine:3.24.4 \
+  cp -a /from/. /to/
+# After the shared proxy starts: the two fingerprints must match.
+docker cp <shared>-proxy:/data/caddy/pki/authorities/local/root.crt ./new-root.crt
+openssl x509 -noout -fingerprint -sha256 -in old-root.crt
+openssl x509 -noout -fingerprint -sha256 -in new-root.crt
+```
