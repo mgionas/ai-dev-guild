@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.4 (2026-11-21)
+
+- A comment check that reads only added lines needs the base it compares with: in CI, fetch the main branch's history (`fetch-depth: 0` on GitHub's checkout) and fail the step when git cannot find the base; a check that ignores git's failure gets no lines and passes having read nothing (`docs/rules/comments-explain-why.md`). Where the migration tool runs each file in one transaction, PostgreSQL refuses `CREATE INDEX CONCURRENTLY`, so the expand-only check refuses it and passes an index on an existing table only with a `-- reviewed:` reason (`db-migrations` agent and role page). Both come from a real project's plan for adopting 0.23. Guards unchanged (0.3.2). (field-tested: the shallow checkout; the transaction rule is new)
+
 ## 0.23.3 (2026-11-21)
 
 - A failed merge step runs `git merge --abort` only when branches share one checkout (`local-ci`, `docs/mistakes.md`). With one worktree per branch, the step stops and leaves the conflict in place for someone to resolve, so it stays visible. A real project pointed out that 0.23.2 asked for the abort in every case. Guards unchanged (0.3.2). (field-tested)

@@ -43,6 +43,13 @@ Rules:
 
   A trigger or policy on an existing table runs against old code's writes and reads, so it
   needs the `-- reviewed:` line; `AS RESTRICTIVE` on an existing table is always refused.
+
+  Exception: where the migration tool runs each file in one transaction, the two `CONCURRENTLY`
+  items above do not apply, because PostgreSQL refuses `CONCURRENTLY` inside a transaction. The
+  check refuses `CONCURRENTLY` there, and an index on an existing table (a plain one, or the one
+  `ADD CONSTRAINT … UNIQUE` builds) passes only with the `-- reviewed:` line. A plain build
+  blocks writes to the table while it runs; the reviewer weighs for how long.
+
   `ALTER POLICY`, `ALTER FUNCTION`, `CREATE RULE`, `ALTER DEFAULT PRIVILEGES` and ownership
   changes are unlisted on purpose, so they are refused. A project adds its own additive
   statements to the list through review, like any rule change, so the list grows on purpose

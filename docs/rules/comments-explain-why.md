@@ -20,7 +20,11 @@ A good comment tells a colleague what the code cannot: why it is written this wa
 - Where old references are many, make the check a ratchet: count them per file, refuse any new
   one, and refuse a file whose count goes up. Key the counts by path and follow renames (git's
   rename detection), or a moved file starts again at zero. The count can then only fall, without
-  a clean-up pass first. Checking only the lines a change adds works too.
+  a clean-up pass first. Checking only the lines a change adds works too, if the check can see
+  the base it compares with. In CI, fetch the main branch's history (GitHub's `actions/checkout`
+  fetches one commit unless given `fetch-depth: 0`, or fetch the base branch yourself), and make
+  the step fail when git cannot find the base. Otherwise `git diff <base>...HEAD` fails, and a
+  check that ignores the failure gets no lines and passes having read nothing.
 - Old references go only where your change already edits the line. List the rest under
   **Noticed** ([change only what the task needs](change-only-the-task.md)), or clean them as a
   task of their own.
