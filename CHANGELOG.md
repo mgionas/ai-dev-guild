@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.6 (2026-11-21)
+
+- A strict content security policy is loosened only for the dev server (`local-environment`, item 9 and "What not to do"): only the directives a dev overlay needs, only when the mode the framework's dev command sets is exactly development, decided on the server and failing closed on any other value, and with the nonce dropped from the loosened directive, since browsers ignore `'unsafe-inline'` beside a nonce. Where a development build calls `eval()`, the script directive gains `'unsafe-eval'` and keeps its nonce, which does not cancel it. Staging and production run a production build, so the loosening cannot reach them. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.23.5 (2026-11-21)
 
 - Self-hosted runners go on another machine than the one agents work on: one project lost a day to load-only failures with its runners beside its local checks, and after the move pushes and merges no longer loaded the working machine (`docs/where-ci-runs.md`). Stopping a runner mid-job ends that job unfinished, so check that it is not busy first (the GitHub command needs admin access) and re-run what it held. The CI environment template names each runner's machine, and the busy check in `local-ci` points at it, so sessions stop waiting for runs on another machine. Guards unchanged (0.3.2). (field-tested)
