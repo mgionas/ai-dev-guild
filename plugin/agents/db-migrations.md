@@ -50,9 +50,9 @@ Rules:
   refused statements and passes everything else is weaker: a statement nobody thought of
   passes silently.
 
-  The check strips comments and string literals before it reads a statement, and splits an
-  `ALTER TABLE` into its comma-separated actions and judges each one: `ADD COLUMN a int, DROP
-  COLUMN b` is refused for its second action.
+  The check reads the marker lines first, then strips comments and string literals before it
+  reads a statement, and splits an `ALTER TABLE` into its comma-separated actions and judges
+  each one: `ADD COLUMN a int, DROP COLUMN b` is refused for its second action.
 
   A contract migration passes only with a marker line, `-- completes: <earlier-migration-file>`,
   and the check confirms that file exists and comes earlier in the migration order. Show it
