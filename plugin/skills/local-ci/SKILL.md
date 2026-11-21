@@ -44,9 +44,10 @@ same machine, and remote CI on main. The overlap caused load failures that were 
 - **A step that merges the main branch in stops when the merge fails.** A script or queue that
   runs `git merge origin/main` before checking a branch reads the merge's exit code. On failure it
   lists the unmerged files (`git diff --name-only --diff-filter=U`; an empty list means the merge
-  failed for another reason, so print git's message), runs `git merge --abort` so the next branch
-  starts from a clean tree, and stops with a failure. If it carries on, the build and the tests
-  run over conflict markers, and nothing may notice.
+  failed for another reason, so print git's message) and stops with a failure. When branches share
+  one checkout, it runs `git merge --abort` first, so the next branch starts from a clean tree.
+  With one worktree per branch, leave the conflict in place for someone to resolve. A step that
+  carries on runs the build and the tests over conflict markers, and nothing may notice.
 - **One heavy run at a time on a machine, across sessions.** This is a rule with a check before you
   start, not a lock. If remote CI runs on this machine (a self-hosted runner), ask the CI host
   whether a run is in progress or queued (for GitHub,
