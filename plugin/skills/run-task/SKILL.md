@@ -14,7 +14,14 @@ The task: $ARGUMENTS
 
 1. **Task branch.** Before anything is built, create a branch for the task (`task/<id>`) from the
    project's main branch, or a worktree on a new branch if other work shares the checkout. Write
-   its name on the brief's `**Branch:**` line. Nothing is built on `main`.
+   its name on the brief's `**Branch:**` line. Nothing is built on `main`. In a new worktree,
+   install dependencies before anything runs a project tool, with the lock file frozen and install
+   scripts off (pnpm: `pnpm install --frozen-lockfile --ignore-scripts`). A package manager set to
+   install on demand (pnpm's `verify-deps-before-run`, for example) otherwise installs with scripts
+   the first time an agent runs a tool there, and a git-hook installer among those scripts points
+   the hook every worktree shares at this worktree. If a dependency needs its own install script (a
+   native module), run that one by name (pnpm: `pnpm rebuild <package>`). With a hook manager, the controller reinstalls the hooks
+   from its own checkout afterwards.
 2. **Question sweep.** Give the task's plan text to `domain-guardian` and ask for the Gaps only.
    Put every product question into one decision batch (`decision-batch` skill) and ask the owner
    once. The builder starts with the answers, not with the questions.

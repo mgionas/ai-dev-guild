@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.7 (2026-11-22)
+
+- CI lessons from two projects' self-hosted runners. `docs/where-ci-runs.md`: set the heap cap in CI on every heavy step, not only locally (a typecheck ran out of memory on every full run once an 8 GB runner joined); checks on pull requests into every long-lived branch; with runners of different strength, a label sends the heavy jobs to the strong ones, at the cost of queueing when they are all off; a job queued for hours that fails at checkout is re-run before it is debugged. `local-ci`: the runner's worker process, matched by name, and a pause file are busy signals; files that only grow at the bottom keep both sides, the base branch's first, and numbered entries are renumbered; a merge commit through a typed lint hook is built first, and the hook is never skipped. `run-task`: a new worktree installs with the lock file frozen and install scripts off, so an on-demand install cannot re-point the shared git hook. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.23.6 (2026-11-21)
 
 - A strict content security policy is loosened only for the dev server (`local-environment`, item 9 and "What not to do"): only the directives a dev overlay needs, only when the mode the framework's dev command sets is exactly development, decided on the server and failing closed on any other value, and with the nonce dropped from the loosened directive, since browsers ignore `'unsafe-inline'` beside a nonce. Where a development build calls `eval()`, the script directive gains `'unsafe-eval'` and keeps its nonce, which does not cancel it. Staging and production run a production build, so the loosening cannot reach them. Guards unchanged (0.3.2). (field-tested)

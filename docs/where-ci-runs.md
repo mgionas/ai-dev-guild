@@ -16,7 +16,11 @@ machine first.
 - **The runtime sizes itself from the machine.** Node picks its default heap from the system's
   memory, and test runners pick one worker per core. A type-aware lint or a production build that
   fits a laptop's heap can run out of memory on a smaller runner. Run locally with CI's heap cap
-  (`NODE_OPTIONS=--max-old-space-size=<MB>`) and CI's core count.
+  (`NODE_OPTIONS=--max-old-space-size=<MB>`) and CI's core count. Set the cap in CI too, on every
+  heavy step, rather than relying on the default: one project's type-aware typecheck ran out of
+  memory (exit code 134) in every full run once an 8 GB runner joined, because that runner's
+  default heap was 2 GB. Keep the cap below the runner's memory divided by the processes that run
+  at once, or the out-of-memory error becomes the system killing the process (exit code 137).
 - **Parallel levels multiply.** A task runner running four packages at once, each starting a test
   worker per core, puts many processes on a two-core runner, and tests that take one second alone
   hit a five-second timeout. Fix the cause: fewer packages at once, heavy packages in their own
@@ -49,6 +53,9 @@ machine first.
 - Know what each setup action caches, and turn off caches you did not choose: some cache
   automatically when they see a package manager field, and can upload far more than you meant.
   Turn such a cache off with the action's own switch: removing the `cache` input is not enough.
+- Checks on pull requests into every long-lived branch, not only the main branch. A milestone or
+  release branch whose pull requests start no remote CI has only the local check behind it
+  (`on: pull_request: branches: [main, 'release/**']`).
 
 ## Self-hosted runners
 
@@ -79,6 +86,20 @@ A self-hosted runner is a program on a machine you own that runs whatever a work
   privileged or OS-specific steps (`if: runner.os == 'Linux'`).
 - **One instance runs one job at a time.** Count instances against the jobs a push starts, or runs
   queue.
+- **Mixed runners: send the heavy jobs to the strong ones by label.** Throughput comes from the
+  number of instances, not the size of the machine, so a weaker machine can still add one. Give the
+  strong runners a label (`heavy`, say) and list it in `runs-on` beside `self-hosted`
+  (`runs-on: [self-hosted, heavy]`) for the jobs that start containers or run integration suites; the weaker runner takes lint, typecheck with an explicit heap cap,
+  unit tests and the jobs that only collect results. On GitHub a label can be added to a registered
+  runner through the API (`POST /repos/<owner>/<repo>/actions/runners/<id>/labels` with the body
+  `{"labels": ["heavy"]}`, admin access), without registering it again. The cost: when every strong runner is off, those jobs wait in the
+  queue, and nothing falls back to the weaker one. When statement timeouts or time-dependent tests
+  fail only on the weak runner, run the same job on a strong one before changing code; if it then
+  passes, the test is load-sensitive, and that is the thing to fix, not the timeout.
+- **A job queued for hours can fail at checkout.** One project's jobs that waited more than eight
+  hours for a runner failed while cloning, with an authentication error
+  (`could not read Username`). Re-run it once before debugging; a failure that repeats on a fresh
+  run is the one to read.
 - **Cancelling is not instant.** Post steps that have started (cache uploads, cleanup) keep running
   after a cancel. A cancelled run is not a failed one: when it was replaced by a newer run, the
   newer run is the result to read.
