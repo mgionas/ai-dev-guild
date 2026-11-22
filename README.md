@@ -14,6 +14,7 @@
 
 <p align="center">
   <a href="#what-the-loop-catches">What it catches</a> ·
+  <a href="#who-does-what">Who does what</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#living-pages">Living pages</a> ·
   <a href="#install-in-2-minutes">Install</a> ·
@@ -25,10 +26,8 @@
 
 ### One agent builds. Another inspects. Nothing ships without proof.
 
-AI agents write code fast and report success with confidence, even when no test has run. In a
-craft guild, no maker stamps their own work: a master inspects it first. **ai-dev-guild is a
-Claude Code plugin that brings that rule to your project.** Each task goes to a fresh builder
-agent. A different agent reviews it, and the task is not done until the test output is pasted in.
+A Claude Code plugin. AI agents say "done" before any test has run. Here, a **different** agent
+checks the work, and **done means the test output is pasted in.**
 
 ## What the loop catches
 
@@ -39,25 +38,22 @@ agent. A different agent reviews it, and the task is not done until the test out
   <img alt="What the loop catches, on average across reviewed tasks built with this workflow: about 90% of tasks had a blocking issue found by an independent reviewer before merge; about 70% of security reviews found a real issue; about 95% of question batches were answered with one accept all; at least 20% of tasks needed a second fix round; about 10% of fix rounds broke something new that the next check caught; at least 5% of done reports claimed more than their evidence." src="assets/stats-wide-light.svg" width="100%">
 </picture>
 
-Counted from the review, fix and decision records of real work, weighted by the number of tasks.
-A builder's own report would have shipped most of these issues: the reviewer who did not write the
-code is the one who finds them, and the re-check after a fix still catches about one new problem in
-ten. To see where your own sessions spend their time and tokens, run the
-[`token-review`](plugin/skills/token-review/SKILL.md) skill.
+<sub>Counted from the review and fix records of real work. Check your own sessions with
+[`token-review`](plugin/skills/token-review/SKILL.md).</sub>
 
 ## What changes
 
-| Without the guild                                           | With the guild                                                                                                                     |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| "Done! All tests pass." No test ever ran.                   | **Done means pasted output** of the tests, type check and lint. No output, no done.                                                |
-| The agent reviews its own code and agrees with itself.      | **A different agent reviews**, and never sees the builder's reasoning, so it catches the misunderstanding instead of repeating it. |
-| Questions turn up halfway through the build, one at a time. | **One batch of questions before the build**, each with a recommendation. You answer "accept all" in a minute.                      |
-| Fix rounds reopen the review and run for days.              | **A fresh fixer, then one re-check that only confirms.** After two rounds, you decide whether to go on.                            |
-| "While I was there, I tidied up…"                           | **Only the task changes.** Anything else noticed goes on a list, with `file:line`.                                                 |
-| `pkill -f jest` kills every agent's test run.               | **A guard hook refuses pattern kills**, skipped git hooks and edits to protected files.                                            |
-| `price * 100` and the server's time zone, baked in.         | **No country assumed:** currency codes, UTC with real time zones, locale formats.                                                  |
-| Progress lives in the chat, and scrolls away. | **Pages kept current every turn:** roadmap, QA board and more, open on a phone, no asking. |
-| "Robust, comprehensive fix. All tests pass." | **The plain version, with its evidence:** what changed, which test went red then green, what was not run. |
+| Without                               | With the guild                               |
+| ------------------------------------- | -------------------------------------------- |
+| "All tests pass." No test ran.        | ✅ Done = pasted test output                 |
+| The agent reviews its own code.       | 🔍 A different agent reviews                 |
+| Questions drip in during the build.   | 📋 One batch of questions first              |
+| Fix rounds drag on for days.          | 🔁 Fresh fixer, one re-check                 |
+| "While I was there, I tidied up…"     | ✂️ Only the task changes                     |
+| `pkill` kills every agent's tests.    | 🛡️ Guard hooks refuse it                     |
+| One country's currency and time zone. | 🌍 No country assumed                        |
+| Progress scrolls away in the chat.    | 📊 Pages kept current, open on a phone       |
+| "Robust, comprehensive fix."          | 📝 Plain words, each claim with its evidence |
 
 ## How it works
 
@@ -68,23 +64,27 @@ ten. To see where your own sessions spend their time and tokens, run the
   <img alt="How it works: 1 ask first, 2 brief, 3 build with a fresh agent, 4 inspect by a different agent; if review finds something, 5 a fresh fixer and one re-check; 6 prove with a strict local check; then merge and update the boards." src="assets/loop-wide-light.svg" width="100%">
 </picture>
 
-1. **Ask first.** Before anything is built, the product questions go to you in one batch, each
-   with a recommended answer.
-2. **Brief.** The task is written down for a fresh agent: goal, scope, tests to run, your answers.
-3. **Build.** A new agent writes the failing test first, builds, and pastes what it ran.
-4. **Inspect.** Reviewers are chosen by what changed (security, money, schema, screens). None of
-   them built it.
-5. **Fix and confirm.** A fresh fixer handles the findings; one re-check confirms them.
-6. **Prove it.** The checks run once, the way CI runs them, on everything the change can reach, and
-   then the work merges.
+**Ask → brief → build → inspect → fix → prove → merge.** Big trade-offs go to the
+**board**: eight advisor agents, and you decide. Details: [docs/loop.md](docs/loop.md).
 
-Bigger choices (scope, pricing, legal exposure) go to the **board**: eight advisor agents who
-answer independently, a summary that keeps disagreement visible, and you making the call.
-More on the loop: [docs/loop.md](docs/loop.md).
+## Who does what
+
+```mermaid
+flowchart LR
+    You([You decide]) -->|answers| B[🔨 Makers<br>build one task]
+    B -->|work + proof| I[🔍 Inspectors<br>review what changed]
+    I -->|findings| F[🔨 Fixer]
+    F -->|re-check| I
+    I -->|approved| M[✅ Merge]
+    You -.->|hard trade-offs| Board[🏛️ Board<br>8 advisors]
+    Board -.->|options| You
+```
+
+- **🔨 Makers:** builder, fixer, money-specialist, db-migrations, i18n.
+- **🔍 Inspectors:** architect, security, domain, QA, design, UX, docs. None of them built it.
+- **🏛️ Board:** product, tech, finance, legal, users, operations, growth, your industry.
 
 ## Living pages
-
-The guild keeps a few pages current for you, so you can see where a project stands without asking.
 
 <picture>
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/pages-tall-dark.svg">
@@ -92,17 +92,6 @@ The guild keeps a few pages current for you, so you can see where a project stan
   <source media="(prefers-color-scheme: dark)" srcset="assets/pages-wide-dark.svg">
   <img alt="How the living pages stay current: 1 an agent's change (a merge, a stage change, a test result or a decision); 2 written in the same turn into the page's data; 3 the living pages (roadmap, QA board, analysis page, project and system map); 4 you read them on a phone. 5 Testers mark Pass, Fail or Blocked back on the QA board." src="assets/pages-wide-light.svg" width="100%">
 </picture>
-
-| Page | What you see there |
-| --- | --- |
-| **Roadmap** | Milestones a user can see, each step with its stage (planned, building, review, fixing, merged), and what waits on you. |
-| **QA board** | One entry per change, with the features it touched and the checks a tester should run. |
-| **Analysis page** | The facts behind a decision, each figure tagged sourced, assumption or gap, with your dated answer written back. |
-| **Flow stats** | How the agent workflow is going: days per task, findings, fix rounds, CI, questions and tokens, counted from the records, with at most three suggestions. |
-| **Project map** | A diagram of the parts and who talks to whom, plus every folder and its job, read from the code. |
-| **System map** | Which feature owns each API operation, screen, table and job. A starter check in [`examples/system-map`](examples/system-map) refuses anything new and undescribed. |
-
-**What they look like** (example data, as the templates ship):
 
 <table>
 <tr><td colspan="2"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/roadmap-dark.png"><img alt="Roadmap page: a headline, four milestone cards with progress bars, then a board of work items in four lanes (completed, in progress, planned, pending), one item marked needs you, and an item's tasks each with a stage." src="assets/screens/roadmap-light.png" width="100%"></picture><br><sub><b>Roadmap</b>: milestones, a four-lane board, and what waits on you.</sub></td></tr>
@@ -112,45 +101,10 @@ The guild keeps a few pages current for you, so you can see where a project stan
 <td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screens/map-dark.png"><img alt="Project map page: a diagram of the web app, API, database and email provider with the links between them, and one card per part." src="assets/screens/map-light.png" width="100%"></picture><br><sub><b>Project map</b>: the parts and who talks to whom.</sub></td></tr>
 </table>
 
-**Why.** Progress, test results and decisions get lost in a chat's scrollback. A page you can open
-on a phone answers "where are we?" without you asking an agent.
+Roadmap · QA board · analysis page · flow stats · project map · system map.
+How they stay current: [docs/living-pages.md](docs/living-pages.md).
 
-**Why a system map.** Agents write and change code often and fast, and a developer can lose track of
-what now exists and why. The system map is read from the code, so it shows what is really there: each
-API operation, screen and table and the feature that owns it, plus the decisions people recorded for
-that feature. The starter check in [`examples/system-map`](examples/system-map), run with `--base`
-against the main branch, refuses a new operation, screen or table that no feature describes, so the
-map cannot quietly fall behind the code.
-
-**How it works.**
-
-- In Claude Code the pages publish as claude.ai artifacts. For the roadmap and the QA board, agents
-  write the rows into the artifact's database in the same turn as each change, unprompted, so a
-  status change is a data write and not a new page.
-- If you do not use artifacts, the same page works as a plain file with the rows embedded in it.
-  The QA board's buttons are then read-only.
-- On the QA board, testers mark each check Pass, Fail or Blocked and add a note. The board shows who
-  marked it and when, and an agent never overwrites a tester's result.
-- On an analysis page, a figure with no tag is not put on the page. The page reports and never
-  decides: the options come with a recommendation, and your answer is written back with its date.
-- All pages share one design ([`page-design.md`](plugin/skills/progress-boards/page-design.md)), for
-  light and dark themes and for a phone. `setup` asks which pages the project wants and whether they
-  use the house look or the project's brand.
-
-**How it helps.**
-
-- A tester knows what changed and what to retest, because each update lists its checks.
-- You answer a decision from numbers whose trust level is on the page, and the answer stays beside them.
-- A newcomer gets the picture of the parts and folders from a page read from the code, so it matches
-  what is there.
-- After a run of agent changes, a developer finds which feature a new route or table belongs to in
-  one search, instead of reading the diff.
-
-Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/skills/progress-boards/SKILL.md),
-[`analysis-page`](plugin/skills/analysis-page/SKILL.md), [`project-map`](plugin/skills/project-map/SKILL.md),
-[`system-map`](plugin/skills/system-map/SKILL.md).
-
-### Plain reports
+## Plain reports
 
 <picture>
   <source media="(max-width: 700px) and (prefers-color-scheme: dark)" srcset="assets/plain-report-tall-dark.svg">
@@ -159,103 +113,41 @@ Skills: [`roadmap`](plugin/skills/roadmap/SKILL.md), [`progress-boards`](plugin/
   <img alt="How plain-report works: 1 a draft report such as “Robust fix. All tests pass.”; 2 check one, plain phrasing; 3 check two, each claim matched to its evidence; 4 the sent report, the plain version with the test count and what was not run." src="assets/plain-report-wide-light.svg" width="100%">
 </picture>
 
-Agents report success with confidence and pad with filler. The [`plain-report`](plugin/skills/plain-report/SKILL.md)
-skill edits every text an agent writes for a person: builder and fixer reports, the controller's
-messages to you, pull request bodies. It makes the wording plain and keeps each claim no stronger than
-its evidence. "Fixed" is written only after a test failed and then passed. A loose size becomes a number
-with its source. A skipped step is said in the main text, not parked in a linked file.
+| Before                                     | After                                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Robust, comprehensive fix. All tests pass. | Fixed February 29 parsing. New test failed, now passes. Unit 212/212; integration not run. |
 
-| Before | After |
-| --- | --- |
-| Robust, comprehensive fix. All tests pass. | Fixed the date parsing for February 29. The new test failed before the change and passes now. Unit tests 212/212; the integration suite was not run. |
-
-Written fresh from the ideas of [academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer)
-and [humanizer](https://github.com/blader/humanizer), both MIT. No text is copied.
+<sub>Skill: [`plain-report`](plugin/skills/plain-report/SKILL.md). Ideas from
+[academic-humanizer](https://github.com/AIScientists-Dev/academic-humanizer) and
+[humanizer](https://github.com/blader/humanizer) (both MIT); no text copied.</sub>
 
 ## Install in 2 minutes
-
-> Plugins load when a session starts. After installing (or after copying files), start a new
-> session.
-
-In Claude Code:
 
 ```
 /plugin marketplace add mgionas/ai-dev-guild
 /plugin install ai-dev-guild@ai-dev-guild
 ```
 
-Set up your project once. This writes an `AGENTS.md` with the working rules and the permission
-rules in `.claude/settings.json`, and asks before it touches any existing file:
+Start a new session, then:
 
-```
-/ai-dev-guild:setup
-```
-
-New to building, with no stack chosen yet? Describe your idea and get a sourced proposal for
-hosting, database and testing:
-
-```
-/ai-dev-guild:stack-advice <what you want to build>
+```mermaid
+flowchart LR
+    A["/ai-dev-guild:setup<br>once per project"] --> B["/ai-dev-guild:run-task<br>your first task"]
+    C["/ai-dev-guild:stack-advice<br>no stack yet?"] -.-> A
 ```
 
-Then hand it your first task:
+Optional guard hooks (Node.js 22.5+): `/plugin install ai-dev-guild-guards@ai-dev-guild`
 
-```
-/ai-dev-guild:run-task <a task from your plan>
-```
-
-Optional guard hooks (needs Node.js 22.5 or later):
-
-```
-/plugin install ai-dev-guild-guards@ai-dev-guild
-```
-
-<sub>Prefer plain files to a plugin? [Copy the folders instead](docs/install.md). Later: [upgrade and remove](docs/upgrade-and-remove.md), and [troubleshooting](docs/troubleshooting.md) if something does not load.</sub>
+<sub>[Copy files instead](docs/install.md) · [upgrade and remove](docs/upgrade-and-remove.md) · [troubleshooting](docs/troubleshooting.md)</sub>
 
 ## What's inside
-
-### 🔨 Makers
-
-**builder** builds one task from a brief · **fixer** fixes findings in a fresh context ·
-**money-specialist** handles prices and payments in integer minor units · **db-migrations**
-writes backward-compatible schema changes · **i18n** keeps every language file complete.
-
-### 🔍 Inspectors
-
-**architect** checks structure and contracts · **security-reviewer** checks access, secrets and
-personal data · **domain-guardian** checks your words and business rules · **qa-tester** tries to
-break it · **designer** reviews screenshots of each screen · **ux-researcher** checks flows
-against real users · **docs-keeper** keeps the docs true.
-
-### 🧭 Stack advisor
-
-Describe your project and get a stack proposal: hosting, database, auth, email, payments and
-monitoring, each with an alternative, today's free tier (linked and dated), the regions it serves
-and how to leave it. It also sets up how you test: a preview per change, database branches and
-staging. You decide and sign up yourself.
-
-### 🪙 Spend fewer tokens
-
-**Token review:** where your sessions spent their tokens, and a few rules to spend less. The pages
-that show where a project stands are in [Living pages](#living-pages).
-
-### 🏛️ The board
-
-Eight advisors for decisions with real trade-offs: product (chair), tech, finance, legal, users,
-operations, growth and your industry. They never see each other's answers.
 
 ### ⚙️ Skills
 
 `stack-advice` · `roadmap` · `analysis-page` · `flow-stats` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
 `design-review` · `research-review` · `plain-report` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
 
-### 🛡️ Guard hooks (optional)
-
-A separate plugin, `ai-dev-guild-guards`, in the same marketplace. It refuses edits to protected
-files (`.env` by default), `pkill`/`killall`, `--no-verify` and other skipped git hooks, and reading
-or sending `.env` files from the shell or the Read and Grep tools. It asks you before any `kill`
-of a process that is not the agent's own job, since it cannot tell whose process that is, and can
-run your own formatter after every edit. The main plugin has no hooks or scripts at all.
+### 📚 In detail
 
 <details>
 <summary><b>Every role, with what it gets and what it returns</b></summary>
@@ -341,43 +233,29 @@ so create and rename secret files yourself. The hooks do not protect their own f
 
 ## Who it's for
 
-- **Developers who use Claude Code on real projects** and want its work checked the way a
-  colleague's would be.
-- **People new to building** who have an idea but no stack: the stack advisor proposes hosting,
-  a database and a safe way to test, checked against today's plans and your users' country.
-- **Teams running several agents at once**, who need them not to break each other's work.
-- **Product owners who decide but don't code**: you get questions in batches with
-  recommendations, and your decisions are recorded and never quietly rewritten.
+- 👩‍💻 Developers using Claude Code on real projects
+- 🌱 People with an idea but no stack yet
+- 🤖 Teams running several agents at once
+- 🧑‍💼 Product owners who decide but don't code
 
-It is not for one-off scripts: the loop pays off when a mistake would cost more than a review.
-
-## It fits your project, not the other way round
-
-- **It learns your project from your files.** Every role reads your `AGENTS.md`, your glossary and
-  your commands, whatever language or framework you use. Advice tied to one framework sits in
-  [examples](examples/README.md).
-- **It assumes nothing local.** Amounts are stored with their currency, times in UTC with the
-  user's time zone, and dates and numbers in the user's format. Tax and legal rules come from you.
-  See [Assume no country](docs/rules/international-by-default.md).
-- **It asks instead of inventing.** It never makes up product terms or makes product, money or
-  legal decisions for you.
+Not for one-off scripts.
 
 ## The ideas behind it
 
-Twenty-five short [working rules](docs/rules/README.md), each with its reason, and twenty
-[mistakes that keep happening](docs/mistakes.md), each with a tiny reproduction. The core six:
+[Working rules](docs/rules/README.md) and [mistakes that keep happening](docs/mistakes.md). The core six:
 
 1. [The builder never reviews its own work.](docs/rules/builder-never-reviews.md)
-2. [One task per fresh agent, with a brief and a report.](docs/rules/one-task-fresh-agent.md)
+2. [One task per fresh agent.](docs/rules/one-task-fresh-agent.md)
 3. [Evidence before done.](docs/rules/evidence-before-done.md)
 4. [Change only what the task needs.](docs/rules/change-only-the-task.md)
 5. [Write down what you assumed.](docs/rules/write-down-assumptions.md)
 6. [Build nothing nobody asked for.](docs/rules/build-nothing-unasked.md)
 
+It reads your `AGENTS.md` and glossary, assumes no country, and asks instead of inventing.
+
 ## Contributing
 
-One change per pull request, each with its reason. See [CONTRIBUTING.md](CONTRIBUTING.md) and
-the [CHANGELOG](CHANGELOG.md).
+One change per pull request, with its reason: [CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG](CHANGELOG.md)
 
 ## Licence
 
