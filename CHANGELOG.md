@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.23.8 (2026-11-22)
+
+- A shorter README: pictures first, about 650 visible words instead of about 2,150, a who-does-what diagram and an install diagram, and the full role, skill and hook lists in collapsed sections. The living pages' longer explanation moved unchanged to `docs/living-pages.md`. Guards unchanged (0.3.2). (new)
+
 ## 0.23.7 (2026-11-22)
 
 - CI lessons from two projects' self-hosted runners. `docs/where-ci-runs.md`: set the heap cap in CI on every heavy step, not only locally (a typecheck ran out of memory on every full run once an 8 GB runner joined); checks on pull requests into every long-lived branch; with runners of different strength, a label sends the heavy jobs to the strong ones, at the cost of queueing when they are all off; a job queued for hours that fails at checkout is re-run before it is debugged. `local-ci`: the runner's worker process, matched by name, and a pause file are busy signals; files that only grow at the bottom keep both sides, the base branch's first, and numbered entries are renumbered; a merge commit through a typed lint hook is built first, and the hook is never skipped. `run-task`: a new worktree installs with the lock file frozen and install scripts off, so an on-demand install cannot re-point the shared git hook. Guards unchanged (0.3.2). (field-tested)
