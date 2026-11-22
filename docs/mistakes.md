@@ -125,6 +125,8 @@ gets a timeout, and nothing waits on the network while holding a lock or a poole
 
 ## Assuming one country
 
+For products that serve more than one country, currency or language.
+
 ```js
 const cents = Math.round(price * 100); // wrong for currencies with 0 or 3 decimals
 const due = new Date();

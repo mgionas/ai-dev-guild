@@ -18,8 +18,8 @@ machine first.
   fits a laptop's heap can run out of memory on a smaller runner. Run locally with CI's heap cap
   (`NODE_OPTIONS=--max-old-space-size=<MB>`) and CI's core count. Set the cap in CI too, on every
   heavy step, rather than relying on the default: a type-aware typecheck ran out of memory (exit
-  code 134) on a runner whose default heap was 2 GB. Keep the cap below the runner's memory divided by the processes that run
-  at once, or the out-of-memory error becomes the system killing the process (exit code 137).
+  code 134) on a runner whose default heap was 2 GB. Keep the cap below the runner's memory
+  divided by the processes that run at once, or the out-of-memory error becomes the system killing the process (exit code 137).
 - **Parallel levels multiply.** A task runner running four packages at once, each starting a test
   worker per core, puts many processes on a two-core runner, and tests that take one second alone
   hit a five-second timeout. Fix the cause: fewer packages at once, heavy packages in their own

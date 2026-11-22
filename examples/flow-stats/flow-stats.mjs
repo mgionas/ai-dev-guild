@@ -374,7 +374,7 @@ export const THRESHOLDS = [
     measure: "token share of the strongest model",
     crossed: "> 50%",
     skill: "token-review",
-    text: "Builders and fixers on the middle model; the strongest only for security, money and architecture.",
+    text: "Builders and fixers on the middle model; the strongest only for security, high-stakes logic and architecture.",
     read: (r) =>
       r.strongShare == null
         ? null
