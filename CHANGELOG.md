@@ -11,7 +11,7 @@ heading where it changed.
 
 ## 0.24.1 (2026-11-22)
 
-- `local-ci`: let the owner watch a run. The check writes to one fixed log path, one terminal the owner can see follows it with `tail -F`, and a `starting <step>` line shows the step in progress. When a build cannot find a declared dependency after a frozen install said up to date, check that package's folder in the store before suspecting the code: an empty folder survives a frozen install. Guards unchanged (0.3.2). (field-tested)
+- `local-ci`: let the owner watch a run. The check writes to one fixed log path, one terminal the owner can see follows it with `tail -F`, and a `starting <step>` line shows the step in progress (the `examples/ci-local` script now prints it). When a build cannot find a declared dependency after a frozen install said up to date, check that package's folder in the store before suspecting the code: an empty folder survives a frozen install. Guards unchanged (0.3.2). (field-tested)
 
 ## 0.24.0 (2026-11-22)
 

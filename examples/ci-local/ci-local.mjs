@@ -425,6 +425,8 @@ function main() {
     }
     const started = Date.now();
     const before = opts.probe ? snapshot(process.cwd()) : null;
+    // Printed, not kept in the summary: it is for someone watching the log, and the summary stays one line per step.
+    console.log(`starting ${step.name}`);
     const result = runStep({ name: step.name, command, env, out });
     let code = result.code;
     let label = String(code);
