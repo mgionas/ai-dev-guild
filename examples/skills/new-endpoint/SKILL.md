@@ -26,13 +26,22 @@ it touches login, permissions or personal data.
    is short and imperative: "Create a project", not "Creates a project". Add these from the
    first route, even when there is only one: a reference with a hundred untagged operations is
    hard to fix later.
+
+   Every summary and description in the document is public text, field descriptions included. It
+   states the rule in words and never points at internal work: no decision or review id, no
+   section sign, no repository path, no "design", "plan", "spec", "roadmap" or "task N". A link to
+   the public user documentation is fine. Code comments may still cite decisions; readers of the
+   API cannot open them.
+
 7. **A guard test enforces what a machine can check.** It fails when an operation has no tag or a tag the list does not
    know, when a tag is in no group, a group names an unknown tag or a group is empty, or when a summary is too long or does not
-   start with one of the project's verbs. When each group names its glossary chapter, the test can
+   start with one of the project's verbs. It also fails when any summary or description in the
+   rendered document points at internal work. When each group names its glossary chapter, the test can
    also check that groups follow the chapter order; the choice of term stays with the reviewer. Break the test once on purpose and watch it fail. A sketch (Vitest syntax):
 
    ```ts
-   // allOperations, knownTags, tagGroups, summaryVerbs: from your generated document and tag list.
+   // allOperations, knownTags, tagGroups, summaryVerbs, renderedDocument: from your generated
+   // document and tag list.
    const groupedTags = tagGroups.flatMap((g) => g.tags);
    for (const op of allOperations) {
      expect(op.tags, op.id).toHaveLength(1);
@@ -45,6 +54,15 @@ it touches login, permissions or personal data.
    for (const tag of groupedTags) expect(knownTags, tag).toContain(tag);
    for (const group of tagGroups) {
      expect(group.tags.length, group.name).toBeGreaterThan(0);
+   }
+   // allPublicText(doc) walks the document and yields { path, text } for every string under a
+   // "summary" or "description" key (operations, tags, schemas, fields); it skips non-strings.
+   // Add your own id formats. Drop a word your domain really uses ("plan" for a subscription,
+   // "design" as a product word): the rule is about pointers, not vocabulary.
+   const internal =
+     /§|\b(ADR|decision|finding|review)[ -]?#?\d+|\btask \d+|\b(design|plan|spec|roadmap)\b|(?<![\w./-])docs\//i;
+   for (const { path, text } of allPublicText(renderedDocument)) {
+     expect(text, path).not.toMatch(internal);
    }
    ```
 
