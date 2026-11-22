@@ -128,9 +128,19 @@ before you blame the machine's load. A test that times out only on CI is a quest
 machine first: count the processes per core before you raise a timeout. Before you call a test
 flaky, rule out two causes that look like one: another process already holding a port the test or
 its runner binds (a dev server, another checkout's run), and a hung process from an earlier run
-holding a port, a lock or a database.
+holding a port, a lock or a database. When a build cannot find a dependency the project declares,
+and the frozen install said everything was up to date, look at that package's folder in the package
+manager's store before you suspect the code (pnpm: `node_modules/.pnpm/<name>@<version>/`). An
+empty or half-written folder survives a frozen install; remove that one folder and install again.
 
 Paste the summary in the report: the mode line, each step's line and the verdict.
+
+**Let the owner watch.** Run the check in the background with its output going to one fixed log
+path (or a `latest` link to the newest log), and open one terminal the owner can see that follows
+it: `tail -n 40 -F <log path>`. `-F` waits for a file that does not exist yet and keeps up when it
+is replaced, so one terminal covers every run and a queue of several. Link that terminal in your
+reply. Print a `starting <step>` line before each step and `<step>: <result>` after it, so the
+step in progress shows, not only the finished ones. Close the terminal when the run is over.
 
 ## Setting it up
 

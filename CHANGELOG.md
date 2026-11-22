@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.24.1 (2026-11-22)
+
+- `local-ci`: let the owner watch a run. The check writes to one fixed log path, one terminal the owner can see follows it with `tail -F`, and a `starting <step>` line shows the step in progress. When a build cannot find a declared dependency after a frozen install said up to date, check that package's folder in the store before suspecting the code: an empty folder survives a frozen install. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.24.0 (2026-11-22)
 
 - The guild reads as a general agent workflow, not one project's notes. "Assume no country" is no longer always on: it left the builder, the `AGENTS.md` template and the README's table, and is now an optional rule (`docs/rules/international-by-default.md`) that `setup` adds when the product will serve more than one country, currency or language. `money-specialist` and `i18n` moved to `examples/agents/` as copy-in roles (projects that relied on them copy `examples/agents/…` into `.claude/agents/`), so the plugin has 21 roles. In `review-panel`, "money" became "high-stakes logic" (money, access control, data that cannot be recovered), reviewed by a human expert plus the security reviewer for access, and the same rename runs through the other rules and skills that named money as a model or reviewer category; "product, money and legal" became "product, business and legal". The README's "No country assumed" row is gone, and `domain-guardian` checks for a built-in local convention only where the project's rules say it serves more than one place. The long text on sharing one machine moved from `local-ci` and `docs/where-ci-runs.md` to its own page, `docs/several-agents-one-machine.md`, and project anecdotes in the rules were cut to a sentence. Guards unchanged (0.3.2). (new)
