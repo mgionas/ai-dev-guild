@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.25.3 (2026-11-22)
+
+- Public API text states rules in words. `examples/skills/new-endpoint`: every summary and description in the generated document, field descriptions included, is public text and never points at internal work (no decision or review id, section sign, repository path, "design", "plan", "spec", "roadmap" or "task N"); a link to public user documentation is fine, and code comments may still cite decisions. The guard test sketch scans the rendered document for such pointers. `docs/mistakes.md`: a new entry, "Internal references in public API text". Guards unchanged (0.3.2). (field-tested)
+
 ## 0.25.2 (2026-11-22)
 
 - `examples/skills/new-endpoint`: the guard test can also check the group order, when each group names its glossary chapter; only the choice of term stays with the reviewer. `docs/mistakes.md`: the index now links "A merge step that carried on". Guards unchanged (0.3.2). (field-tested)

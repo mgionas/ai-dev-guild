@@ -34,6 +34,7 @@ with an example is far less likely to come back.
 [Resuming the builder to fix its own findings](#resuming-the-builder-to-fix-its-own-findings) ·
 [History where the reason should be](#history-where-the-reason-should-be) ·
 [A deferred part of a copied pattern](#a-deferred-part-of-a-copied-pattern) ·
+[Internal references in public API text](#internal-references-in-public-api-text) ·
 [A merge step that carried on](#a-merge-step-that-carried-on)
 
 ---
@@ -391,6 +392,23 @@ twenty operations later the reference had no tags, no groups and summaries in th
 **Fix:** when you copy a pattern and put part of it off, write that part as a task with the event
 that triggers it ("when the second route lands"), in the plan or the carried list. Better still,
 copy the pattern's check with it, so the gap fails the build the day it appears.
+
+## Internal references in public API text
+
+```yaml
+summary: Cancel a booking
+description: Allowed up to 24 hours before the start (design §5, decision 412).
+```
+
+The people who read an API reference cannot open the design or the decision log, so the pointer
+tells them nothing, and it shows the outside world how the work was organised. One project found
+about 960 such pointers across its generated reference.
+
+**Fix:** state the rule in words ("Allowed up to 24 hours before the start."), link only public
+user documentation, and add a guard test that renders the document and refuses internal pointers
+(the [`new-endpoint`](../examples/skills/new-endpoint/SKILL.md) example has a sketch). Code
+comments may keep their decision links; see
+[History where the reason should be](#history-where-the-reason-should-be) for what those need.
 
 ## A merge step that carried on
 
