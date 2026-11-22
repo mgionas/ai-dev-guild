@@ -14,9 +14,9 @@ questions go to you in one batch, each with a recommended answer.
   inspectors (architect, security-reviewer, domain-guardian, qa-tester, designer, ux-researcher,
   docs-keeper), a board of eight advisors for decisions with real trade-offs, a stack advisor for
   new projects, a token optimizer, and a status keeper that checks the roadmap against git.
-- **20 skills**, run as `/ai-dev-guild:<name>`: `setup`, `run-task`, `write-brief`, `review-panel`,
+- **21 skills**, run as `/ai-dev-guild:<name>`: `setup`, `run-task`, `write-brief`, `review-panel`,
   `fix-round`, `decision-batch`, `board`, `stack-advice`, `roadmap`, `project-map`, `token-review`,
-  `design-review`, `research-review`, `local-ci`, `local-environment`, `system-map`,
+  `design-review`, `research-review`, `empathy-map`, `local-ci`, `local-environment`, `system-map`,
   `progress-boards`, `analysis-page`, `flow-stats`, `plain-report`.
 
 Start with `/ai-dev-guild:setup` in your project, then `/ai-dev-guild:run-task <a task>`. New to

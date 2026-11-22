@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
   <img alt="21 roles" src="https://img.shields.io/badge/roles-21-9a6700">
-  <img alt="20 skills" src="https://img.shields.io/badge/skills-20-9a6700">
+  <img alt="21 skills" src="https://img.shields.io/badge/skills-21-9a6700">
 </p>
 
 <p align="center">
@@ -147,7 +147,7 @@ Optional guard hooks (Node.js 22.5+): `/plugin install ai-dev-guild-guards@ai-de
 ### ⚙️ Skills
 
 `stack-advice` · `roadmap` · `analysis-page` · `flow-stats` · `project-map` · `token-review` · `run-task` · `write-brief` · `review-panel` · `fix-round` · `decision-batch` · `board` ·
-`design-review` · `research-review` · `plain-report` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
+`design-review` · `research-review` · `empathy-map` · `plain-report` · `local-ci` · `local-environment` · `system-map` · `progress-boards` · `setup`
 
 ### 📚 In detail
 
@@ -193,6 +193,7 @@ high-stakes logic, the stack advisor, the board's chair, finance and legal seats
 | [`board`](plugin/skills/board/SKILL.md)                     | put a decision with real trade-offs to the board          |
 | [`design-review`](plugin/skills/design-review/SKILL.md)     | review a built screen from screenshots first              |
 | [`research-review`](plugin/skills/research-review/SKILL.md) | check a flow against personas, heuristics and WCAG 2.2 AA |
+| [`empathy-map`](plugin/skills/empathy-map/SKILL.md) | use your own product on one customer task; map the friction and test one fix |
 | [`local-ci`](plugin/skills/local-ci/SKILL.md)               | run, or set up, a local check as strict as CI             |
 | [`local-environment`](plugin/skills/local-environment/SKILL.md) | advise a local setup: own containers, local HTTPS, a ports registry, telemetry, fake providers, a dev-only security policy |
 | [`plain-report`](plugin/skills/plain-report/SKILL.md) | clean up prose for a human reader; no claim beyond its evidence |
