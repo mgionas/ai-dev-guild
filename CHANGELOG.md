@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.25.0 (2026-11-22)
+
+- New skill, `empathy-map`: a product coach for using your own product on one real customer task. It asks one short question at a time (what you did, said, thought and felt, and where clarity, trust or ease broke down) and ends with an empathy map table, the top friction point, one fix to test and how to check it before building. A fix that touches high-stakes logic, security, legal text or a business rule goes to the product owner as a question. 21 skills. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.24.2 (2026-11-22)
 
 - New rule, `docs/rules/offer-safe-shortcuts.md`: when a step clearly costs more than it protects, the agent proposes a shortcut with what it saves, what it risks, the condition that makes it safe, and a recommendation, and the human decides. An agent never skips a step on its own. High-stakes logic, security, personal data, migrations and the owner's documents keep their full process, but the human still hears what it costs. `decision-batch` collects these proposals with the other questions, and `local-ci`'s "no other shortcuts" now reads "none on your own". Guards unchanged (0.3.2). (field-tested)
