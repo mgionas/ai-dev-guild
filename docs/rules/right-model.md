@@ -1,6 +1,6 @@
 # Choose the model on purpose
 
-Light work on the light model, judgement on the strongest: haiku for lookups and exactly specified edits, sonnet for briefed builds, fixes, QA and docs, opus for security, architecture, money and concurrency.
+Light work on the light model, judgement on the strongest: haiku for lookups and exactly specified edits, sonnet for briefed builds, fixes, QA and docs, opus for security, architecture, high-stakes logic and concurrency.
 
 **Why:** Defaulting every agent to the strongest model multiplied cost several times over with no gain on mechanical work. Defaulting everything to the light model misses the hard findings.
 

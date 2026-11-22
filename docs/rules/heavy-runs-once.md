@@ -21,19 +21,9 @@ and on a machine shared by several agents it starves everyone else's runs.
 - Every report says, step by step, what ran, what was skipped and why. A skip never reads as a pass.
 - Count the places the suite runs (git hooks, the local check, remote CI on the pull request, remote
   CI on main) and give each one full run, no more. A git hook holds fast checks only.
-- Never run two heavy suites at once on a shared machine. Before starting one, check for other
-  sessions' runs, and if CI runs on this machine, ask the CI host whether a run is in progress or
-  queued. Tell the other sessions you are starting, and wait for a "done" from any that is running
-  its own. Repeat the check before each run, since runners take jobs at any moment. When CI runs
-  on this machine, any push that starts remote CI, including a merge into main, is a heavy run too:
-  hold it while you wait for the machine.
-- A wait-until-quiet loop runs as its own command, before the heavy one, and counts only named
-  busy signals (CI runs, named test tools, their containers), never "any container not ours". It
-  matches a test tool by the program that runs it, never by a command line alone, because other
-  agents' waiting shells name the tool too. It needs two quiet checks in a row and a time limit.
-- When a controller hands out the work, several heavy runs go in one queue it runs one after
-  another, not one wait per agent: waiters released together start together. Waiting for another
-  session's "done" is for sessions with no controller between them.
+- Never run two heavy suites at once on a shared machine. If several agents or a self-hosted
+  runner share it, check before each run, and hold any push that starts remote CI: see
+  [Several agents on one machine](../several-agents-one-machine.md).
 
 **Where it lives:** the `local-ci`, `write-brief`, `fix-round` and `run-task` skills.
 

@@ -7,7 +7,7 @@ argument-hint: "[the decision]"
 The owner asked "should we do X?", and the answer depends on numbers nobody has put in one place.
 An analysis page puts them there, says how far each one can be trusted, and keeps the owner's answer
 beside them, so the page becomes the record of the decision. The page reports. It never decides:
-product, money and legal choices are the owner's.
+product, business and legal choices are the owner's.
 
 ## 1. Ask what the page is for
 

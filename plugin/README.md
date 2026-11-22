@@ -5,12 +5,12 @@ proof.
 
 Each task goes to a fresh builder agent with a written brief. A different agent reviews the change,
 without seeing the builder's reasoning. A fresh fixer handles any findings, one re-check confirms
-them, and the task is done only when the test output is pasted in. Product, money and legal
+them, and the task is done only when the test output is pasted in. Product, business and legal
 questions go to you in one batch, each with a recommended answer.
 
 ## What you get
 
-- **23 roles** (subagents): builders (builder, fixer, money-specialist, db-migrations, i18n),
+- **21 roles** (subagents): builders (builder, fixer, db-migrations),
   inspectors (architect, security-reviewer, domain-guardian, qa-tester, designer, ux-researcher,
   docs-keeper), a board of eight advisors for decisions with real trade-offs, a stack advisor for
   new projects, a token optimizer, and a status keeper that checks the roadmap against git.

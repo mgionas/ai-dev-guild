@@ -16,7 +16,7 @@ argument-hint: "<task id> <round number>"
    strict local check before merging.
 4. **One combined re-check.** One reviewer (or the one or two whose findings were fixed) confirms
    each fix against the findings file and writes `.work/tasks/<id>/recheck-<n>.md` with a line
-   `**New problems:** <count>` (0 or more), which `flow-stats` counts. Security and money reviewers re-check their own critical
+   `**New problems:** <count>` (0 or more), which `flow-stats` counts. Security and high-stakes reviewers re-check their own critical
    and high findings themselves. Where you can, resume the reviewer who wrote a finding for its
    re-check: it still has the context, so confirming costs a few tool calls. This is the one resume
    the loop allows; a builder or fixer is never resumed.

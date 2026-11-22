@@ -6,7 +6,7 @@ Where the brief was silent and the agent had to choose, the report lists each ch
 
 **How to apply:**
 
-- If the choice is about the product, money, legal wording or naming, it is not yours to assume. Ask the owner.
+- If the choice is about the product, business rules, legal wording or naming, it is not yours to assume. Ask the owner.
 - One bullet per choice.
 
 **Where it lives:** the report template.

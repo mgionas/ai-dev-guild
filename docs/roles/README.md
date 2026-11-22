@@ -8,9 +8,9 @@ The builder of a change never reviews it. Reviewers get the change and the rules
 | --- | --- | --- | --- |
 | [builder](builder.md) | Builds one task from a brief | Code in the brief's scope | sonnet |
 | [fixer](fixer.md) | Fixes a list of review findings in a fresh context | Code and tests named by the findings | sonnet |
-| [money-specialist](money-specialist.md) | Builds or reviews code that touches money (never both on one change) | Code in the brief's scope | opus |
 | [db-migrations](db-migrations.md) | Writes backward-compatible schema migrations and their tests | Migrations, schema, tests | sonnet |
-| [i18n](i18n.md) | Keeps translation files complete and consistent with the glossary | Message files | sonnet |
+
+Two more build roles, one for money and one for translations, are optional [examples](../../examples/agents/README.md) you copy in when your product needs them.
 
 ## Review
 

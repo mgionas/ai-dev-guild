@@ -26,6 +26,15 @@ exists. Where one exists, show the user what you would add and ask.
    `rebase -i --autosquash` before the task is reported. Fix forward means new commits, and history
    is never rewritten. With no answer, write fix forward: it never rewrites history.
 
+   Also ask: "Will the product serve more than one country, currency or language?"
+   - If yes, add the [international rule](https://github.com/mgionas/ai-dev-guild/blob/main/docs/rules/international-by-default.md)
+     to `AGENTS.md` as the last working rule: "Assume no country. Times in UTC with IANA zone names,
+     money with its currency code, formats by locale, phone numbers in E.164. Country rules (tax,
+     holidays, legal text) come from the project's rules." Then offer the optional money and
+     translation roles: the user copies them into `.claude/agents/` from
+     [`examples/agents/`](https://github.com/mgionas/ai-dev-guild/tree/main/examples/agents).
+   - If no, add nothing.
+
 6. **A stack**: if the repository shows no stack yet (no lock file, no framework config), offer
    the `stack-advice` skill before the first task, and leave the Stack section as `TODO(owner)`.
 

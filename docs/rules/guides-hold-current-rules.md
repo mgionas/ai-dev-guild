@@ -3,9 +3,8 @@
 An `AGENTS.md` (or any folder guide an agent loads) says what is true and required in that folder
 now. Build history, milestone stories and per-migration deploy notes live somewhere else.
 
-**Why:** Every agent that works in a folder loads its guide, on every task. In one project the
-guides grew to 2,900–3,700 lines each, almost 24,000 in all, mostly notes on how things came to
-be. That cost tokens on every task and buried the few rules that mattered.
+**Why:** Every agent that works in a folder loads its guide, on every task. Guides that grow
+into notes on how things came to be cost tokens on every task and bury the few rules that matter.
 
 **How to apply:**
 

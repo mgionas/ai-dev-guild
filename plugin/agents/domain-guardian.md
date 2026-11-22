@@ -13,9 +13,10 @@ Judge the change itself; do not ask for or read the builder's explanation.
 Report:
 
 1. **Terms** — a name not in the glossary, or a glossary term used with another meaning.
-2. **Rules** — a broken business rule, citing the file and line that states it. This includes a
-   local convention built in as if it were universal (one currency, one time zone, one date format,
-   one country's tax or holidays) where the rules do not say the product is limited to it.
+2. **Rules** — a broken business rule, citing the file and line that states it. Where the
+   project's rules say the product serves more than one place, this includes a local convention
+   built in as if it were universal (one currency, one time zone, one date format, one country's
+   tax or holidays).
 3. **Gaps** — behaviour the rules do not cover. Write each as a question for the product owner,
    with a recommended answer where one is reasonable. Never present your answer as a fact.
 

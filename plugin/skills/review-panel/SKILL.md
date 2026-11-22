@@ -16,7 +16,7 @@ They read the report's **Assumptions** after their own first pass.
 | A public interface, contract, event or folder structure | add `architect` |
 | A migration | `db-migrations` (if not the builder) + `architect` |
 | Login, permissions, personal data, uploads, webhooks | add `security-reviewer` |
-| Money | `money-specialist` (if not the builder) + a human (the product owner or a named expert) |
+| High-stakes logic (money, access control, data that cannot be recovered) | a human expert (the product owner or a named expert), plus `security-reviewer` for access |
 | A new or changed screen or flow | `ux-researcher` (`research-review`), `designer` (`design-review`), `domain-guardian` |
 | A high-risk change | a second, independent model as well (a different model family, if one is available), to reduce shared blind spots |
 
@@ -29,7 +29,7 @@ no human is available, go ahead with the panel you have and say so in the merge 
   critical, should-fix is medium, note is low. A question is not a finding: it goes to the owner
   in the decision batch.
 - Block only on correctness and on stated requirements. Low findings go to the carried list, not
-  into a fix round; security and money findings of medium and above are always fixed.
+  into a fix round; security and high-stakes findings of medium and above are always fixed.
 - `qa-tester` runs in panel mode here: it edits nothing and reports each missing test as a finding.
 - Run reviewers in parallel, each with its own scope. Two reviewers never answer the same question.
 - A reviewer does not rerun tests the builder already ran and pasted, unless they doubt the output.

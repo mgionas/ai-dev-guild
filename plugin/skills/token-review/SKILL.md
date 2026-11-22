@@ -21,15 +21,15 @@ This skill measures it and turns it into a few rules.
 
 Common findings, so you recognise them:
 
-| Finding                                                  | Usual rule                                                                                                         |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The strongest model ran builds that had a complete brief | builders and fixers default to the middle model; the strongest only for security, architecture, money, concurrency |
-| Fix rounds cost more than the builds                     | better briefs (name the traps), Lows to the carried list, a fresh fixer per round                                  |
-| Findings were sent back into the builder's session       | always a fresh fixer with a findings file                                                                          |
-| Agents ran past about 110 turns                          | split the task, or hand off with a written handover at about 250K context                                          |
-| The controller's context passed 250K                     | `/compact` after each merge, and hand-backs of a few lines pointing at the report file                             |
-| Two reviewers covered the same ground                    | one scope per reviewer                                                                                             |
-| Test runs printed every passing test                     | the runner's quiet output: failures in full, passes as a count, the full log in a file                             |
+| Finding                                                  | Usual rule                                                                                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| The strongest model ran builds that had a complete brief | builders and fixers default to the middle model; the strongest only for security, architecture, high-stakes logic, concurrency |
+| Fix rounds cost more than the builds                     | better briefs (name the traps), Lows to the carried list, a fresh fixer per round                                              |
+| Findings were sent back into the builder's session       | always a fresh fixer with a findings file                                                                                      |
+| Agents ran past about 110 turns                          | split the task, or hand off with a written handover at about 250K context                                                      |
+| The controller's context passed 250K                     | `/compact` after each merge, and hand-backs of a few lines pointing at the report file                                         |
+| Two reviewers covered the same ground                    | one scope per reviewer                                                                                                         |
+| Test runs printed every passing test                     | the runner's quiet output: failures in full, passes as a count, the full log in a file                                         |
 
 Report what you measured, not what you expected. If the numbers are too thin to say anything,
 say that.
