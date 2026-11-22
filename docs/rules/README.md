@@ -15,6 +15,7 @@ One rule per file, each with its reason, so you can adopt, change or drop one on
 | [Check the installed version](check-installed-version.md) | Before using a library's API, read the installed version and its current documentation. |
 | [Use a library before writing one](library-before-writing-one.md) | When a well-known, actively maintained open-source package already does the job (dates, phone numbers, cryptography, basic UI parts), depend on it at an exact version. |
 | [Ask the owner in batches, with recommendations](decision-batches.md) | Collect every open question into one file, with a recommendation and a reason for each, and ask once: "Accept all" or "I'll change some". |
+| [Offer safe shortcuts; never take one alone](offer-safe-shortcuts.md) | When a step clearly costs more than it protects, propose skipping it with what it saves, what it risks and a recommendation; the human decides. |
 | [Re-checks confirm; they do not reopen](confirm-only-rechecks.md) | After a fix round, one combined re-check confirms each fix. |
 | [Choose the model on purpose](right-model.md) | Light work on the light model, judgement on the strongest: haiku for lookups and exactly specified edits, sonnet for briefed builds, fixes, QA and docs, opus for security, architecture, high-stakes logic and concurrency. |
 | [Run the heavy checks once, and only where the change reaches](heavy-runs-once.md) | Builders and fixers run only the tests for the code they touched; the heavy checks run once, on what the change can reach. |

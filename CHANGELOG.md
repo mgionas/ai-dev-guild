@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.24.2 (2026-11-22)
+
+- New rule, `docs/rules/offer-safe-shortcuts.md`: when a step clearly costs more than it protects, the agent proposes a shortcut with what it saves, what it risks, the condition that makes it safe, and a recommendation, and the human decides. An agent never skips a step on its own. High-stakes logic, security, personal data, migrations and the owner's documents keep their full process, but the human still hears what it costs. `decision-batch` collects these proposals with the other questions, and `local-ci`'s "no other shortcuts" now reads "none on your own". Guards unchanged (0.3.2). (field-tested)
+
 ## 0.24.1 (2026-11-22)
 
 - `local-ci`: let the user watch a run. The check writes to one fixed log path, one terminal the owner can see follows it with `tail -F`, and a `starting <step>` line shows the step in progress (the `examples/ci-local` script now prints it). When a build cannot find a declared dependency after a frozen install said up to date, check that package's folder inside the project before suspecting the code: an empty folder survives a frozen install, so remove only that folder, reinstall and check it came back. Guards unchanged (0.3.2). (field-tested)
