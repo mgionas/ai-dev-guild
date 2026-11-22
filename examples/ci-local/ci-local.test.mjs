@@ -258,11 +258,12 @@ test("a failing step prints the tail of its log and returns its exit code", () =
     log: (line) => printed.push(line),
   });
   assert.equal(code, 3);
+  assert.equal(printed[0], "starting stub");
   assert.match(printed.join("\n"), /why it failed/);
   assert.match(readFileSync(join(out, "stub.log"), "utf8"), /why it failed/);
 });
 
-test("a passing step prints nothing", () => {
+test("a passing step prints only that it is starting", () => {
   const out = mkdtempSync(join(tmpdir(), "ci-local-test-"));
   const printed = [];
   const { code } = runStep({
@@ -273,7 +274,7 @@ test("a passing step prints nothing", () => {
     log: (line) => printed.push(line),
   });
   assert.equal(code, 0);
-  assert.deepEqual(printed, []);
+  assert.deepEqual(printed, ["starting ok"]);
 });
 
 test("a step killed by a signal fails: it never reads as a pass", () => {
