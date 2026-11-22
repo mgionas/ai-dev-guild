@@ -218,7 +218,7 @@ on its machine keeps the setup above. The templates are under "Shared proxy" in 
   full config in a throwaway container of the same image, then reload the running proxy. Never
   restart it: a failed reload keeps the old config serving, while a restart with a bad config
   leaves every project with no proxy at all. Validation checks syntax and duplicates, not
-  upstreams: after the reload, `curl -sI` the project's own hosts.
+  upstreams: after the reload, open each of the project's own hosts in a browser.
 - **Agents never stop or recreate the shared proxy, and never start a second one.** When Docker
   refuses port 443, that is the shared proxy doing its job; it is not something to fix by
   stopping it. Put this in each project's rules about containers an agent did not start. A change
@@ -245,9 +245,10 @@ Plan for a gap of about a minute, with the owner present for the hosts lines and
    does not copy; its old root stays trusted until someone removes it.
 4. Start the shared proxy on the new volume and check that it serves the same root: compare
    `openssl x509 -noout -fingerprint -sha256 -in` on `old-root.crt` and on the root copied out
-   of the new proxy, then `curl -sI --cacert old-root.crt https://<project>.test`. The machine's
-   trust then holds without trusting anything again.
-5. Check every host of every project, in a browser and with `curl -sI`.
+   of the new proxy, then open `https://<project>.test` in a browser: it loads with no
+   certificate warning, and the root in the browser's certificate details has the same SHA-256
+   fingerprint as `old-root.crt`. The machine's trust then holds without trusting anything again.
+5. Check every host of every project in a browser.
 6. Only then remove the proxy service from each project and point its local-development page to
    the shared folder.
 

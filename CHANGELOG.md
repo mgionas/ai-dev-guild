@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.25.4 (2026-11-23)
+
+- For the plugin directory's policy review: `local-environment` no longer shows `curl` commands. After a proxy reload or move, the checks open each host in a browser, and the move compares the root in the browser's certificate details with `old-root.crt` by fingerprint. The manifest keeps `documentationUrl`, `supportUrl`, `privacyPolicyUrl` and `icon`: they are listing fields the directory reads, and the pinned validator passes them. Guards unchanged (0.3.2). (new)
+
 ## 0.25.3 (2026-11-22)
 
 - Public API text states rules in words. `examples/skills/new-endpoint`: every summary and description in the generated document, field descriptions included, is public text and never points at internal work (no decision or review id, section sign, repository path, "design", "plan", "spec", "roadmap" or "task N"); a link to public user documentation is fine, and code comments may still cite decisions. The guard test sketch scans the rendered document for such pointers. `docs/mistakes.md`: a new entry, "Internal references in public API text". Guards unchanged (0.3.2). (field-tested)
