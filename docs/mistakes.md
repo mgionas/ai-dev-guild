@@ -32,7 +32,8 @@ with an example is far less likely to come back.
 [Killing processes by pattern](#killing-processes-by-pattern) ·
 [A commit that sweeps in someone else's staged files](#a-commit-that-sweeps-in-someone-elses-staged-files) ·
 [Resuming the builder to fix its own findings](#resuming-the-builder-to-fix-its-own-findings) ·
-[History where the reason should be](#history-where-the-reason-should-be)
+[History where the reason should be](#history-where-the-reason-should-be) ·
+[A deferred part of a copied pattern](#a-deferred-part-of-a-copied-pattern)
 
 ---
 
@@ -375,6 +376,20 @@ number, seen failing once on an example. A comment then gives the reason and lin
 and a guide holds only current rules ([comments explain why](rules/comments-explain-why.md),
 [folder guides hold current rules](rules/guides-hold-current-rules.md)). Old references go when a
 change edits their line, or in a cleanup task of their own.
+
+## A deferred part of a copied pattern
+
+```text
+plan.md: Copy the reference renderer from the sibling project. Tags and groups: later, only one route exists.
+```
+
+One project copied another's way of generating its API reference while it had a single route, and
+left out the tags for later. Nothing scheduled them and no check asked for them. A hundred and
+twenty operations later the reference had no tags, no groups and summaries in the wrong style.
+
+**Fix:** when you copy a pattern and put part of it off, write that part as a task with the event
+that triggers it ("when the second route lands"), in the plan or the carried list. Better still,
+copy the pattern's check with it, so the gap fails the build the day it appears.
 
 ## A merge step that carried on
 

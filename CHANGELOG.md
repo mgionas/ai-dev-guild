@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.25.1 (2026-11-22)
+
+- `examples/skills/new-endpoint`: two steps: the API reference (one tag per operation, named with the glossary's term and set in the operation's own contract file; tags in groups that follow the glossary's chapter order; short imperative summaries, from the first route) and a guard test that enforces what a machine can check, with a sketch. `docs/mistakes.md`: a new entry, "A deferred part of a copied pattern": a part of a copied pattern that is put off becomes a task with its trigger, and the pattern's check comes with it. Guards unchanged (0.3.2). (field-tested)
+
 ## 0.25.0 (2026-11-22)
 
 - New skill, `empathy-map`: a product coach for using your own product on one real customer task. It asks one short question at a time (what you did, said, thought and felt, and where clarity, trust or ease broke down) and ends with an empathy map table, the top friction point, one fix to test and how to check it before building. A fix that touches high-stakes logic, security, legal text or a business rule goes to the product owner as a question. 21 skills. Guards unchanged (0.3.2). (field-tested)
