@@ -130,7 +130,21 @@ flaky, rule out two causes that look like one: another process already holding a
 its runner binds (a dev server, another checkout's run), and a hung process from an earlier run
 holding a port, a lock or a database.
 
+**A dependency the build cannot find.** When the frozen install said everything was up to date,
+look at that package's folder inside the project before you suspect the code (pnpm:
+`node_modules/.pnpm/<name>@<version>/`, matched exactly). An empty or half-written folder survives
+a frozen install. Remove only that folder, install again, and check it came back (pnpm: if not,
+`pnpm install --frozen-lockfile --force`).
+
 Paste the summary in the report: the mode line, each step's line and the verdict.
+
+**Let the user watch.** Run the check in the background with its output redirected to one fixed
+log path (`… > <log path> 2>&1`, or a `latest` link to the newest log), and open one terminal the
+user can see that follows it: `tail -n 40 -F <log path>`. `-F` waits for a file that does not exist
+yet and keeps up when it is replaced, so one terminal covers every run, including a queue of runs
+one after another. Link that terminal in your
+reply. Print a `starting <step>` line before each step and `<step>: <result>` after it, so the
+step in progress shows, not only the finished ones. Close the terminal when the run is over.
 
 ## Setting it up
 

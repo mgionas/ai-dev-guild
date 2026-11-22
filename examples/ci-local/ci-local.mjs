@@ -264,12 +264,14 @@ export function judgeSelection(selected, all) {
 export const tail = (text, lines = 200) => text.split("\n").slice(-lines).join("\n");
 
 /**
- * Runs one step to completion, logs it, and prints the tail of its output when it fails.
+ * Runs one step to completion, logs it, says it is starting, and prints the tail of its output when it fails.
  *
  * @param {{name: string, command: string, env: object, out: string, log?: (line: string) => void}} ctx - what to run and where its log goes.
  * @returns {{code: number, output: string}} the exit code and the logged text.
  */
 export function runStep({ name, command, env, out, log = console.log }) {
+  // Printed, not kept in the summary: it is for someone watching the log, and the summary stays one line per step.
+  log(`starting ${name}`);
   const result = spawnSync(command, { shell: true, env, encoding: "utf8", maxBuffer: 1 << 30 });
   const output = `$ ${command}\n${result.stdout ?? ""}${result.stderr ?? ""}${result.error ? `\n${result.error}` : ""}`;
   writeFileSync(join(out, `${name}.log`), output);
