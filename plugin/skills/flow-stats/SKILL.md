@@ -65,7 +65,7 @@ so the owner can read the rule.
 | claims | reports with a claim that did not hold | > 5% of reports | run-task | The reviewer re-runs one claimed test per task; reports paste their output. |
 | flaky | local CI runs that failed only on load or timing | > 10% of runs | local-ci | One heavy run at a time, and run only what the change affects. |
 | owner-wait | median days to answer a batch | > 2 days | decision-batch | Run the question sweep before the build, so answers arrive first. |
-| strong-model | token share of the strongest model | > 50% | token-review | Builders and fixers on the middle model; the strongest only for security, money and architecture. |
+| strong-model | token share of the strongest model | > 50% | token-review | Builders and fixers on the middle model; the strongest only for security, high-stakes logic and architecture. |
 | slow-tail | slowest tasks | p90 > 3 × median | write-brief | Split the kind of task the slowest tail shows; one task per fresh agent. |
 
 The script ranks every crossed threshold by how far past it the value is and keeps the top three.

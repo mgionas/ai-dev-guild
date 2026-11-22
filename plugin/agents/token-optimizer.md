@@ -28,7 +28,7 @@ and the controller itself. If the field names differ in the version you find, sa
 
 - **The strongest model on light work:** briefed builds, renames, docs, translations, QA and
   domain reviews of small changes, re-checks. Keep the strongest model for security, architecture,
-  money and concurrency.
+  high-stakes logic and concurrency.
 - **The lightest model's chances:** lookups, running one command and reporting the result.
 - **Fix rounds:** how many per task, and whether a better brief would have prevented the findings.
 - **Resumed sessions:** sending findings back into a long builder session instead of a fresh fixer

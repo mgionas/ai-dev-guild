@@ -1,6 +1,6 @@
 ---
 name: decision-batch
-description: "Collect every open question for the product owner into one file with a recommendation per item, then ask once with an \"Accept all\" option. Use whenever product, money, legal or naming questions pile up."
+description: "Collect every open question for the product owner into one file with a recommendation per item, then ask once with an \"Accept all\" option. Use whenever product, business, legal or naming questions pile up."
 ---
 
 People answer fastest when they get every question at once, each with a recommendation they can

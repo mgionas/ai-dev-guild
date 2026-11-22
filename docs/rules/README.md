@@ -16,7 +16,7 @@ One rule per file, each with its reason, so you can adopt, change or drop one on
 | [Use a library before writing one](library-before-writing-one.md) | When a well-known, actively maintained open-source package already does the job (dates, phone numbers, cryptography, basic UI parts), depend on it at an exact version. |
 | [Ask the owner in batches, with recommendations](decision-batches.md) | Collect every open question into one file, with a recommendation and a reason for each, and ask once: "Accept all" or "I'll change some". |
 | [Re-checks confirm; they do not reopen](confirm-only-rechecks.md) | After a fix round, one combined re-check confirms each fix. |
-| [Choose the model on purpose](right-model.md) | Light work on the light model, judgement on the strongest: haiku for lookups and exactly specified edits, sonnet for briefed builds, fixes, QA and docs, opus for security, architecture, money and concurrency. |
+| [Choose the model on purpose](right-model.md) | Light work on the light model, judgement on the strongest: haiku for lookups and exactly specified edits, sonnet for briefed builds, fixes, QA and docs, opus for security, architecture, high-stakes logic and concurrency. |
 | [Run the heavy checks once, and only where the change reaches](heavy-runs-once.md) | Builders and fixers run only the tests for the code they touched; the heavy checks run once, on what the change can reach. |
 | [Failures in full, passes as a count](quiet-test-output.md) | When an agent runs tests, it reads each failure in full and the passing tests only as a count. |
 | [Never kill processes by pattern](never-kill-by-pattern.md) | Stop only a process you started, by its own PID. |
