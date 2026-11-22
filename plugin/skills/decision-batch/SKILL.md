@@ -7,7 +7,9 @@ People answer fastest when they get every question at once, each with a recommen
 accept. A long chain of single questions stalls the work.
 
 1. **Collect** every open question: from the question sweep, review findings, builders'
-   Questions, and assumptions that were really product choices.
+   Questions, assumptions that were really product choices, and shortcuts an agent proposes
+   (a step that costs more than it protects: what it saves, what it risks, and the condition that
+   makes it safe).
 2. **De-duplicate** and order them, most decision-relevant first.
 3. **Write one file**, `.work/decisions/<date>-<topic>.md`, from `batch-template.md`: for each
    item, the question, its options with the recommended one first and marked "(recommended)", and

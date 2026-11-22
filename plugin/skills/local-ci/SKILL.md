@@ -94,7 +94,9 @@ defects.
   request into the main branch, the narrow local run is safe before that pull request, and a local
   `--full` just before opening one only repeats the run CI is about to do. A merge that no remote CI
   checks (into a long-lived feature or milestone branch, a release cut by hand) runs with `--full`.
-- **No other shortcuts.** Nothing lets you leave out a named step or cut one short. When a step
+- **No other shortcuts on your own.** Nothing lets you leave out a named step or cut one short
+  unless the user approves it: propose it with what it saves and what it risks
+  ([offer safe shortcuts](../../../docs/rules/offer-safe-shortcuts.md)). When a step
   fails, the rest still run, so a single run shows every problem.
 - **Every step says what happened:** ran in full, ran on the affected part, or skipped and why. The
   verdict line names the mode and its reach, such as `PASS (affected: 6 of 11 packages; integration
