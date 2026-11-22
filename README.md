@@ -70,19 +70,17 @@ checks the work, and **done means the test output is pasted in.**
 ## Who does what
 
 ```mermaid
-flowchart LR
-    You([You decide]) -->|answers| B[🔨 Makers<br>build one task]
-    B -->|work + proof| I[🔍 Inspectors<br>review what changed]
-    I -->|findings| F[🔨 Fixer]
-    F -->|re-check| I
-    I -->|approved| M[✅ Merge]
-    You -.->|hard trade-offs| Board[🏛️ Board<br>8 advisors]
-    Board -.->|options| You
+flowchart TD
+    You([🧑 You answer the questions]) --> B[🔨 Maker builds one task]
+    B --> I[🔍 Inspector reviews it]
+    I -->|found something| F[🔨 Fresh fixer]
+    F --> I
+    I -->|all clear| M[✅ Merge]
 ```
 
 - **🔨 Makers:** builder, fixer, money-specialist, db-migrations, i18n.
 - **🔍 Inspectors:** architect, security, domain, QA, design, UX, docs. None of them built it.
-- **🏛️ Board:** product, tech, finance, legal, users, operations, growth, your industry.
+- **🏛️ Board:** eight advisors for hard trade-offs. You decide.
 
 ## Living pages
 
@@ -132,8 +130,13 @@ Start a new session, then:
 
 ```mermaid
 flowchart LR
-    A["/ai-dev-guild:setup<br>once per project"] --> B["/ai-dev-guild:run-task<br>your first task"]
-    C["/ai-dev-guild:stack-advice<br>no stack yet?"] -.-> A
+    S[stack-advice<br>no stack yet?] -.-> A[setup<br>once]
+    A --> R[run-task<br>first task]
+```
+
+```
+/ai-dev-guild:setup
+/ai-dev-guild:run-task <a task from your plan>
 ```
 
 Optional guard hooks (Node.js 22.5+): `/plugin install ai-dev-guild-guards@ai-dev-guild`
