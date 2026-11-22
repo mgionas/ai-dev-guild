@@ -33,7 +33,8 @@ with an example is far less likely to come back.
 [A commit that sweeps in someone else's staged files](#a-commit-that-sweeps-in-someone-elses-staged-files) ·
 [Resuming the builder to fix its own findings](#resuming-the-builder-to-fix-its-own-findings) ·
 [History where the reason should be](#history-where-the-reason-should-be) ·
-[A deferred part of a copied pattern](#a-deferred-part-of-a-copied-pattern)
+[A deferred part of a copied pattern](#a-deferred-part-of-a-copied-pattern) ·
+[A merge step that carried on](#a-merge-step-that-carried-on)
 
 ---
 
