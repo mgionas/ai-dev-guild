@@ -47,7 +47,15 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   failed for another reason, so print git's message) and stops with a failure. When branches share
   one checkout, it runs `git merge --abort` first, so the next branch starts from a clean tree.
   With one worktree per branch, leave the conflict in place for someone to resolve. A step that
-  carries on runs the build and the tests over conflict markers, and nothing may notice.
+  carries on runs the build and the tests over conflict markers, and nothing may notice. Files that
+  only grow at the bottom (a decision index and its log, a changelog) conflict on every pair of
+  parallel branches: whoever resolves keeps both sides, the base branch's lines first and then the
+  branch's, and keeps an index in the same order as the entries it lists. Where entries are
+  numbered, the branch's entries take the next numbers after the base branch's, and every reference
+  to them changes too. If the merge commit goes through a hook that lints or type-checks with
+  types, install the way `run-task` step 1 does (lock file frozen, install scripts off) and build first,
+  because in an unbuilt worktree the hook cannot resolve the workspace's own types; give it a
+  bigger heap if a large merge runs it out of memory. Never skip the hook.
 - **One heavy run at a time on a machine, across sessions.** This is a rule with a check before you
   start, not a lock. If a self-hosted runner shares this machine (the project's CI environment
   page names each runner's machine), ask the CI host
@@ -59,7 +67,12 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   a branch with an open pull request, or a merge into the main branch) runs here, so it is a heavy
   run too: a session that has asked for the machine, or is waiting for another session's "done",
   holds those pushes and merges as well as its local runs. Also look for other sessions' test containers
-  (`docker ps`) and other projects' test runners (`ps`). When other agent sessions share the
+  (`docker ps`) and other projects' test runners (`ps`). A CI job running on this machine shows as
+  the runner's worker process (GitHub: `Runner.Worker`), a local signal that needs no API access.
+  Match it by its fixed process name (`pgrep -x Runner.Worker`), not by command line: Linux's `pgrep -f`
+  leaves out only itself, so a waiting shell whose command names the worker matches and waits for
+  ever. Honour a pause file too (a path the project names), which the owner or a controller creates
+  to hold every heavy run until they remove it. When other agent sessions share the
   machine and can message each other, tell them before you start, and if one is running its own
   heavy run, wait for its "done". Do all of this immediately before each heavy run, not once per
   session: runners take jobs at any moment, so a check made at the start of the day is out of date
@@ -76,8 +89,9 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   is then left out, and a tool started through a package-manager script is found by its runtime
   child. A wait written in the runtime itself (`node -e …`) would still match: write it as a shell
   script. Or look at the containers the tools start instead of processes. Name each busy signal:
-  CI runs in progress or queued, the named test tools run by their runtime, and the containers
-  those tools start (Testcontainers and its reaper, for example). Never "any container that is not
+  CI runs in progress or queued, the runner's worker process, the pause file, the named test tools
+  run by their runtime, and the containers those tools start (Testcontainers and its reaper, for
+  example). Never "any container that is not
   ours": another project's always-on container keeps the loop waiting for hours. Call the machine quiet only after
   two checks in a row, about 30 seconds apart. Give the loop a time limit; when it runs out, report
   what kept it busy instead of starting anyway. A hung process left by an earlier run blocks every
