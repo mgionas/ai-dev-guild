@@ -33,9 +33,9 @@ heap, jobs at once and what else shares the machine. The guide behind it:
 
 List every place the suite runs for a change: the git hooks, the local check, remote CI on the pull
 request, and remote CI on the main branch after the merge. Give each place that needs a full run
-one, and no place a second. One project found a single pull request running its unit tests four
-times on one machine: a local `--full`, the pre-push hook, remote CI on a self-hosted runner on the
-same machine, and remote CI on main. The overlap caused load failures that were not defects.
+one, and no place a second: the same unit tests run four times on one machine (a local `--full`, the
+pre-push hook, a self-hosted runner there, remote CI on main) caused load failures that were not
+defects.
 
 - **A git hook holds fast checks only:** the tool version, refusing a push to the main branch,
   format, protected files and text checks. Typecheck, the test suites and module-boundary checks run
@@ -56,51 +56,8 @@ same machine, and remote CI on main. The overlap caused load failures that were 
   types, install the way `run-task` step 1 does (lock file frozen, install scripts off) and build first,
   because in an unbuilt worktree the hook cannot resolve the workspace's own types; give it a
   bigger heap if a large merge runs it out of memory. Never skip the hook.
-- **One heavy run at a time on a machine, across sessions.** This is a rule with a check before you
-  start, not a lock. If a self-hosted runner shares this machine (the project's CI environment
-  page names each runner's machine), ask the CI host
-  whether a run is in progress or queued (for GitHub,
-  `gh run list --repo <owner/repo> --status in_progress --limit 1` and the same with
-  `--status queued`) and start only if both printed nothing. Read the output, not the exit code.
-  A queued run takes the machine as soon as a runner is free. Hosted runners don't load this
-  machine, so their runs don't count. On a self-hosted machine any push that starts remote CI (to
-  a branch with an open pull request, or a merge into the main branch) runs here, so it is a heavy
-  run too: a session that has asked for the machine, or is waiting for another session's "done",
-  holds those pushes and merges as well as its local runs. Also look for other sessions' test containers
-  (`docker ps`) and other projects' test runners (`ps`). A CI job running on this machine shows as
-  the runner's worker process (GitHub: `Runner.Worker`), a local signal that needs no API access.
-  Match it by its fixed process name (`pgrep -x Runner.Worker`), not by command line: Linux's `pgrep -f`
-  leaves out only itself, so a waiting shell whose command names the worker matches and waits for
-  ever. Honour a pause file too (a path the project names), which the owner or a controller creates
-  to hold every heavy run until they remove it. When other agent sessions share the
-  machine and can message each other, tell them before you start, and if one is running its own
-  heavy run, wait for its "done". Do all of this immediately before each heavy run, not once per
-  session: runners take jobs at any moment, so a check made at the start of the day is out of date
-  by the time you run. The check does not cover git hooks, which is one more reason they stay
-  light.
-- **A loop that waits for a quiet machine must not wait on itself, or on other waiters.** Run the
-  wait as its own command and the heavy run as the next one. In `wait-quiet && run-tests` the
-  waiting shell's own command line names the test tool, so a `ps` check sees "busy" for ever. That
-  is not enough on its own: every other agent's waiting shell names the tool too, so two waiters
-  each see the other as busy and neither starts. Never match a test tool by its command line alone.
-  Match the program that runs it: list `ps -eo comm=,args=`, keep the lines whose first field, by
-  its last path part, is the runtime (`node`, for example; macOS prints the full path there, and
-  Linux cuts it to 15 characters), and grep only those for the tool. A shell waiting with `sh -c`
-  is then left out, and a tool started through a package-manager script is found by its runtime
-  child. A wait written in the runtime itself (`node -e …`) would still match: write it as a shell
-  script. Or look at the containers the tools start instead of processes. Name each busy signal:
-  CI runs in progress or queued, the runner's worker process, the pause file, the named test tools
-  run by their runtime, and the containers those tools start (Testcontainers and its reaper, for
-  example). Never "any container that is not
-  ours": another project's always-on container keeps the loop waiting for hours. Call the machine quiet only after
-  two checks in a row, about 30 seconds apart. Give the loop a time limit; when it runs out, report
-  what kept it busy instead of starting anyway. A hung process left by an earlier run blocks every
-  wait the same way: name it in the report, and stop it only if you started it, by its PID.
-- **Heavy runs go in one queue, not one wait per agent.** Agents that each wait for a quiet
-  machine are all released at the same moment and start together. When a controller hands out the
-  work and has several heavy runs to do, it runs them one after another itself, or gives agents
-  their turn one at a time; its agents never wait on their own for a quiet machine. Waiting for
-  another session's "done" (above) is for sessions with no controller between them.
+- **One heavy run at a time on a machine.** If several agents or a self-hosted runner share it, follow
+  [Several agents on one machine](https://github.com/mgionas/ai-dev-guild/blob/main/docs/several-agents-one-machine.md) before each heavy run.
 
 ## What makes it strict
 

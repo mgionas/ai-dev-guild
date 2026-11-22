@@ -8,7 +8,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2ea44f"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
-  <img alt="23 roles" src="https://img.shields.io/badge/roles-23-9a6700">
+  <img alt="21 roles" src="https://img.shields.io/badge/roles-21-9a6700">
   <img alt="20 skills" src="https://img.shields.io/badge/skills-20-9a6700">
 </p>
 
@@ -43,17 +43,16 @@ checks the work, and **done means the test output is pasted in.**
 
 ## What changes
 
-| Without                               | With the guild                               |
-| ------------------------------------- | -------------------------------------------- |
-| "All tests pass." No test ran.        | ✅ Done = pasted test output                 |
-| The agent reviews its own code.       | 🔍 A different agent reviews                 |
-| Questions drip in during the build.   | 📋 One batch of questions first              |
-| Fix rounds drag on for days.          | 🔁 Fresh fixer, one re-check                 |
-| "While I was there, I tidied up…"     | ✂️ Only the task changes                     |
-| `pkill` kills every agent's tests.    | 🛡️ Guard hooks refuse it                     |
-| One country's currency and time zone. | 🌍 No country assumed                        |
-| Progress scrolls away in the chat.    | 📊 Pages kept current, open on a phone       |
-| "Robust, comprehensive fix."          | 📝 Plain words, each claim with its evidence |
+| Without                             | With the guild                               |
+| ----------------------------------- | -------------------------------------------- |
+| "All tests pass." No test ran.      | ✅ Done = pasted test output                 |
+| The agent reviews its own code.     | 🔍 A different agent reviews                 |
+| Questions drip in during the build. | 📋 One batch of questions first              |
+| Fix rounds drag on for days.        | 🔁 Fresh fixer, one re-check                 |
+| "While I was there, I tidied up…"   | ✂️ Only the task changes                     |
+| `pkill` kills every agent's tests.  | 🛡️ Guard hooks refuse it                     |
+| Progress scrolls away in the chat.  | 📊 Pages kept current, open on a phone       |
+| "Robust, comprehensive fix."        | 📝 Plain words, each claim with its evidence |
 
 ## How it works
 
@@ -78,7 +77,7 @@ flowchart TD
     I -->|all clear| M[✅ Merge]
 ```
 
-- **🔨 Makers:** builder, fixer, money-specialist, db-migrations, i18n.
+- **🔨 Makers:** builder, fixer, db-migrations.
 - **🔍 Inspectors:** architect, security, domain, QA, design, UX, docs. None of them built it.
 - **🏛️ Board:** eight advisors for hard trade-offs. You decide.
 
@@ -155,23 +154,23 @@ Optional guard hooks (Node.js 22.5+): `/plugin install ai-dev-guild-guards@ai-de
 <details>
 <summary><b>Every role, with what it gets and what it returns</b></summary>
 
-| Makers                                             | Inspectors                                           | Board                                                            |
-| -------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| [builder](docs/roles/builder.md)                   | [architect](docs/roles/architect.md)                 | [product-manager](docs/roles/board-product-manager.md)           |
-| [fixer](docs/roles/fixer.md)                       | [security-reviewer](docs/roles/security-reviewer.md) | [tech-lead](docs/roles/board-tech-lead.md)                       |
-| [money-specialist](docs/roles/money-specialist.md) | [domain-guardian](docs/roles/domain-guardian.md)     | [finance-expert](docs/roles/board-finance-expert.md)             |
-| [db-migrations](docs/roles/db-migrations.md)       | [qa-tester](docs/roles/qa-tester.md)                 | [legal-advisor](docs/roles/board-legal-advisor.md)               |
-| [i18n](docs/roles/i18n.md)                         | [designer](docs/roles/designer.md)                   | [user-advocate](docs/roles/board-user-advocate.md)               |
-|                                                    | [ux-researcher](docs/roles/ux-researcher.md)         | [operations-expert](docs/roles/board-operations-expert.md)       |
-|                                                    | [docs-keeper](docs/roles/docs-keeper.md)             | [business-development](docs/roles/board-business-development.md) |
-| | | [domain-expert](docs/roles/board-domain-expert.md) |
+| Makers                                       | Inspectors                                           | Board                                                            |
+| -------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| [builder](docs/roles/builder.md)             | [architect](docs/roles/architect.md)                 | [product-manager](docs/roles/board-product-manager.md)           |
+| [fixer](docs/roles/fixer.md)                 | [security-reviewer](docs/roles/security-reviewer.md) | [tech-lead](docs/roles/board-tech-lead.md)                       |
+| [db-migrations](docs/roles/db-migrations.md) | [domain-guardian](docs/roles/domain-guardian.md)     | [finance-expert](docs/roles/board-finance-expert.md)             |
+|                                              | [qa-tester](docs/roles/qa-tester.md)                 | [legal-advisor](docs/roles/board-legal-advisor.md)               |
+|                                              | [designer](docs/roles/designer.md)                   | [user-advocate](docs/roles/board-user-advocate.md)               |
+|                                              | [ux-researcher](docs/roles/ux-researcher.md)         | [operations-expert](docs/roles/board-operations-expert.md)       |
+|                                              | [docs-keeper](docs/roles/docs-keeper.md)             | [business-development](docs/roles/board-business-development.md) |
+|                                              |                                                      | [domain-expert](docs/roles/board-domain-expert.md)               |
 
 Outside the board: [stack-advisor](docs/roles/stack-advisor.md) for choosing tools and services, and
 [token-optimizer](docs/roles/token-optimizer.md) for spending fewer tokens, and
 [status-keeper](docs/roles/status-keeper.md) for keeping the roadmap true to git.
 
 Each role has a default model: opus where judgement is the whole job (security, architecture,
-money, the stack advisor, the board's chair, finance and legal seats, design), sonnet for the rest.
+high-stakes logic, the stack advisor, the board's chair, finance and legal seats, design), sonnet for the rest.
 </details>
 
 <details>
@@ -254,7 +253,7 @@ Not for one-off scripts.
 5. [Write down what you assumed.](docs/rules/write-down-assumptions.md)
 6. [Build nothing nobody asked for.](docs/rules/build-nothing-unasked.md)
 
-It reads your `AGENTS.md` and glossary, assumes no country, and asks instead of inventing.
+It reads your `AGENTS.md` and glossary and asks instead of inventing.
 
 ## Contributing
 

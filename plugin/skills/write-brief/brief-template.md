@@ -4,7 +4,7 @@
 
 **Branch:** <the task branch the builder works on, never `main`; `flow-stats` also uses it to find when the task merged>
 
-**Role:** builder | money-specialist | db-migrations | fixer   **Model:** <haiku | sonnet | opus, and why if not the default>
+**Role:** builder | db-migrations | fixer   **Model:** <haiku | sonnet | opus, and why if not the default>
 
 ## Scope
 

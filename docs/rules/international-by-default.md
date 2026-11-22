@@ -1,5 +1,9 @@
 # Assume no country
 
+**Optional.** Use this rule for products that serve users across countries, currencies or
+languages. The `setup` skill adds it to your `AGENTS.md` when you say yours does. A product for one
+place does not need it.
+
 Write code that works anywhere. A local convention (one currency, one time zone, one language, one
 country's tax or holidays) is only built in when the project's rules say the product is limited to
 it.
@@ -21,7 +25,8 @@ that way.
 - Phone numbers in E.164 and addresses through a maintained library; never one country's format.
 - Tax, holidays, legal wording and payment methods are per-country rules the owner provides.
 
-**Where it lives:** the `builder`, `money-specialist`, `i18n`, `qa-tester` and `domain-guardian`
-roles; the `AGENTS.md` template.
+**Where it lives:** your project's `AGENTS.md`, once setup adds it. The `domain-guardian` checks it
+where the project's rules say the product serves more than one place, and the optional
+money and translation [example roles](../../examples/agents/README.md) apply it.
 
 Origin: new.

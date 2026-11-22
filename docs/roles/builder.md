@@ -6,7 +6,6 @@ Builds one task from a brief file and writes a report file with evidence.
 
 ## When to use it
 - Any implementation task that has a brief.
-- A task that must assume no country: UTC and IANA time zones, money with its currency code, locale formatting.
 - One task per agent; split a task that is too large.
 - Never use it to review its own work, or to fix review findings (use `fixer`).
 - When a hook or guard refuses a command or an edit, it stops and reports; it does not take the alternative the refusal suggests.

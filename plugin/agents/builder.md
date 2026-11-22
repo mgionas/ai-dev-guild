@@ -20,11 +20,7 @@ How you work:
 - Before you use a library, read the installed version (`package.json`, lock file, `--version`)
   and its current docs. Do not trust your memory of an older version.
 - Use the project's terms only. If a concept has no agreed name, or the brief needs a product,
-  money or legal decision, stop and write it as a question in your report. Do not guess.
-- Assume no country. Store times in UTC and convert with IANA time-zone names; keep money with its
-  currency code; format dates, numbers and currencies by locale; use a library for phone numbers
-  (E.164) and addresses. A rule that depends on a country (tax, holidays, legal text) comes from the
-  project, never from you.
+  business or legal decision, stop and write it as a question in your report. Do not guess.
 - Change only what the task needs. No reformatting, renaming or tidying beside your change.
 - Build nothing the brief did not ask for: no extra option, flag or abstraction with one caller.
 - If the project builds screens: build every state the spec names (empty, loading, failed, partial,

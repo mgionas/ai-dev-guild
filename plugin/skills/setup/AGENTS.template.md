@@ -14,7 +14,7 @@
 ## Working rules
 
 1. **Only glossary words.** If you need a concept the glossary lacks, stop and ask for it.
-2. **People decide product, price, legal and money questions.** Write the question down and ask.
+2. **People decide product, business and legal questions.** Write the question down and ask.
 3. **Read the installed version** of a library, and its current docs, before you call it.
 4. **No proof, not done.** Paste the output of the tests, type check and lint you ran.
 5. **Work in your own area.** Use other modules only through their public interface.
@@ -31,12 +31,9 @@
 11. **Record your guesses** under **Assumptions**: what you picked, what else it could have meant,
     and why you picked it.
 12. **Add nothing extra.** No setting, flag or layer that no one has asked for.
-13. **Assume no country.** Times in UTC with IANA zone names, money with its currency code,
-    formats by locale, phone numbers in E.164. Country rules (tax, holidays, legal text) come from
-    the project's rules.
-14. **Decisions are the owner's.** If code and a recorded decision disagree, the code is not done
+13. **Decisions are the owner's.** If code and a recorded decision disagree, the code is not done
     yet. Report it; do not edit the decision.
-15. **Work on the task's branch, never on `main`.** Each task has its own branch (or worktree),
+14. **Work on the task's branch, never on `main`.** Each task has its own branch (or worktree),
     named in its brief. Changes reach `main` only by a pull request, or by a local merge when the
     project has no remote.
 
@@ -79,5 +76,4 @@ Whoever builds a change does not review it. The `review-panel` skill says who do
 
 ## Decisions for people
 
-Product scope, business rules, anything about money, production releases and migrations, and legal
-text are decided by the product owner or a named expert.
+Product scope, business rules, production releases and migrations, and legal text are decided by the product owner or a named expert.

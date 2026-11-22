@@ -17,9 +17,8 @@ machine first.
   memory, and test runners pick one worker per core. A type-aware lint or a production build that
   fits a laptop's heap can run out of memory on a smaller runner. Run locally with CI's heap cap
   (`NODE_OPTIONS=--max-old-space-size=<MB>`) and CI's core count. Set the cap in CI too, on every
-  heavy step, rather than relying on the default: one project's type-aware typecheck ran out of
-  memory (exit code 134) in every full run once an 8 GB runner joined, because that runner's
-  default heap was 2 GB. Keep the cap below the runner's memory divided by the processes that run
+  heavy step, rather than relying on the default: a type-aware typecheck ran out of memory (exit
+  code 134) on a runner whose default heap was 2 GB. Keep the cap below the runner's memory divided by the processes that run
   at once, or the out-of-memory error becomes the system killing the process (exit code 137).
 - **Parallel levels multiply.** A task runner running four packages at once, each starting a test
   worker per core, puts many processes on a two-core runner, and tests that take one second alone
@@ -96,21 +95,16 @@ A self-hosted runner is a program on a machine you own that runs whatever a work
   queue, and nothing falls back to the weaker one. When statement timeouts or time-dependent tests
   fail only on the weak runner, run the same job on a strong one before changing code; if it then
   passes, the test is load-sensitive, and that is the thing to fix, not the timeout.
-- **A job queued for hours can fail at checkout.** One project's jobs that waited more than eight
-  hours for a runner failed while cloning, with an authentication error
-  (`could not read Username`). Re-run it once before debugging; a failure that repeats on a fresh
-  run is the one to read.
+- **A job queued for hours can fail at checkout.** It may fail while cloning, with an authentication
+  error (`could not read Username`). Re-run it once before debugging; a failure that repeats on a
+  fresh run is the one to read.
 - **Cancelling is not instant.** Post steps that have started (cache uploads, cleanup) keep running
   after a cancel. A cancelled run is not a failed one: when it was replaced by a newer run, the
   newer run is the result to read.
 - **Put the runner on another machine than the one agents work on.** If agent sessions or other
   projects use the runner's machine too, load-sensitive tests get flaky and parallel pre-push hooks
-  time out. One project kept three runners on the machine where its agents ran local checks, beside
-  a sibling project's checks, and lost a day to failures that only load caused: containers that
-  missed their start-up time, network errors, unit tests past their timeout. After the runner moved
-  to a second machine, pushes and merges no longer loaded the working one. A separate account or
-  container protects secrets, not load. Where a second machine is not possible, the rule "never
-  two heavy suites at once" applies to the runner as well.
+  time out. The longer reason, and what to do where a second machine is not possible, is in
+  [Several agents on one machine](several-agents-one-machine.md).
 - **Stopping a runner mid-job ends that job.** The job does not finish: it fails, or hangs until
   the CI host notices the runner is gone. Before you stop or retire one, ask the CI host whether it
   is busy (for GitHub, `gh api repos/<owner>/<repo>/actions/runners` shows `"busy": true`; it needs

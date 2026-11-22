@@ -6,8 +6,8 @@ build config, test timeouts or heavy tests link it, and the local check imitates
 runner's limits.
 
 **Why:** Builds and tests that passed on a developer machine ran out of memory, or timed out, on a
-runner with half the cores and memory. Agents raised test timeouts three times before anyone
-looked at the machine. Nothing in their briefs said CI was smaller.
+runner with half the cores and memory. Agents raised test timeouts before anyone
+looked at the machine, because nothing in their briefs said CI was smaller.
 
 **How to apply:**
 

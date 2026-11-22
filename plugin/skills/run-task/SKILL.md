@@ -27,7 +27,7 @@ The task: $ARGUMENTS
    once. The builder starts with the answers, not with the questions.
 3. **Brief.** Write `.work/tasks/<id>/brief.md` with the `write-brief` skill. The brief is the
    builder's whole world: complete, with line ranges for any long document it must read.
-4. **Build.** Dispatch one fresh `builder` (or `money-specialist`, `db-migrations`) with the brief
+4. **Build.** Dispatch one fresh `builder` (or `db-migrations`) with the brief
    path. One task per agent. Pick the model on purpose (see below).
 5. **Read the report.** No pasted evidence means not done: send it back. Move each **Noticed** item
    to the carried list (`.work/carried.md`). Read **Assumptions** first: a product choice in there
@@ -82,11 +82,11 @@ Tell the user that plugin agent types load only in a new session.
 
 ## Choosing a model
 
-| Work | Model |
-| --- | --- |
-| Lookups, renames, a fix whose exact change is written down | haiku |
-| Builders from a clear brief, fixers, QA, domain review, docs, translations, re-checks | sonnet |
-| Security, architecture, money, concurrency, access control — building or reviewing | opus |
+| Work                                                                                           | Model  |
+| ---------------------------------------------------------------------------------------------- | ------ |
+| Lookups, renames, a fix whose exact change is written down                                     | haiku  |
+| Builders from a clear brief, fixers, QA, domain review, docs, translations, re-checks          | sonnet |
+| Security, architecture, high-stakes logic, concurrency, access control — building or reviewing | opus   |
 
 State the reason when you override a role's default.
 

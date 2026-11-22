@@ -9,6 +9,10 @@ heading where it changed.
 
 ## Unreleased
 
+## 0.24.0 (2026-11-22)
+
+- The guild reads as a general agent workflow, not one project's notes. "Assume no country" is no longer always on: it left the builder, the `AGENTS.md` template and the README's table, and is now an optional rule (`docs/rules/international-by-default.md`) that `setup` adds when the product handles money, dates, addresses or several languages. `money-specialist` and `i18n` moved to `examples/agents/` as copy-in roles (projects that relied on them copy `examples/agents/…` into `.claude/agents/`), so the plugin has 21 roles. In `review-panel`, "money" became "high-stakes logic" (money, access control, data that cannot be recovered), reviewed by a human expert plus the security reviewer for access, and "product, money and legal" became "product, business and legal". The long text on sharing one machine moved from `local-ci` and `docs/where-ci-runs.md` to its own page, `docs/several-agents-one-machine.md`, and project anecdotes in the rules were cut to a sentence. Guards unchanged (0.3.2). (new)
+
 ## 0.23.8 (2026-11-22)
 
 - A shorter README: pictures first, about 650 visible words instead of about 2,150, a who-does-what diagram and an install diagram, and the full role, skill and hook lists in collapsed sections. The living pages' longer explanation moved unchanged to `docs/living-pages.md`. Guards unchanged (0.3.2). (new)
